@@ -198,7 +198,7 @@ function App() {
       <div className="page-container">
         <header className="home-header">
           <div>
-            <p className="eyebrow">もっと楽しく推し活を</p>
+            <p className="eyebrow">生きる活力チャージ</p>
             <h1 className="app-title">OshiMemo</h1>
           </div>
 
@@ -207,27 +207,27 @@ function App() {
           </button>
         </header>
 
-        <section className="create-banner">
-          <div>
-            <p>新しいお買い物メモを作成</p>
-            <h2>次の推し活を準備しよう</h2>
-          </div>
+        <button
+          type="button"
+          className="create-banner"
+          onClick={() => setIsFormOpen(true)}
+        >
+         <span className="create-banner-icon" aria-hidden="true">
+          ＋
+        </span>
 
-          <button
-            type="button"
-            className="create-button"
-            onClick={() => setIsFormOpen(true)}
-          >
-            ＋ 新しいイベント
-          </button>
-        </section>
+        <span className="create-banner-text">
+          新しい買い物メモを作成
+        </span>
+
+  <span className="create-banner-arrow" aria-hidden="true">
+    ›
+  </span>
+</button>
 
         <section className="saved-events">
           <div className="section-heading">
-            <div>
-              <p className="section-label">MY EVENTS</p>
               <h2>保存したメモ</h2>
-            </div>
 
             <span className="event-count">{events.length}件</span>
           </div>
@@ -279,7 +279,6 @@ function App() {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="dialog-heading">
-              <p>NEW EVENT</p>
               <h2 id="new-event-title">新しいイベント</h2>
               <span>
                 イベント名と開催日を入力してください。

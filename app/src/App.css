@@ -123,24 +123,81 @@ button {
   line-height: 1.4;
 }
 
-.create-button {
-  flex-shrink: 0;
-  padding: 14px 22px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--color-surface-strong);
+.create-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  margin-bottom: 40px;
+  border: 1px solid rgba(228, 193, 181, 0.55);
+  border-radius: 28px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(228, 193, 181, 0.9),
+      rgba(244, 225, 218, 0.94)
+    );
+  box-shadow: 0 16px 38px rgba(84, 76, 64, 0.09);
+}
+
+.create-banner {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 26px 30px;
+  margin-bottom: 40px;
+  border: 1px solid rgba(228, 193, 181, 0.7);
+  border-radius: 28px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(228, 193, 181, 0.92),
+      rgba(244, 225, 218, 0.96)
+    );
   color: var(--color-text);
-  font-weight: 750;
-  box-shadow: 0 8px 20px rgba(84, 76, 64, 0.09);
+  text-align: left;
+  box-shadow: 0 16px 38px rgba(84, 76, 64, 0.09);
   cursor: pointer;
   transition:
     transform 160ms ease,
+    border-color 160ms ease,
     box-shadow 160ms ease;
 }
 
-.create-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(84, 76, 64, 0.14);
+.create-banner:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-accent-dark);
+  box-shadow: 0 20px 46px rgba(84, 76, 64, 0.14);
+}
+
+.create-banner:active {
+  transform: translateY(-1px);
+}
+
+.create-banner-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  font-size: 28px;
+  font-weight: 500;
+  box-shadow: 0 8px 20px rgba(84, 76, 64, 0.08);
+}
+
+.create-banner-text {
+  font-size: clamp(17px, 3vw, 21px);
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.create-banner-arrow {
+  color: rgba(84, 76, 64, 0.5);
+  font-size: 30px;
+  line-height: 1;
 }
 
 .section-heading {
@@ -288,14 +345,6 @@ button {
 
 .dialog-heading {
   margin-bottom: 25px;
-}
-
-.dialog-heading p {
-  margin: 0 0 5px;
-  color: var(--color-accent-dark);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.15em;
 }
 
 .dialog-heading h2 {
@@ -526,9 +575,23 @@ button {
     padding: 25px;
   }
 
-  .create-button {
-    width: 100%;
-  }
+  .create-banner {
+  grid-template-columns: 48px 1fr auto;
+  gap: 14px;
+  padding: 22px 20px;
+  border-radius: 24px;
+}
+
+.create-banner-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  font-size: 24px;
+}
+
+.create-banner-text {
+  font-size: 16px;
+}
 
   .event-card {
     padding: 19px;
