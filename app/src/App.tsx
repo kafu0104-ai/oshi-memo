@@ -1,122 +1,162 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+{isFormOpen && (
+  <div
+    role="presentation"
+    onClick={() => setIsFormOpen(false)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      display: 'grid',
+      placeItems: 'center',
+      padding: '20px',
+      background: 'rgba(60, 52, 47, 0.35)',
+      backdropFilter: 'blur(8px)',
+      zIndex: 1000,
+    }}
+  >
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="new-event-title"
+      onClick={(event) => event.stopPropagation()}
+      style={{
+        boxSizing: 'border-box',
+        width: 'min(440px, 100%)',
+        maxHeight: 'calc(100vh - 40px)',
+        overflowY: 'auto',
+        padding: '28px',
+        borderRadius: '24px',
+        background: '#fffdfb',
+        boxShadow: '0 24px 70px rgba(60, 52, 47, 0.22)',
+      }}
+    >
+      <h2
+        id="new-event-title"
+        style={{
+          margin: 0,
+          color: '#544c40',
+          fontSize: '22px',
+          fontWeight: 700,
+          lineHeight: 1.4,
+        }}
+      >
+        新しいイベント
+      </h2>
 
-function App() {
-  const [count, setCount] = useState(0)
+      <p
+        style={{
+          margin: '8px 0 24px',
+          color: '#8a7f76',
+          fontSize: '14px',
+          lineHeight: 1.7,
+        }}
+      >
+        イベント名と開催日を入力してください。
+      </p>
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
+      <label
+        style={{
+          display: 'grid',
+          gap: '8px',
+          marginBottom: '18px',
+          color: '#544c40',
+          fontSize: '14px',
+          fontWeight: 600,
+        }}
+      >
+        イベント名
+
+        <input
+          value={eventName}
+          onChange={(event) => setEventName(event.target.value)}
+          placeholder="例：うたプリ GRAND SHOP"
+          autoFocus
+          style={{
+            boxSizing: 'border-box',
+            width: '100%',
+            minWidth: 0,
+            padding: '14px 16px',
+            border: '1px solid #ddd2cb',
+            borderRadius: '14px',
+            background: '#ffffff',
+            color: '#544c40',
+            font: 'inherit',
+            outline: 'none',
+          }}
+        />
+      </label>
+
+      <label
+        style={{
+          display: 'grid',
+          gap: '8px',
+          color: '#544c40',
+          fontSize: '14px',
+          fontWeight: 600,
+        }}
+      >
+        開催日
+
+        <input
+          type="date"
+          value={eventDate}
+          onChange={(event) => setEventDate(event.target.value)}
+          style={{
+            boxSizing: 'border-box',
+            width: '100%',
+            minWidth: 0,
+            padding: '14px 16px',
+            border: '1px solid #ddd2cb',
+            borderRadius: '14px',
+            background: '#ffffff',
+            color: '#544c40',
+            font: 'inherit',
+            outline: 'none',
+          }}
+        />
+      </label>
+
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'flex-end',
+          gap: '10px',
+          marginTop: '28px',
+        }}
+      >
         <button
           type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+          onClick={() => setIsFormOpen(false)}
+          style={{
+            padding: '12px 18px',
+            border: '1px solid #ddd2cb',
+            borderRadius: '999px',
+            background: '#ffffff',
+            color: '#6f655d',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
         >
-          Count is {count}
+          キャンセル
         </button>
-      </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
-}
-
-export default App
+        <button
+          type="button"
+          onClick={createEvent}
+          disabled={!eventName.trim()}
+          style={{
+            padding: '12px 20px',
+            border: 0,
+            borderRadius: '999px',
+            background: eventName.trim() ? '#e4c1b5' : '#e5dfdb',
+            color: eventName.trim() ? '#544c40' : '#aaa19b',
+            fontWeight: 700,
+            cursor: eventName.trim() ? 'pointer' : 'not-allowed',
+          }}
+        >
+          作成
+        </button>
+      </div>
+    </section>
+  </div>
+)}
