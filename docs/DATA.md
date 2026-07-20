@@ -86,6 +86,17 @@ AppSetting
 | updatedAt | datetime | ✔ | 自動更新 | 更新日時 |
 
 ---
+### Relations
+
+なし（最上位データ）
+
+### Children
+
+- Purchaser
+- Product
+- BonusSetting
+
+---
 
 ## 3. Purchaser
 
@@ -107,6 +118,14 @@ AppSetting
 | sortOrder | number | ✔ | 0 | 表示順 |
 | createdAt | datetime | ✔ | 自動生成 | 作成日時 |
 | updatedAt | datetime | ✔ | 自動更新 | 更新日時 |
+
+---
+
+### Relations
+
+| Relation | Target |
+|----------|--------|
+| eventId | Event.id |
 
 ---
 
@@ -140,6 +159,17 @@ AppSetting
 
 ---
 
+### Relations
+
+| Relation | Target |
+|----------|--------|
+| eventId | Event.id |
+| categoryId | Category.id |
+| characterIds | Character.id |
+| groupIds | Group.id |
+
+---
+
 ## 5. Purchase
 
 ### 概要
@@ -164,6 +194,15 @@ AppSetting
 
 ---
 
+### Relations
+
+| Relation | Target |
+|----------|--------|
+| purchaserId | Purchaser.id |
+| productId | Product.id |
+
+---
+
 ## 6. BonusSetting
 
 ### 概要
@@ -185,6 +224,14 @@ AppSetting
 | threshold | number | | 3000 | 配布条件金額 |
 | createdAt | datetime | ✔ | 自動生成 | 作成日時 |
 | updatedAt | datetime | ✔ | 自動更新 | 更新日時 |
+
+---
+
+### Relations
+
+| Relation | Target |
+|----------|--------|
+| eventId | Event.id |
 
 ---
 
@@ -231,6 +278,14 @@ AppSetting
 
 ---
 
+### Relations
+
+| Relation | Target |
+|----------|--------|
+| workId | Work.id |
+
+---
+
 ## 9. Character
 
 ### 概要
@@ -256,6 +311,14 @@ AppSetting
 
 ---
 
+### Relations
+
+| Relation | Target |
+|----------|--------|
+| workId | Work.id |
+
+---
+
 ## 10. CharacterGroup
 
 ### 概要
@@ -271,6 +334,15 @@ AppSetting
 |------|------|:--------:|:-------:|-------------|
 | characterId | string | ✔ | - | キャラクターID |
 | groupId | string | ✔ | - | グループID |
+
+---
+
+### Relations
+
+| Relation | Target |
+|----------|--------|
+| characterId | Character.id |
+| groupId | Group.id |
 
 ---
 
@@ -292,3 +364,182 @@ AppSetting
 | sortOrder | number | ✔ | 0 | 表示順 |
 | createdAt | datetime | ✔ | 自動生成 | 作成日時 |
 | updatedAt | datetime | ✔ | 自動更新 | 更新日時 |
+---
+
+## 12. Theme
+
+### 概要
+
+テーマ情報。
+ベーステーマ・推しテーマを管理する。
+アプリ全体で共有する。
+
+---
+
+### Fields
+
+| Field | Type | Required | Default | Description |
+|------|------|:--------:|:-------:|-------------|
+| id | string | ✔ | default | テーマID |
+| baseTheme | string | ✔ | default | ベーステーマ |
+| accentTheme | string | ✔ | default | 推しテーマ |
+| updatedAt | datetime | ✔ | 自動更新 | 更新日時 |
+
+---
+
+## 13. AppSetting
+
+### 概要
+
+アプリ全体の設定。
+イベントとは独立して保持する。
+
+---
+
+### Fields
+
+| Field | Type | Required | Default | Description |
+|------|------|:--------:|:-------:|-------------|
+| id | string | ✔ | default | 設定ID |
+| language | string | ✔ | ja | 表示言語 |
+| themeId | string | ✔ | default | テーマ設定 |
+| sampleDataLoaded | boolean | ✔ | false | サンプルデータ読込済み |
+| createdAt | datetime | ✔ | 自動生成 | 作成日時 |
+| updatedAt | datetime | ✔ | 自動更新 | 更新日時 |
+
+---
+
+### Relations
+
+| Relation | Target |
+|----------|--------|
+| themeId | Theme.id |
+
+---
+
+
+## 14. Backup
+
+### 概要
+
+イベントのバックアップデータ。
+エクスポート・インポート時のみ使用する。
+
+---
+
+### Fields
+
+| Field | Type | Required | Description |
+|------|------|:--------:|-------------|
+| version | string | ✔ | データ形式バージョン |
+| exportedAt | datetime | ✔ | エクスポート日時 |
+| events | Event[] | ✔ | イベント一覧 |
+| masters | MasterData | ✔ | マスターデータ |
+| settings | AppSetting | ✔ | アプリ設定 |
+
+---
+
+## 15. MasterData
+
+### 概要
+
+マスターデータをまとめて管理する構造。
+バックアップや初期データ読込時に使用する。
+
+---
+
+### Fields
+
+| Field | Type | Required | Description |
+|------|------|:--------:|-------------|
+| works | Work[] | ✔ | 作品一覧 |
+| groups | Group[] | ✔ | グループ一覧 |
+| characters | Character[] | ✔ | キャラクター一覧 |
+| categories | Category[] | ✔ | カテゴリー一覧 |
+
+---
+
+## 16. 共通ルール
+
+### ID
+
+すべてのデータはUUIDを使用する。
+
+---
+
+### createdAt
+
+作成日時。
+作成後は変更しない。
+
+---
+
+### updatedAt
+
+更新日時。
+データ変更時に自動更新する。
+
+---
+
+### sortOrder
+
+一覧表示順。
+小さい値ほど先頭へ表示する。
+
+---
+
+### 削除
+
+論理削除は採用しない。
+削除時は物理削除とする。
+削除前には必ず確認ダイアログを表示する。
+
+---
+
+### リレーション
+
+データの関連はIDで管理する。
+オブジェクトそのものは保持しない。
+
+例
+- eventId
+- purchaserId
+- productId
+
+---
+
+### 配列
+
+複数データを保持する場合は配列を使用する。
+
+例
+- characterIds
+- groupIds
+
+---
+
+### マスター
+
+マスターデータはアプリ全体で共有する。
+イベントごとには保持しない。
+
+---
+
+### イベント
+
+イベント内データはイベント単位で独立する。
+イベントを削除した場合は、関連データも削除する。
+
+---
+
+### 購入情報
+
+購入数量は商品ではなくPurchaseへ保持する。
+商品データは共通データとして扱う。
+
+---
+
+### テーマ
+
+テーマ設定はアプリ全体へ適用する。
+イベント単位では保持しない。
