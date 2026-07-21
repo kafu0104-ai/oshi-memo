@@ -58,10 +58,14 @@ function formatDate(date: string) {
 function App() {
   const [events, setEvents] = useState<EventItem[]>(loadEvents)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
-  const [isFormOpen, setIsFormOpen] = useState(false)
 
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [eventName, setEventName] = useState('')
   const [eventDate, setEventDate] = useState('')
+
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false)
+  const [editEventName, setEditEventName] = useState('')
+  const [editEventDate, setEditEventDate] = useState('')
 
   const selectedEvent =
     events.find((event) => event.id === selectedEventId) ?? null
@@ -96,6 +100,48 @@ function App() {
     closeForm()
   }
 
+  const openEditForm = () => {
+    if (!selectedEvent) {
+      return
+    }
+
+    setEditEventName(selectedEvent.name)
+    setEditEventDate(selectedEvent.date)
+    setIsEditFormOpen(true)
+  }
+
+  const closeEditForm = () => {
+    setIsEditFormOpen(false)
+    setEditEventName('')
+    setEditEventDate('')
+  }
+
+  const updateEvent = () => {
+    if (!selectedEvent) {
+      return
+    }
+
+    const trimmedName = editEventName.trim()
+
+    if (!trimmedName) {
+      return
+    }
+
+    setEvents((currentEvents) =>
+      currentEvents.map((event) =>
+        event.id === selectedEvent.id
+          ? {
+              ...event,
+              name: trimmedName,
+              date: editEventDate,
+            }
+          : event,
+      ),
+    )
+
+    closeEditForm()
+  }
+
   if (selectedEvent) {
     return (
       <main className="app-shell">
@@ -113,6 +159,7 @@ function App() {
               type="button"
               className="icon-button"
               aria-label="イベント設定"
+              onClick={openEditForm}
             >
               ⚙
             </button>
@@ -162,33 +209,96 @@ function App() {
             <div className="menu-grid">
               <button type="button" className="menu-card">
                 <span className="menu-icon">🛍️</span>
+
                 <span>
                   <strong>商品一覧</strong>
                   <small>商品情報と購入数を管理</small>
                 </span>
+
                 <span className="menu-arrow">›</span>
               </button>
 
               <button type="button" className="menu-card">
                 <span className="menu-icon">👤</span>
+
                 <span>
                   <strong>購入者</strong>
                   <small>購入者ごとのメモを確認</small>
                 </span>
+
                 <span className="menu-arrow">›</span>
               </button>
 
               <button type="button" className="menu-card">
                 <span className="menu-icon">🎀</span>
+
                 <span>
                   <strong>特典設定</strong>
                   <small>配布条件と枚数を管理</small>
                 </span>
+
                 <span className="menu-arrow">›</span>
               </button>
             </div>
           </section>
         </div>
+
+        {isEditFormOpen && (
+          <div className="modal-backdrop" onClick={closeEditForm}>
+            <section
+              className="event-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-event-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="dialog-heading">
+                <h2 id="edit-event-title">イベントを編集</h2>
+                <span>イベント名と開催日を変更できます。</span>
+              </div>
+
+              <label className="form-field">
+                <span>イベント名</span>
+
+                <input
+                  type="text"
+                  value={editEventName}
+                  onChange={(event) => setEditEventName(event.target.value)}
+                  autoFocus
+                />
+              </label>
+
+              <label className="form-field">
+                <span>開催日</span>
+
+                <input
+                  type="date"
+                  value={editEventDate}
+                  onChange={(event) => setEditEventDate(event.target.value)}
+                />
+              </label>
+
+              <div className="dialog-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={closeEditForm}
+                >
+                  キャンセル
+                </button>
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={updateEvent}
+                  disabled={!editEventName.trim()}
+                >
+                  保存
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
       </main>
     )
   }
@@ -198,8 +308,11 @@ function App() {
       <div className="page-container">
         <header className="home-header">
           <div>
-            <p className="eyebrow">生きる活力チャージ</p>
-            <h1 className="app-title">OshiMemo</h1>
+            <p className="eyebrow">
+              グッズ購入は明日を生きる活力チャージ！
+            </p>
+
+            <h1 className="app-title">推しメモ</h1>
           </div>
 
           <button type="button" className="icon-button" aria-label="設定">
@@ -212,22 +325,22 @@ function App() {
           className="create-banner"
           onClick={() => setIsFormOpen(true)}
         >
-         <span className="create-banner-icon" aria-hidden="true">
-          ＋
-        </span>
+          <span className="create-banner-icon" aria-hidden="true">
+            ＋
+          </span>
 
-        <span className="create-banner-text">
-          新しい買い物メモを作成
-        </span>
+          <span className="create-banner-text">
+            新しい買い物メモを作成
+          </span>
 
-  <span className="create-banner-arrow" aria-hidden="true">
-    ›
-  </span>
-</button>
+          <span className="create-banner-arrow" aria-hidden="true">
+            ›
+          </span>
+        </button>
 
         <section className="saved-events">
           <div className="section-heading">
-              <h2>保存したメモ</h2>
+            <h2>保存したメモ</h2>
 
             <span className="event-count">{events.length}件</span>
           </div>
@@ -236,7 +349,9 @@ function App() {
             <div className="empty-state">
               <span>🤍</span>
               <h3>まだイベントはありません</h3>
-              <p>新しいイベントを作成して、推し活の準備を始めましょう。</p>
+              <p>
+                新しいイベントを作成して、推し活の準備を始めましょう。
+              </p>
             </div>
           ) : (
             <div className="event-list">
@@ -280,9 +395,7 @@ function App() {
           >
             <div className="dialog-heading">
               <h2 id="new-event-title">新しいイベント</h2>
-              <span>
-                イベント名と開催日を入力してください。
-              </span>
+              <span>イベント名と開催日を入力してください。</span>
             </div>
 
             <label className="form-field">
