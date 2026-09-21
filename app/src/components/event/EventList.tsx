@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import type { Event } from "../../types/Event";
 
 interface EventListProps {
@@ -76,6 +77,12 @@ function EventList({
               )}
 
               {event.memo && <p>{event.memo}</p>}
+
+              <p>
+                <Link to={`/events/${event.id}`}>
+                  イベント詳細を開く →
+                </Link>
+              </p>
 
               <div className="form-actions">
                 <button
