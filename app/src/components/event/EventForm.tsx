@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { Event } from "../../types/Event";
+import { DEFAULT_EVENT_TAGS } from "../../types/EventTag";
 
 interface EventFormProps {
   onSaveEvent: (event: Event) => void;
@@ -13,6 +14,7 @@ function EventForm({
   editingEvent = null,
 }: EventFormProps) {
   const [title, setTitle] = useState("");
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [venue, setVenue] = useState("");
@@ -24,6 +26,7 @@ function EventForm({
   useEffect(() => {
     if (editingEvent) {
       setTitle(editingEvent.title);
+      setSelectedTagIds(editingEvent.tagIds ?? []);
       setStartDate(editingEvent.startDate);
       setEndDate(editingEvent.endDate);
       setVenue(editingEvent.venue);
@@ -31,6 +34,7 @@ function EventForm({
       setMemo(editingEvent.memo ?? "");
     } else {
       setTitle("");
+      setSelectedTagIds([]);
       setStartDate("");
       setEndDate("");
       setVenue("");
@@ -38,6 +42,18 @@ function EventForm({
       setMemo("");
     }
   }, [editingEvent]);
+
+  const handleToggleTag = (tagId: string) => {
+    setSelectedTagIds((currentTagIds) => {
+      if (currentTagIds.includes(tagId)) {
+        return currentTagIds.filter(
+          (currentTagId) => currentTagId !== tagId
+        );
+      }
+
+      return [...currentTagIds, tagId];
+    });
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -52,6 +68,7 @@ function EventForm({
     const savedEvent: Event = {
       id: editingEvent?.id ?? crypto.randomUUID(),
       title: trimmedTitle,
+      tagIds: selectedTagIds,
       startDate,
       endDate,
       venue: venue.trim(),
@@ -81,7 +98,10 @@ function EventForm({
 
       <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="event-title">イベント・ライブ名</label>
+          <label htmlFor="event-title">
+            イベント・ライブ名
+          </label>
+
           <input
             id="event-title"
             type="text"
@@ -92,54 +112,117 @@ function EventForm({
           />
         </div>
 
+        <div className="event-tag-field">
+          <div>
+            <span className="event-tag-label">
+              イベントタグ
+            </span>
+
+            <p className="event-tag-description">
+              当てはまるものを複数選択できます
+            </p>
+          </div>
+
+          <div className="event-tag-list">
+            {DEFAULT_EVENT_TAGS.map((tag) => {
+              const isSelected = selectedTagIds.includes(tag.id);
+
+              return (
+                <button
+                  key={tag.id}
+                  className={
+                    isSelected
+                      ? "event-tag-button is-selected"
+                      : "event-tag-button"
+                  }
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => handleToggleTag(tag.id)}
+                >
+                  {isSelected && (
+                    <span aria-hidden="true">✓ </span>
+                  )}
+
+                  {tag.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div>
-          <label htmlFor="event-start-date">開始日</label>
+          <label htmlFor="event-start-date">
+            開始日
+          </label>
+
           <input
             id="event-start-date"
             type="date"
             value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
+            onChange={(event) =>
+              setStartDate(event.target.value)
+            }
           />
         </div>
 
         <div>
-          <label htmlFor="event-end-date">終了日</label>
+          <label htmlFor="event-end-date">
+            終了日
+          </label>
+
           <input
             id="event-end-date"
             type="date"
             value={endDate}
-            onChange={(event) => setEndDate(event.target.value)}
+            onChange={(event) =>
+              setEndDate(event.target.value)
+            }
           />
         </div>
 
         <div>
-          <label htmlFor="event-venue">会場名</label>
+          <label htmlFor="event-venue">
+            会場名
+          </label>
+
           <input
             id="event-venue"
             type="text"
             value={venue}
-            onChange={(event) => setVenue(event.target.value)}
-            placeholder="例：池袋P'PARCO"
+            onChange={(event) =>
+              setVenue(event.target.value)
+            }
+            placeholder="例：池袋・サンシャインシティ"
           />
         </div>
 
         <div>
-          <label htmlFor="event-official-url">公式サイトURL</label>
+          <label htmlFor="event-official-url">
+            公式サイトURL
+          </label>
+
           <input
             id="event-official-url"
             type="url"
             value={officialUrl}
-            onChange={(event) => setOfficialUrl(event.target.value)}
+            onChange={(event) =>
+              setOfficialUrl(event.target.value)
+            }
             placeholder="https://example.com"
           />
         </div>
 
         <div>
-          <label htmlFor="event-memo">メモ</label>
+          <label htmlFor="event-memo">
+            メモ
+          </label>
+
           <textarea
             id="event-memo"
             value={memo}
-            onChange={(event) => setMemo(event.target.value)}
+            onChange={(event) =>
+              setMemo(event.target.value)
+            }
             placeholder="整理券、入場時間、確認事項など"
             rows={4}
           />
@@ -155,7 +238,9 @@ function EventForm({
           </button>
 
           <button type="submit">
-            {isEditing ? "変更を保存" : "イベントを追加"}
+            {isEditing
+              ? "変更を保存"
+              : "イベントを追加"}
           </button>
         </div>
       </form>
