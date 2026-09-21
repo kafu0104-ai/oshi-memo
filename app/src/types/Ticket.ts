@@ -141,6 +141,7 @@ export interface TicketSettlement {
  */
 export interface TicketPayment {
   /**
+   * 支払期限
    * YYYY-MM-DD
    */
   deadlineDate?: string;
@@ -285,34 +286,24 @@ export interface TicketFulfillment {
 /**
  * 1つの申込内容
  *
- * 同じ先行・受付の中でも
- * 複数公演や複数希望を登録できる。
+ * 同じ先行・受付の中でも、
+ * 複数の公演回へ申し込める。
  */
 export interface TicketApplication {
   id: string;
 
   /**
-   * 公演名
+   * Event.performances の公演回ID
    *
    * 例：
-   * 東京公演 昼
-   * 10/18 夜公演
+   * Event側の
+   * 「2026/10/17 夜公演」
+   * を参照する。
    *
-   * 未入力でも可
+   * 公演回を使用しないイベントでは
+   * 未設定でもよい。
    */
-  performanceName?: string;
-
-  /**
-   * 公演日
-   * YYYY-MM-DD
-   */
-  performanceDate?: string;
-
-  /**
-   * 開演時間
-   * HH:mm
-   */
-  performanceTime?: string;
+  performanceId?: string;
 
   /**
    * TicketReception.seatTypes のID
@@ -424,6 +415,9 @@ export interface TicketReception {
 
   /**
    * この受付で行った申込
+   *
+   * 各申込は performanceId により
+   * Event側の公演回を参照できる。
    */
   applications: TicketApplication[];
 
