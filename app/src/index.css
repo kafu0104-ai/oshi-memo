@@ -315,27 +315,31 @@ main {
   gap: 8px;
 }
 
-/*
-  フォーム内で横幅いっぱいにしたい項目用。
-  今後項目が増えても nth-child に依存しない。
-*/
 .form-field-full {
   grid-column: 1 / -1;
 }
 
-/*
-  日付・時間などを左右に並べる場合に使用。
-*/
 .form-field-half {
   min-width: 0;
 }
 
+
+/* ========================================
+   Form actions
+======================================== */
+
 .form-actions {
-  display: flex;
+  display: flex !important;
+  flex-direction: row;
   justify-content: flex-end;
   gap: 10px;
 
   grid-column: 1 / -1;
+}
+
+.form-actions button {
+  flex: 0 1 180px;
+  min-width: 0;
 }
 
 
@@ -671,14 +675,6 @@ article p {
     width: 100%;
   }
 
-  .form-actions {
-    flex-direction: column-reverse;
-  }
-
-  .form-actions button {
-    width: 100%;
-  }
-
   .event-card > .event-card-link {
     min-height: 125px;
     padding: 20px;
@@ -687,6 +683,14 @@ article p {
 
   .event-card-chevron {
     font-size: 1.8rem;
+  }
+
+  .form-actions {
+    flex-direction: row;
+  }
+
+  .form-actions button {
+    flex: 1 1 0;
   }
 }
 
