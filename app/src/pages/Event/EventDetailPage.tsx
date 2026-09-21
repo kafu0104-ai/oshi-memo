@@ -130,10 +130,30 @@ function EventDetailPage() {
       event.tagIds?.includes(tag.id)
     );
 
+  /**
+   * 旧イベント用の共通時間情報
+   */
   const scheduleItems =
     event.schedule?.filter(
       (item) =>
         item.time.trim() !== ""
+    ) ?? [];
+
+  /**
+   * 新しい公演回情報
+   *
+   * 完全に空の公演回は表示しない。
+   */
+  const performances =
+    event.performances?.filter(
+      (performance) =>
+        performance.date ||
+        performance.name ||
+        performance.schedule.some(
+          (item) =>
+            item.time.trim() !== ""
+        ) ||
+        performance.memo
     ) ?? [];
 
   const startDate =
@@ -391,48 +411,148 @@ function EventDetailPage() {
               </div>
             )}
 
-            {scheduleItems.length >
+            {performances.length >
               0 && (
-              <div className="event-detail-info-item">
+              <div className="event-detail-info-item event-detail-info-item-full">
                 <span
                   className="event-detail-info-icon"
                   aria-hidden="true"
                 >
-                  🕐
+                  🎭
                 </span>
 
                 <div className="event-detail-info-content">
                   <p className="event-detail-info-label">
-                    時間
+                    公演回・参加予定
                   </p>
 
-                  <div className="event-detail-schedule">
-                    {scheduleItems.map(
-                      (item) => (
-                        <div
-                          className="event-detail-schedule-row"
-                          key={
-                            item.id
-                          }
-                        >
-                          <span>
-                            {
-                              item.label
-                            }
-                          </span>
+                  <div className="event-detail-performance-list">
+                    {performances.map(
+                      (
+                        performance,
+                        index
+                      ) => {
+                        const performanceSchedule =
+                          performance.schedule.filter(
+                            (item) =>
+                              item.time.trim() !==
+                              ""
+                          );
 
-                          <strong>
-                            {
-                              item.time
+                        return (
+                          <div
+                            className="event-detail-performance-card"
+                            key={
+                              performance.id
                             }
-                          </strong>
-                        </div>
-                      )
+                          >
+                            <div className="event-detail-performance-header">
+                              <div>
+                                <p className="event-detail-performance-date">
+                                  {performance.date
+                                    ? formatDate(
+                                        performance.date
+                                      )
+                                    : "日付未定"}
+                                </p>
+
+                                <h3>
+                                  {performance.name ||
+                                    `公演回 ${index + 1}`}
+                                </h3>
+                              </div>
+                            </div>
+
+                            {performanceSchedule.length >
+                              0 && (
+                              <div className="event-detail-performance-schedule">
+                                {performanceSchedule.map(
+                                  (
+                                    item
+                                  ) => (
+                                    <div
+                                      className="event-detail-performance-schedule-row"
+                                      key={
+                                        item.id
+                                      }
+                                    >
+                                      <span>
+                                        {
+                                          item.label
+                                        }
+                                      </span>
+
+                                      <strong>
+                                        {
+                                          item.time
+                                        }
+                                      </strong>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            )}
+
+                            {performance.memo && (
+                              <p className="event-detail-performance-memo">
+                                {
+                                  performance.memo
+                                }
+                              </p>
+                            )}
+                          </div>
+                        );
+                      }
                     )}
                   </div>
                 </div>
               </div>
             )}
+
+            {scheduleItems.length >
+              0 &&
+              performances.length ===
+                0 && (
+                <div className="event-detail-info-item">
+                  <span
+                    className="event-detail-info-icon"
+                    aria-hidden="true"
+                  >
+                    🕐
+                  </span>
+
+                  <div className="event-detail-info-content">
+                    <p className="event-detail-info-label">
+                      時間
+                    </p>
+
+                    <div className="event-detail-schedule">
+                      {scheduleItems.map(
+                        (item) => (
+                          <div
+                            className="event-detail-schedule-row"
+                            key={
+                              item.id
+                            }
+                          >
+                            <span>
+                              {
+                                item.label
+                              }
+                            </span>
+
+                            <strong>
+                              {
+                                item.time
+                              }
+                            </strong>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
             {event.venue && (
               <div className="event-detail-info-item">
@@ -507,6 +627,8 @@ function EventDetailPage() {
             {!startDate &&
               !endDate &&
               scheduleItems.length ===
+                0 &&
+              performances.length ===
                 0 &&
               !event.venue &&
               !event.officialUrl &&
