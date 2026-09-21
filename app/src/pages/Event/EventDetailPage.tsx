@@ -51,8 +51,8 @@ function EventDetailPage() {
 
 
   /*
-    一覧や登録フォームで下までスクロールしていても、
-    詳細ページを開いたら必ずページ上部から表示する。
+    詳細ページを開いたときは、
+    必ずページ上部から表示する。
   */
   useEffect(() => {
     window.scrollTo({
@@ -64,10 +64,10 @@ function EventDetailPage() {
 
 
   /*
-    新規登録直後だけ完了メッセージを表示する。
+    新規登録直後だけ登録完了通知を表示する。
 
-    history の state はそのままだと残るため、
-    表示後に現在のURLへ置き換えて state を消しておく。
+    ブラウザ履歴に justCreated が残り続けないよう、
+    一度表示したら location.state を空にする。
   */
   useEffect(() => {
     if (!locationState?.justCreated) {
@@ -100,7 +100,9 @@ function EventDetailPage() {
             EVENT
           </p>
 
-          <h1>イベントが見つかりません</h1>
+          <h1>
+            イベントが見つかりません
+          </h1>
 
           <p>
             削除されたか、URLが正しくない可能性があります。
@@ -131,6 +133,9 @@ function EventDetailPage() {
   const endDate = formatDate(event.endDate);
 
 
+  /*
+    イベント編集を保存
+  */
   const handleSaveEvent = (
     updatedEvent: Event
   ) => {
@@ -154,6 +159,9 @@ function EventDetailPage() {
   };
 
 
+  /*
+    イベント削除
+  */
   const handleDeleteEvent = () => {
     const shouldDelete = window.confirm(
       `「${event.title}」を削除しますか？\nこの操作は取り消せません。`
@@ -174,8 +182,70 @@ function EventDetailPage() {
   };
 
 
+  /*
+    編集画面
+  */
+  if (isEditing) {
+    return (
+      <main className="event-detail-page">
+        <div className="event-detail-back">
+          <button
+            className="event-detail-back-button"
+            type="button"
+            onClick={() => {
+              setIsEditing(false);
+
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: "smooth",
+              });
+            }}
+          >
+            ← イベント詳細へ戻る
+          </button>
+        </div>
+
+
+        <section className="event-detail-edit-section">
+          <div className="event-detail-edit-heading">
+            <p className="section-label">
+              EDIT EVENT
+            </p>
+
+            <h1>
+              イベントを編集
+            </h1>
+
+            <p>
+              {event.title}
+            </p>
+          </div>
+
+
+          <EventForm
+            editingEvent={event}
+            onSaveEvent={handleSaveEvent}
+            onCancel={() => {
+              setIsEditing(false);
+
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: "smooth",
+              });
+            }}
+          />
+        </section>
+      </main>
+    );
+  }
+
+
   return (
     <main className="event-detail-page">
+
+      {/* 一覧へ戻る */}
       <div className="event-detail-back">
         <Link
           className="text-link"
@@ -186,12 +256,16 @@ function EventDetailPage() {
       </div>
 
 
-      {showCreatedMessage && !isEditing && (
+      {/* 新規登録直後だけ表示 */}
+      {showCreatedMessage && (
         <div
           className="event-created-message"
           role="status"
         >
-          <span aria-hidden="true">
+          <span
+            className="event-created-icon"
+            aria-hidden="true"
+          >
             ✓
           </span>
 
@@ -208,127 +282,122 @@ function EventDetailPage() {
       )}
 
 
-      {!isEditing && (
-        <>
-          <header className="event-detail-header">
-            <p className="page-eyebrow">
-              EVENT
+      {/* イベント全体を包む白いシート */}
+      <article className="event-detail-sheet">
+
+        {/* イベント上部 */}
+        <header className="event-detail-header">
+
+          {/* 編集・削除 */}
+          <div className="event-detail-actions">
+            <button
+              className="event-edit-button"
+              type="button"
+              onClick={() => {
+                setShowCreatedMessage(false);
+                setIsEditing(true);
+
+                window.scrollTo({
+                  top: 0,
+                  left: 0,
+                  behavior: "smooth",
+                });
+              }}
+            >
+              編集
+            </button>
+
+            <button
+              className="event-delete-button"
+              type="button"
+              onClick={handleDeleteEvent}
+            >
+              削除
+            </button>
+          </div>
+
+
+          <p className="page-eyebrow">
+            EVENT
+          </p>
+
+          <h1>
+            {event.title}
+          </h1>
+
+
+          {selectedTags.length > 0 && (
+            <div className="event-detail-tags">
+              {selectedTags.map((tag) => (
+                <span
+                  className="event-detail-tag"
+                  key={tag.id}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </header>
+
+
+        {/* イベント基本情報 */}
+        <section
+          className="event-detail-information"
+          aria-labelledby="event-info-heading"
+        >
+          <div className="event-detail-section-heading">
+            <p className="section-label">
+              EVENT INFORMATION
             </p>
 
-            <h1>
-              {event.title}
-            </h1>
+            <h2 id="event-info-heading">
+              イベント情報
+            </h2>
+          </div>
 
 
-            {selectedTags.length > 0 && (
-              <div className="event-detail-tags">
-                {selectedTags.map((tag) => (
-                  <span
-                    className="event-detail-tag"
-                    key={tag.id}
-                  >
-                    {tag.name}
-                  </span>
-                ))}
+          <div className="event-detail-info-grid">
+
+            {(startDate || endDate) && (
+              <div className="event-detail-info-item">
+                <span
+                  className="event-detail-info-icon"
+                  aria-hidden="true"
+                >
+                  📅
+                </span>
+
+                <div className="event-detail-info-content">
+                  <p className="event-detail-info-label">
+                    開催日程
+                  </p>
+
+                  <p className="event-detail-info-value">
+                    {startDate || "未定"}
+
+                    {endDate &&
+                      endDate !== startDate &&
+                      ` 〜 ${endDate}`}
+                  </p>
+                </div>
               </div>
             )}
-          </header>
 
 
-          <section
-            className="event-detail-card"
-            aria-labelledby="event-info-heading"
-          >
-            <div className="event-detail-section-heading">
-              <div>
-                <p className="section-label">
-                  EVENT INFORMATION
-                </p>
+            {scheduleItems.length > 0 && (
+              <div className="event-detail-info-item">
+                <span
+                  className="event-detail-info-icon"
+                  aria-hidden="true"
+                >
+                  🕐
+                </span>
 
-                <h2 id="event-info-heading">
-                  イベント情報
-                </h2>
-              </div>
-
-              <button
-                className="event-detail-edit-button"
-                type="button"
-                onClick={() => {
-                  setShowCreatedMessage(false);
-                  setIsEditing(true);
-
-                  window.scrollTo({
-                    top: 0,
-                    left: 0,
-                    behavior: "smooth",
-                  });
-                }}
-              >
-                編集
-              </button>
-            </div>
-
-
-            <div className="event-detail-info-grid">
-              {(startDate || endDate) && (
-                <div className="event-detail-info-item">
-                  <div
-                    className="event-detail-info-icon"
-                    aria-hidden="true"
-                  >
-                    📅
-                  </div>
-
-                  <div>
-                    <p className="event-detail-info-label">
-                      開催日程
-                    </p>
-
-                    <p className="event-detail-info-value">
-                      {startDate || "未定"}
-
-                      {endDate &&
-                        endDate !== startDate &&
-                        ` 〜 ${endDate}`}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-
-              {event.venue && (
-                <div className="event-detail-info-item">
-                  <div
-                    className="event-detail-info-icon"
-                    aria-hidden="true"
-                  >
-                    📍
-                  </div>
-
-                  <div>
-                    <p className="event-detail-info-label">
-                      会場
-                    </p>
-
-                    <p className="event-detail-info-value">
-                      {event.venue}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-
-              {scheduleItems.length > 0 && (
-                <div className="event-detail-info-block">
-                  <div className="event-detail-info-block-heading">
-                    <span aria-hidden="true">
-                      🕐
-                    </span>
-
-                    <p className="event-detail-info-label">
-                      時間
-                    </p>
-                  </div>
+                <div className="event-detail-info-content">
+                  <p className="event-detail-info-label">
+                    時間
+                  </p>
 
                   <div className="event-detail-schedule">
                     {scheduleItems.map((item) => (
@@ -347,20 +416,45 @@ function EventDetailPage() {
                     ))}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
 
-              {event.officialUrl && (
-                <div className="event-detail-info-block">
-                  <div className="event-detail-info-block-heading">
-                    <span aria-hidden="true">
-                      🔗
-                    </span>
+            {event.venue && (
+              <div className="event-detail-info-item">
+                <span
+                  className="event-detail-info-icon"
+                  aria-hidden="true"
+                >
+                  📍
+                </span>
 
-                    <p className="event-detail-info-label">
-                      公式サイト
-                    </p>
-                  </div>
+                <div className="event-detail-info-content">
+                  <p className="event-detail-info-label">
+                    会場
+                  </p>
+
+                  <p className="event-detail-info-value">
+                    {event.venue}
+                  </p>
+                </div>
+              </div>
+            )}
+
+
+            {event.officialUrl && (
+              <div className="event-detail-info-item">
+                <span
+                  className="event-detail-info-icon"
+                  aria-hidden="true"
+                >
+                  🔗
+                </span>
+
+                <div className="event-detail-info-content">
+                  <p className="event-detail-info-label">
+                    公式サイト
+                  </p>
 
                   <a
                     className="event-detail-official-link"
@@ -371,148 +465,105 @@ function EventDetailPage() {
                     公式サイトを開く ↗
                   </a>
                 </div>
-              )}
+              </div>
+            )}
 
 
-              {event.memo && (
-                <div className="event-detail-info-block">
-                  <div className="event-detail-info-block-heading">
-                    <span aria-hidden="true">
-                      📝
-                    </span>
+            {event.memo && (
+              <div className="event-detail-info-item event-detail-info-item-full">
+                <span
+                  className="event-detail-info-icon"
+                  aria-hidden="true"
+                >
+                  📝
+                </span>
 
-                    <p className="event-detail-info-label">
-                      メモ
-                    </p>
-                  </div>
+                <div className="event-detail-info-content">
+                  <p className="event-detail-info-label">
+                    メモ
+                  </p>
 
                   <p className="event-detail-memo">
                     {event.memo}
                   </p>
                 </div>
-              )}
-
-
-              {!startDate &&
-                !endDate &&
-                !event.venue &&
-                scheduleItems.length === 0 &&
-                !event.officialUrl &&
-                !event.memo && (
-                  <div className="event-detail-empty-info">
-                    <p>
-                      まだイベントの詳細情報は登録されていません。
-                    </p>
-                  </div>
-                )}
-            </div>
-          </section>
-
-
-          <section
-            className="event-memo-section"
-            aria-labelledby="event-memo-heading"
-          >
-            <div className="event-memo-heading">
-              <p className="section-label">
-                OSHI-MEMO
-              </p>
-
-              <h2 id="event-memo-heading">
-                このイベントのメモ
-              </h2>
-
-              <p>
-                チケット、買い物、代行、やることなど、
-                必要になった情報を追加して管理できます。
-              </p>
-            </div>
-
-
-            <div className="event-memo-empty">
-              <div
-                className="event-memo-empty-icon"
-                aria-hidden="true"
-              >
-                ♡
               </div>
-
-              <h3>
-                まだメモはありません
-              </h3>
-
-              <p>
-                このイベントについて覚えておきたいことを
-                メモしておきましょう。
-              </p>
-
-              <button
-                className="event-add-memo-button"
-                type="button"
-                onClick={() => {
-                  /*
-                    次の工程で
-                    /events/:eventId/memos/new
-                    へ遷移させる。
-                  */
-                }}
-              >
-                ＋ メモを追加
-              </button>
-            </div>
-          </section>
+            )}
 
 
-          <section className="event-detail-management">
-            <p className="event-detail-management-label">
-              イベントの管理
-            </p>
+            {!startDate &&
+              !endDate &&
+              scheduleItems.length === 0 &&
+              !event.venue &&
+              !event.officialUrl &&
+              !event.memo && (
+                <div className="event-detail-empty-info">
+                  <p>
+                    まだイベントの詳細情報は登録されていません。
+                  </p>
+                </div>
+              )}
+          </div>
+        </section>
 
-            <button
-              className="event-delete-button"
-              type="button"
-              onClick={handleDeleteEvent}
-            >
-              このイベントを削除
-            </button>
-          </section>
-        </>
-      )}
 
-
-      {isEditing && (
-        <section className="event-detail-edit-section">
-          <div className="event-detail-edit-heading">
+        {/* イベントに紐づくメモ */}
+        <section
+          className="event-memo-section"
+          aria-labelledby="event-memo-heading"
+        >
+          <div className="event-memo-heading">
             <p className="section-label">
-              EDIT EVENT
+              OSHI-MEMO
             </p>
 
-            <h1>
-              イベントを編集
-            </h1>
+            <h2 id="event-memo-heading">
+              このイベントのメモ
+            </h2>
 
             <p>
-              {event.title}
+              チケット、買い物、代行、やることなど、
+              必要になった情報を追加して管理できます。
             </p>
           </div>
 
-          <EventForm
-            editingEvent={event}
-            onSaveEvent={handleSaveEvent}
-            onCancel={() => {
-              setIsEditing(false);
 
-              window.scrollTo({
-                top: 0,
-                left: 0,
-                behavior: "smooth",
-              });
-            }}
-          />
+          <div className="event-memo-empty">
+            <div
+              className="event-memo-empty-icon"
+              aria-hidden="true"
+            >
+              ♡
+            </div>
+
+            <h3>
+              まだメモはありません
+            </h3>
+
+            <p>
+              このイベントについて覚えておきたいことを
+              メモしておきましょう。
+            </p>
+
+            <button
+              className="event-add-memo-button"
+              type="button"
+              onClick={() => {
+                /*
+                  次に作るメモタイプ選択ページへ
+                  遷移させる予定。
+                */
+              }}
+            >
+              ＋ メモを追加
+            </button>
+          </div>
         </section>
-      )}
+
+      </article>
     </main>
   );
 }
+
 
 export default EventDetailPage;
