@@ -19,6 +19,24 @@ interface EventDetailLocationState {
   justCreated?: boolean;
 }
 
+/**
+ * チケット管理をおすすめ表示するイベントタグ
+ */
+const TICKET_RECOMMENDED_TAG_IDS = [
+  "live",
+  "stage",
+  "movie",
+  "talk",
+];
+
+/**
+ * 買い物メモをおすすめ表示するイベントタグ
+ */
+const SHOPPING_RECOMMENDED_TAG_IDS = [
+  "goods-sale",
+  "online-sale",
+];
+
 function formatDate(date: string): string {
   if (!date) {
     return "";
@@ -123,6 +141,24 @@ function EventDetailPage() {
 
   const endDate =
     formatDate(event.endDate);
+
+  /**
+   * イベントタグから、
+   * おすすめ表示する管理機能を判定
+   */
+  const shouldRecommendTicket =
+    event.tagIds?.some((tagId) =>
+      TICKET_RECOMMENDED_TAG_IDS.includes(
+        tagId
+      )
+    ) ?? false;
+
+  const shouldRecommendShopping =
+    event.tagIds?.some((tagId) =>
+      SHOPPING_RECOMMENDED_TAG_IDS.includes(
+        tagId
+      )
+    ) ?? false;
 
   const handleSaveEvent = (
     updatedEvent: Event
@@ -251,7 +287,7 @@ function EventDetailPage() {
             </strong>
 
             <p>
-              必要な情報をメモとして追加していきましょう。
+              必要な情報を追加して管理していきましょう。
             </p>
           </div>
         </div>
@@ -494,43 +530,114 @@ function EventDetailPage() {
             </p>
 
             <h2 id="event-memo-heading">
-              このイベントのメモ
+              このイベントの管理
             </h2>
 
             <p>
-              チケット、買い物、代行、やることなど、
-              必要になった情報を追加して管理できます。
+              イベントの種類に合わせて、
+              必要になりそうな管理機能を表示しています。
             </p>
           </div>
 
-          <div className="event-memo-empty">
-            <div
-              className="event-memo-empty-icon"
-              aria-hidden="true"
-            >
-              ♡
-            </div>
+          <div className="event-module-list">
+            {shouldRecommendTicket && (
+              <article className="event-module-card">
+                <div className="event-module-icon">
+                  🎫
+                </div>
 
-            <h3>
-              まだメモはありません
-            </h3>
+                <div className="event-module-content">
+                  <h3>
+                    チケット・申込
+                  </h3>
 
-            <p>
-              このイベントについて覚えておきたいことを
-              メモしておきましょう。
-            </p>
+                  <p>
+                    先行・申込・当落・支払い・発券・分配・座席までまとめて管理できます。
+                  </p>
 
+                  <button
+                    className="event-module-button"
+                    type="button"
+                    onClick={() => {
+                      /*
+                        次の工程で
+                        チケット管理ページへ接続します。
+                      */
+                    }}
+                  >
+                    ＋ チケット情報を登録
+                  </button>
+                </div>
+              </article>
+            )}
+
+            {shouldRecommendShopping && (
+              <article className="event-module-card">
+                <div className="event-module-icon">
+                  🛍
+                </div>
+
+                <div className="event-module-content">
+                  <h3>
+                    買い物メモ
+                  </h3>
+
+                  <p>
+                    このイベントで購入したい商品や、
+                    購入したグッズをまとめて管理できます。
+                  </p>
+
+                  <button
+                    className="event-module-button"
+                    type="button"
+                    onClick={() => {
+                      /*
+                        買い物メモ実装時に
+                        接続します。
+                      */
+                    }}
+                  >
+                    ＋ 買い物メモを作る
+                  </button>
+                </div>
+              </article>
+            )}
+
+            {!shouldRecommendTicket &&
+              !shouldRecommendShopping && (
+                <div className="event-module-empty">
+                  <div
+                    className="event-memo-empty-icon"
+                    aria-hidden="true"
+                  >
+                    ♡
+                  </div>
+
+                  <h3>
+                    管理情報を追加できます
+                  </h3>
+
+                  <p>
+                    必要になった機能を、
+                    このイベントに追加して管理できます。
+                  </p>
+                </div>
+              )}
+          </div>
+
+          <div className="event-other-memo">
             <button
-              className="event-add-memo-button"
+              className="event-other-memo-button"
               type="button"
               onClick={() => {
                 /*
-                  次にメモタイプ選択ページへ
-                  接続します。
+                  将来、
+                  チケット・買い物・代行・やること等を
+                  任意追加する画面へ接続します。
                 */
               }}
             >
-              ＋ メモを追加
+              ＋ その他の管理を追加
             </button>
           </div>
         </section>

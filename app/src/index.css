@@ -1330,3 +1330,189 @@ section[aria-labelledby="event-list-heading"] > div {
     width: 100%;
   }
 }
+/* ========================================
+   Event management modules
+======================================== */
+
+.event-module-list {
+  display: grid;
+  gap: 14px;
+}
+
+.event-module-card {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 18px;
+
+  padding: 22px;
+
+  border: 1px solid
+    rgba(222, 213, 206, 0.85);
+
+  border-radius: var(--radius-medium);
+
+  background: #faf7f4;
+}
+
+.event-module-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  width: 46px;
+  height: 46px;
+
+  border-radius: 14px;
+
+  background:
+    rgba(228, 193, 181, 0.3);
+
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.event-module-content {
+  flex: 1;
+
+  min-width: 0;
+}
+
+.event-module-content h3 {
+  margin: 1px 0 7px;
+
+  color: var(--color-text);
+
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.event-module-content p {
+  margin: 0 0 18px;
+
+  color: var(--color-subtext);
+
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.event-module-button {
+  min-height: 42px;
+  padding: 0 18px;
+
+  font-size: 0.88rem;
+}
+
+.event-module-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+
+  padding: 32px 24px;
+
+  border: 1px dashed
+    rgba(207, 168, 155, 0.65);
+
+  border-radius: var(--radius-medium);
+
+  background: #faf7f4;
+
+  text-align: center;
+}
+
+.event-module-empty h3 {
+  margin: 0;
+
+  font-size: 1.05rem;
+}
+
+.event-module-empty p {
+  margin: 8px 0 0;
+
+  color: var(--color-subtext);
+
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+
+/* ========================================
+   Other event management
+======================================== */
+
+.event-other-memo {
+  display: flex;
+  justify-content: center;
+
+  margin-top: 18px;
+}
+
+.event-other-memo-button {
+  min-height: 42px;
+
+  border: 1px solid
+    var(--color-border);
+
+  background: transparent;
+  color: var(--color-subtext);
+
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.event-other-memo-button:hover {
+  border-color:
+    var(--color-primary-dark);
+
+  background: #faf6f3;
+
+  color: var(--color-text);
+}
+
+
+/* ========================================
+   Event management modules - Mobile
+======================================== */
+
+@media (max-width: 639px) {
+  .event-module-card {
+    gap: 14px;
+
+    padding: 18px 16px;
+  }
+
+  .event-module-icon {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 12px;
+
+    font-size: 1.15rem;
+  }
+
+  .event-module-content h3 {
+    font-size: 1rem;
+  }
+
+  .event-module-content p {
+    margin-bottom: 15px;
+
+    font-size: 0.86rem;
+  }
+
+  .event-module-button {
+    width: 100%;
+
+    padding: 0 12px;
+  }
+
+  .event-module-empty {
+    padding: 28px 16px;
+  }
+
+  .event-other-memo-button {
+    width: 100%;
+  }
+}
