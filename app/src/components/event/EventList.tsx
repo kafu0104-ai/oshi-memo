@@ -49,57 +49,68 @@ function EventList({
           const endDate = formatDate(event.endDate);
 
           return (
-            <article key={event.id}>
-              <h3>{event.title}</h3>
+            <article className="event-card" key={event.id}>
+              <Link
+                className="event-card-link"
+                to={`/events/${event.id}`}
+                aria-label={`${event.title}の詳細を開く`}
+              />
 
-              {(startDate || endDate) && (
-                <p>
-                  開催期間：
-                  {startDate || "未設定"}
-                  {endDate && endDate !== startDate
-                    ? ` 〜 ${endDate}`
-                    : ""}
-                </p>
-              )}
+              <div className="event-card-content">
+                <div className="event-card-heading">
+                  <h3>{event.title}</h3>
 
-              {event.venue && <p>会場：{event.venue}</p>}
-
-              {event.officialUrl && (
-                <p>
-                  <a
-                    href={event.officialUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                  <span
+                    className="event-card-chevron"
+                    aria-hidden="true"
                   >
-                    公式サイトを開く
-                  </a>
-                </p>
-              )}
+                    ›
+                  </span>
+                </div>
 
-              {event.memo && <p>{event.memo}</p>}
+                {(startDate || endDate) && (
+                  <p>
+                    開催期間：
+                    {startDate || "未設定"}
+                    {endDate && endDate !== startDate
+                      ? ` 〜 ${endDate}`
+                      : ""}
+                  </p>
+                )}
 
-              <p>
-                <Link to={`/events/${event.id}`}>
-                  イベント詳細を開く →
-                </Link>
-              </p>
+                {event.venue && <p>会場：{event.venue}</p>}
 
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => onEditEvent(event)}
-                >
-                  編集
-                </button>
+                {event.officialUrl && (
+                  <p className="event-card-action">
+                    <a
+                      href={event.officialUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      公式サイトを開く
+                    </a>
+                  </p>
+                )}
 
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => handleDelete(event)}
-                >
-                  削除
-                </button>
+                {event.memo && <p>{event.memo}</p>}
+
+                <div className="form-actions event-card-action">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => onEditEvent(event)}
+                  >
+                    編集
+                  </button>
+
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => handleDelete(event)}
+                  >
+                    削除
+                  </button>
+                </div>
               </div>
             </article>
           );
