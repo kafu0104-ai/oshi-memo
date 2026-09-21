@@ -786,7 +786,7 @@ function EventForm({
                                   "talk-end",
                                   "talkEnd",
                                   "トーク終了",
-                                  event
+                                  value
                                 )
                               }
                             />
