@@ -21,9 +21,6 @@ interface EventDetailLocationState {
 
 const PERFORMANCE_PREVIEW_COUNT = 4;
 
-/**
- * チケット管理をおすすめ表示するイベントタグ
- */
 const TICKET_RECOMMENDED_TAG_IDS = [
   "live",
   "stage",
@@ -31,9 +28,6 @@ const TICKET_RECOMMENDED_TAG_IDS = [
   "talk",
 ];
 
-/**
- * 買い物メモをおすすめ表示するイベントタグ
- */
 const SHOPPING_RECOMMENDED_TAG_IDS = [
   "goods-sale",
   "online-sale",
@@ -139,20 +133,12 @@ function EventDetailPage() {
       event.tagIds?.includes(tag.id)
     );
 
-  /**
-   * 旧イベント用の共通時間情報
-   */
   const scheduleItems =
     event.schedule?.filter(
       (item) =>
         item.time.trim() !== ""
     ) ?? [];
 
-  /**
-   * 公演スケジュール
-   *
-   * 完全に空の公演回は表示しない。
-   */
   const performances =
     event.performances?.filter(
       (performance) =>
@@ -190,10 +176,6 @@ function EventDetailPage() {
   const endDate =
     formatDate(event.endDate);
 
-  /**
-   * イベントタグから、
-   * おすすめ表示する管理機能を判定
-   */
   const shouldRecommendTicket =
     event.tagIds?.some((tagId) =>
       TICKET_RECOMMENDED_TAG_IDS.includes(
@@ -463,7 +445,7 @@ function EventDetailPage() {
                     </span>
                   </div>
 
-                  <div className="event-detail-performance-list">
+                  <div className="event-detail-performance-compact-list">
                     {visiblePerformances.map(
                       (
                         performance,
@@ -478,64 +460,62 @@ function EventDetailPage() {
 
                         return (
                           <div
-                            className="event-detail-performance-card"
+                            className="event-detail-performance-compact-row"
                             key={
                               performance.id
                             }
                           >
-                            <div className="event-detail-performance-header">
-                              <div>
-                                <p className="event-detail-performance-date">
+                            <div className="event-detail-performance-compact-main">
+                              <div className="event-detail-performance-compact-name">
+                                <span className="event-detail-performance-compact-date">
                                   {performance.date
                                     ? formatDate(
                                         performance.date
                                       )
                                     : "日付未定"}
-                                </p>
+                                </span>
 
-                                <h3>
+                                <strong>
                                   {performance.name ||
                                     `公演回 ${
-                                      showAllPerformances
-                                        ? index + 1
-                                        : index + 1
+                                      index + 1
                                     }`}
-                                </h3>
+                                </strong>
                               </div>
+
+                              {performanceSchedule.length >
+                                0 && (
+                                <div className="event-detail-performance-compact-times">
+                                  {performanceSchedule.map(
+                                    (
+                                      item
+                                    ) => (
+                                      <div
+                                        className="event-detail-performance-compact-time"
+                                        key={
+                                          item.id
+                                        }
+                                      >
+                                        <span>
+                                          {
+                                            item.label
+                                          }
+                                        </span>
+
+                                        <strong>
+                                          {
+                                            item.time
+                                          }
+                                        </strong>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              )}
                             </div>
 
-                            {performanceSchedule.length >
-                              0 && (
-                              <div className="event-detail-performance-schedule">
-                                {performanceSchedule.map(
-                                  (
-                                    item
-                                  ) => (
-                                    <div
-                                      className="event-detail-performance-schedule-row"
-                                      key={
-                                        item.id
-                                      }
-                                    >
-                                      <span>
-                                        {
-                                          item.label
-                                        }
-                                      </span>
-
-                                      <strong>
-                                        {
-                                          item.time
-                                        }
-                                      </strong>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            )}
-
                             {performance.memo && (
-                              <p className="event-detail-performance-memo">
+                              <p className="event-detail-performance-compact-memo">
                                 {
                                   performance.memo
                                 }
