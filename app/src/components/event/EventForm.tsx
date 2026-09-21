@@ -481,12 +481,12 @@ function EventForm({
             <div className="event-performance-heading">
               <div>
                 <span className="event-tag-label">
-                  公演回・参加予定
+                  公演スケジュール
                 </span>
 
                 <p className="event-tag-description">
                   昼夜公演・複数日・上映回など、
-                  管理したい回だけ追加できます
+                  チケット申込や予定管理に使う公演回を追加できます
                 </p>
               </div>
 
@@ -505,12 +505,12 @@ function EventForm({
               0 && (
               <div className="event-performance-empty">
                 <p>
-                  公演回はまだ登録されていません。
+                  公演スケジュールはまだ登録されていません。
                 </p>
 
                 <p>
-                  1公演だけの場合も、
-                  必要なときだけ追加できます。
+                  必要な公演回だけ追加できます。
+                  全公演を登録してもOKです。
                 </p>
               </div>
             )}
@@ -786,7 +786,7 @@ function EventForm({
                                   "talk-end",
                                   "talkEnd",
                                   "トーク終了",
-                                  value
+                                  event
                                 )
                               }
                             />
