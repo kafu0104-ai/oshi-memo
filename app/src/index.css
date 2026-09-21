@@ -331,14 +331,14 @@ main {
 .form-actions {
   display: flex !important;
   flex-direction: row;
-  justify-content: flex-end;
+  justify-content: stretch;
   gap: 10px;
 
   grid-column: 1 / -1;
 }
 
 .form-actions button {
-  flex: 0 1 180px;
+  flex: 1 1 0;
   min-width: 0;
 }
 
@@ -683,14 +683,6 @@ article p {
 
   .event-card-chevron {
     font-size: 1.8rem;
-  }
-
-  .form-actions {
-    flex-direction: row;
-  }
-
-  .form-actions button {
-    flex: 1 1 0;
   }
 }
 
