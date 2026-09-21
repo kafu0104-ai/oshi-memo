@@ -2,6 +2,8 @@ import type { Event } from "../../types/Event";
 
 interface EventListProps {
   events: Event[];
+  onEditEvent: (event: Event) => void;
+  onDeleteEvent: (eventId: string) => void;
 }
 
 function formatDate(date: string): string {
@@ -12,7 +14,11 @@ function formatDate(date: string): string {
   return date.replaceAll("-", "/");
 }
 
-function EventList({ events }: EventListProps) {
+function EventList({
+  events,
+  onEditEvent,
+  onDeleteEvent,
+}: EventListProps) {
   if (events.length === 0) {
     return (
       <section aria-labelledby="event-list-heading">
@@ -21,6 +27,16 @@ function EventList({ events }: EventListProps) {
       </section>
     );
   }
+
+  const handleDelete = (event: Event) => {
+    const shouldDelete = window.confirm(
+      `「${event.title}」を削除しますか？`
+    );
+
+    if (shouldDelete) {
+      onDeleteEvent(event.id);
+    }
+  };
 
   return (
     <section aria-labelledby="event-list-heading">
@@ -39,7 +55,9 @@ function EventList({ events }: EventListProps) {
                 <p>
                   開催期間：
                   {startDate || "未設定"}
-                  {endDate && endDate !== startDate ? ` 〜 ${endDate}` : ""}
+                  {endDate && endDate !== startDate
+                    ? ` 〜 ${endDate}`
+                    : ""}
                 </p>
               )}
 
@@ -58,6 +76,24 @@ function EventList({ events }: EventListProps) {
               )}
 
               {event.memo && <p>{event.memo}</p>}
+
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => onEditEvent(event)}
+                >
+                  編集
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => handleDelete(event)}
+                >
+                  削除
+                </button>
+              </div>
             </article>
           );
         })}
