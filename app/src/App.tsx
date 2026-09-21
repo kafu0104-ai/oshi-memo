@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from "react-router";
 import EventPage from "./pages/Event/EventPage";
+import EventDetailPage from "./pages/Event/EventDetailPage";
 import HomePage from "./pages/Home/HomePage";
 import SettingsPage from "./pages/Settings/SettingsPage";
 
@@ -9,7 +10,12 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/events" element={<EventPage />} />
+        <Route
+          path="/events/:eventId"
+          element={<EventDetailPage />}
+        />
         <Route path="/settings" element={<SettingsPage />} />
+
         <Route
           path="*"
           element={
@@ -23,12 +29,17 @@ function App() {
         />
       </Routes>
 
-      <nav className="bottom-navigation" aria-label="メインナビゲーション">
+      <nav
+        className="bottom-navigation"
+        aria-label="メインナビゲーション"
+      >
         <NavLink
           to="/"
           end
           className={({ isActive }) =>
-            isActive ? "bottom-nav-link is-active" : "bottom-nav-link"
+            isActive
+              ? "bottom-nav-link is-active"
+              : "bottom-nav-link"
           }
         >
           <span aria-hidden="true">⌂</span>
@@ -38,7 +49,9 @@ function App() {
         <NavLink
           to="/events"
           className={({ isActive }) =>
-            isActive ? "bottom-nav-link is-active" : "bottom-nav-link"
+            isActive
+              ? "bottom-nav-link is-active"
+              : "bottom-nav-link"
           }
         >
           <span aria-hidden="true">♡</span>
@@ -48,7 +61,9 @@ function App() {
         <NavLink
           to="/settings"
           className={({ isActive }) =>
-            isActive ? "bottom-nav-link is-active" : "bottom-nav-link"
+            isActive
+              ? "bottom-nav-link is-active"
+              : "bottom-nav-link"
           }
         >
           <span aria-hidden="true">⚙</span>
