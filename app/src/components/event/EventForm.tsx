@@ -1,5 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
-import type { Event } from "../../types/Event";
+import type {
+  Event,
+  EventScheduleItem,
+} from "../../types/Event";
 import { DEFAULT_EVENT_TAGS } from "../../types/EventTag";
 
 interface EventFormProps {
@@ -8,6 +11,29 @@ interface EventFormProps {
   editingEvent?: Event | null;
 }
 
+type ScheduleType = EventScheduleItem["type"];
+
+interface ScheduleDefinition {
+  type: ScheduleType;
+  label: string;
+}
+
+const LIVE_SCHEDULE: ScheduleDefinition[] = [
+  { type: "doorsOpen", label: "開場" },
+  { type: "start", label: "開演" },
+  { type: "expectedEnd", label: "終演予定" },
+];
+
+const MOVIE_SCHEDULE: ScheduleDefinition[] = [
+  { type: "screeningStart", label: "上映開始" },
+  { type: "screeningEnd", label: "上映終了" },
+];
+
+const TALK_WITH_MOVIE_SCHEDULE: ScheduleDefinition[] = [
+  { type: "talkStart", label: "トーク開始" },
+  { type: "talkEnd", label: "トーク終了" },
+];
+
 function EventForm({
   onSaveEvent,
   onCancel,
@@ -15,13 +41,24 @@ function EventForm({
 }: EventFormProps) {
   const [title, setTitle] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  const [schedule, setSchedule] = useState<EventScheduleItem[]>([]);
+
   const [venue, setVenue] = useState("");
   const [officialUrl, setOfficialUrl] = useState("");
   const [memo, setMemo] = useState("");
 
   const isEditing = Boolean(editingEvent);
+
+  const hasLiveTag =
+    selectedTagIds.includes("live") ||
+    selectedTagIds.includes("stage");
+
+  const hasMovieTag = selectedTagIds.includes("movie");
+  const hasTalkTag = selectedTagIds.includes("talk");
 
   useEffect(() => {
     if (editingEvent) {
@@ -29,6 +66,7 @@ function EventForm({
       setSelectedTagIds(editingEvent.tagIds ?? []);
       setStartDate(editingEvent.startDate);
       setEndDate(editingEvent.endDate);
+      setSchedule(editingEvent.schedule ?? []);
       setVenue(editingEvent.venue);
       setOfficialUrl(editingEvent.officialUrl ?? "");
       setMemo(editingEvent.memo ?? "");
@@ -37,11 +75,52 @@ function EventForm({
       setSelectedTagIds([]);
       setStartDate("");
       setEndDate("");
+      setSchedule([]);
       setVenue("");
       setOfficialUrl("");
       setMemo("");
     }
   }, [editingEvent]);
+
+  const getScheduleValue = (type: ScheduleType) => {
+    return (
+      schedule.find((item) => item.type === type)?.time ?? ""
+    );
+  };
+
+  const updateScheduleItem = (
+    type: ScheduleType,
+    label: string,
+    time: string
+  ) => {
+    setSchedule((currentSchedule) => {
+      const existingItem = currentSchedule.find(
+        (item) => item.type === type
+      );
+
+      if (existingItem) {
+        return currentSchedule.map((item) =>
+          item.type === type
+            ? {
+                ...item,
+                label,
+                time,
+              }
+            : item
+        );
+      }
+
+      return [
+        ...currentSchedule,
+        {
+          id: crypto.randomUUID(),
+          type,
+          label,
+          time,
+        },
+      ];
+    });
+  };
 
   const handleToggleTag = (tagId: string) => {
     setSelectedTagIds((currentTagIds) => {
@@ -61,7 +140,7 @@ function EventForm({
     const trimmedTitle = title.trim();
 
     if (!trimmedTitle) {
-      alert("イベント・ライブ名を入力してください。");
+      alert("イベント名を入力してください。");
       return;
     }
 
@@ -71,12 +150,39 @@ function EventForm({
       tagIds: selectedTagIds,
       startDate,
       endDate,
+      schedule,
       venue: venue.trim(),
       officialUrl: officialUrl.trim() || undefined,
       memo: memo.trim() || undefined,
     };
 
     onSaveEvent(savedEvent);
+  };
+
+  const renderScheduleField = ({
+    type,
+    label,
+  }: ScheduleDefinition) => {
+    return (
+      <div className="form-field-half" key={type}>
+        <label htmlFor={`schedule-${type}`}>
+          {label}
+        </label>
+
+        <input
+          id={`schedule-${type}`}
+          type="time"
+          value={getScheduleValue(type)}
+          onChange={(event) =>
+            updateScheduleItem(
+              type,
+              label,
+              event.target.value
+            )
+          }
+        />
+      </div>
+    );
   };
 
   return (
@@ -91,22 +197,26 @@ function EventForm({
           </p>
 
           <h2 id="event-form-heading">
-            {isEditing ? "イベントを編集" : "新しいイベント"}
+            {isEditing
+              ? "イベントを編集"
+              : "新しいイベント"}
           </h2>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div>
+        <div className="form-field-full">
           <label htmlFor="event-title">
-            イベント・ライブ名
+            イベント名 *
           </label>
 
           <input
             id="event-title"
             type="text"
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(event) =>
+              setTitle(event.target.value)
+            }
             placeholder="例：うたの☆プリンスさまっ♪ GRAND SHOP"
             required
           />
@@ -125,7 +235,8 @@ function EventForm({
 
           <div className="event-tag-list">
             {DEFAULT_EVENT_TAGS.map((tag) => {
-              const isSelected = selectedTagIds.includes(tag.id);
+              const isSelected =
+                selectedTagIds.includes(tag.id);
 
               return (
                 <button
@@ -137,10 +248,14 @@ function EventForm({
                   }
                   type="button"
                   aria-pressed={isSelected}
-                  onClick={() => handleToggleTag(tag.id)}
+                  onClick={() =>
+                    handleToggleTag(tag.id)
+                  }
                 >
                   {isSelected && (
-                    <span aria-hidden="true">✓ </span>
+                    <span aria-hidden="true">
+                      ✓{" "}
+                    </span>
                   )}
 
                   {tag.name}
@@ -150,7 +265,7 @@ function EventForm({
           </div>
         </div>
 
-        <div>
+        <div className="form-field-half">
           <label htmlFor="event-start-date">
             開始日
           </label>
@@ -165,7 +280,7 @@ function EventForm({
           />
         </div>
 
-        <div>
+        <div className="form-field-half">
           <label htmlFor="event-end-date">
             終了日
           </label>
@@ -180,7 +295,25 @@ function EventForm({
           />
         </div>
 
-        <div>
+        {hasLiveTag &&
+          LIVE_SCHEDULE.map(renderScheduleField)}
+
+        {hasMovieTag &&
+          MOVIE_SCHEDULE.map(renderScheduleField)}
+
+        {hasMovieTag &&
+          hasTalkTag &&
+          TALK_WITH_MOVIE_SCHEDULE.map(
+            renderScheduleField
+          )}
+
+        {hasTalkTag && !hasMovieTag && (
+          <>
+            {LIVE_SCHEDULE.map(renderScheduleField)}
+          </>
+        )}
+
+        <div className="form-field-full">
           <label htmlFor="event-venue">
             会場名
           </label>
@@ -196,7 +329,7 @@ function EventForm({
           />
         </div>
 
-        <div>
+        <div className="form-field-full">
           <label htmlFor="event-official-url">
             公式サイトURL
           </label>
@@ -212,7 +345,7 @@ function EventForm({
           />
         </div>
 
-        <div>
+        <div className="form-field-full">
           <label htmlFor="event-memo">
             メモ
           </label>
