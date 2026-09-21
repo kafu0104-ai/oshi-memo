@@ -140,9 +140,6 @@ function EventForm({
   const hasTalk =
     selectedTagIds.includes("talk");
 
-  /**
-   * 公演回を使う可能性が高いタグか
-   */
   const hasPerformanceTag =
     hasLiveOrStage ||
     hasMovie ||
@@ -325,12 +322,6 @@ function EventForm({
 
       endDate,
 
-      /**
-       * 既存イベントとの互換性のため、
-       * 編集前のscheduleは保持する。
-       *
-       * 新規イベントでは空配列。
-       */
       schedule:
         editingEvent?.schedule ?? [],
 
@@ -623,6 +614,7 @@ function EventForm({
                             <input
                               id={`doors-open-${performance.id}`}
                               type="time"
+                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "doors-open"
@@ -653,6 +645,7 @@ function EventForm({
                             <input
                               id={`performance-start-${performance.id}`}
                               type="time"
+                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "performance-start"
@@ -683,6 +676,7 @@ function EventForm({
                             <input
                               id={`performance-end-${performance.id}`}
                               type="time"
+                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "performance-end"
@@ -717,6 +711,7 @@ function EventForm({
                             <input
                               id={`screening-start-${performance.id}`}
                               type="time"
+                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "screening-start"
@@ -747,6 +742,7 @@ function EventForm({
                             <input
                               id={`screening-end-${performance.id}`}
                               type="time"
+                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "screening-end"
@@ -781,6 +777,7 @@ function EventForm({
                             <input
                               id={`talk-start-${performance.id}`}
                               type="time"
+                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "talk-start"
@@ -811,6 +808,7 @@ function EventForm({
                             <input
                               id={`talk-end-${performance.id}`}
                               type="time"
+                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "talk-end"
