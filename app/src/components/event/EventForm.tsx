@@ -11,6 +11,7 @@ import type {
 } from "../../types/Event";
 
 import { DEFAULT_EVENT_TAGS } from "../../types/EventTag";
+import TimeSelect from "../common/TimeSelect";
 
 interface EventFormProps {
   onSaveEvent: (event: Event) => void;
@@ -322,6 +323,10 @@ function EventForm({
 
       endDate,
 
+      /**
+       * 旧イベントのscheduleは
+       * 互換性のため保持する。
+       */
       schedule:
         editingEvent?.schedule ?? [],
 
@@ -605,93 +610,75 @@ function EventForm({
                       {hasLiveOrStage && (
                         <>
                           <div className="form-field">
-                            <label
-                              htmlFor={`doors-open-${performance.id}`}
-                            >
+                            <label>
                               開場
                             </label>
 
-                            <input
+                            <TimeSelect
                               id={`doors-open-${performance.id}`}
-                              type="time"
-                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "doors-open"
                               )}
                               onChange={(
-                                event
+                                value
                               ) =>
                                 updatePerformanceSchedule(
                                   performance.id,
                                   "doors-open",
                                   "doorsOpen",
                                   "開場",
-                                  event
-                                    .target
-                                    .value
+                                  value
                                 )
                               }
                             />
                           </div>
 
                           <div className="form-field">
-                            <label
-                              htmlFor={`performance-start-${performance.id}`}
-                            >
+                            <label>
                               開演
                             </label>
 
-                            <input
+                            <TimeSelect
                               id={`performance-start-${performance.id}`}
-                              type="time"
-                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "performance-start"
                               )}
                               onChange={(
-                                event
+                                value
                               ) =>
                                 updatePerformanceSchedule(
                                   performance.id,
                                   "performance-start",
                                   "start",
                                   "開演",
-                                  event
-                                    .target
-                                    .value
+                                  value
                                 )
                               }
                             />
                           </div>
 
                           <div className="form-field">
-                            <label
-                              htmlFor={`performance-end-${performance.id}`}
-                            >
+                            <label>
                               終演予定
                             </label>
 
-                            <input
+                            <TimeSelect
                               id={`performance-end-${performance.id}`}
-                              type="time"
-                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "performance-end"
                               )}
                               onChange={(
-                                event
+                                value
                               ) =>
                                 updatePerformanceSchedule(
                                   performance.id,
                                   "performance-end",
                                   "expectedEnd",
                                   "終演予定",
-                                  event
-                                    .target
-                                    .value
+                                  value
                                 )
                               }
                             />
@@ -702,62 +689,50 @@ function EventForm({
                       {hasMovie && (
                         <>
                           <div className="form-field">
-                            <label
-                              htmlFor={`screening-start-${performance.id}`}
-                            >
+                            <label>
                               上映開始
                             </label>
 
-                            <input
+                            <TimeSelect
                               id={`screening-start-${performance.id}`}
-                              type="time"
-                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "screening-start"
                               )}
                               onChange={(
-                                event
+                                value
                               ) =>
                                 updatePerformanceSchedule(
                                   performance.id,
                                   "screening-start",
                                   "screeningStart",
                                   "上映開始",
-                                  event
-                                    .target
-                                    .value
+                                  value
                                 )
                               }
                             />
                           </div>
 
                           <div className="form-field">
-                            <label
-                              htmlFor={`screening-end-${performance.id}`}
-                            >
+                            <label>
                               上映終了
                             </label>
 
-                            <input
+                            <TimeSelect
                               id={`screening-end-${performance.id}`}
-                              type="time"
-                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "screening-end"
                               )}
                               onChange={(
-                                event
+                                value
                               ) =>
                                 updatePerformanceSchedule(
                                   performance.id,
                                   "screening-end",
                                   "screeningEnd",
                                   "上映終了",
-                                  event
-                                    .target
-                                    .value
+                                  value
                                 )
                               }
                             />
@@ -768,62 +743,50 @@ function EventForm({
                       {hasTalk && (
                         <>
                           <div className="form-field">
-                            <label
-                              htmlFor={`talk-start-${performance.id}`}
-                            >
+                            <label>
                               トーク開始
                             </label>
 
-                            <input
+                            <TimeSelect
                               id={`talk-start-${performance.id}`}
-                              type="time"
-                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "talk-start"
                               )}
                               onChange={(
-                                event
+                                value
                               ) =>
                                 updatePerformanceSchedule(
                                   performance.id,
                                   "talk-start",
                                   "talkStart",
                                   "トーク開始",
-                                  event
-                                    .target
-                                    .value
+                                  value
                                 )
                               }
                             />
                           </div>
 
                           <div className="form-field">
-                            <label
-                              htmlFor={`talk-end-${performance.id}`}
-                            >
+                            <label>
                               トーク終了
                             </label>
 
-                            <input
+                            <TimeSelect
                               id={`talk-end-${performance.id}`}
-                              type="time"
-                              step={300}
                               value={getPerformanceScheduleTime(
                                 performance,
                                 "talk-end"
                               )}
                               onChange={(
-                                event
+                                value
                               ) =>
                                 updatePerformanceSchedule(
                                   performance.id,
                                   "talk-end",
                                   "talkEnd",
                                   "トーク終了",
-                                  event
-                                    .target
-                                    .value
+                                  value
                                 )
                               }
                             />
