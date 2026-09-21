@@ -19,6 +19,8 @@ interface EventDetailLocationState {
   justCreated?: boolean;
 }
 
+const PERFORMANCE_PREVIEW_COUNT = 4;
+
 /**
  * チケット管理をおすすめ表示するイベントタグ
  */
@@ -62,6 +64,11 @@ function EventDetailPage() {
     useState(false);
 
   const [
+    showAllPerformances,
+    setShowAllPerformances,
+  ] = useState(false);
+
+  const [
     showCreatedMessage,
     setShowCreatedMessage,
   ] = useState(
@@ -74,6 +81,8 @@ function EventDetailPage() {
       left: 0,
       behavior: "instant",
     });
+
+    setShowAllPerformances(false);
   }, [eventId]);
 
   useEffect(() => {
@@ -140,7 +149,7 @@ function EventDetailPage() {
     ) ?? [];
 
   /**
-   * 新しい公演回情報
+   * 公演スケジュール
    *
    * 完全に空の公演回は表示しない。
    */
@@ -155,6 +164,25 @@ function EventDetailPage() {
         ) ||
         performance.memo
     ) ?? [];
+
+  const hasHiddenPerformances =
+    performances.length >
+    PERFORMANCE_PREVIEW_COUNT;
+
+  const visiblePerformances =
+    showAllPerformances
+      ? performances
+      : performances.slice(
+          0,
+          PERFORMANCE_PREVIEW_COUNT
+        );
+
+  const hiddenPerformanceCount =
+    Math.max(
+      performances.length -
+        PERFORMANCE_PREVIEW_COUNT,
+      0
+    );
 
   const startDate =
     formatDate(event.startDate);
@@ -194,6 +222,7 @@ function EventDetailPage() {
     saveEvents(nextEvents);
 
     setIsEditing(false);
+    setShowAllPerformances(false);
 
     window.scrollTo({
       top: 0,
@@ -422,12 +451,20 @@ function EventDetailPage() {
                 </span>
 
                 <div className="event-detail-info-content">
-                  <p className="event-detail-info-label">
-                    公演回・参加予定
-                  </p>
+                  <div className="event-detail-performance-title-row">
+                    <p className="event-detail-info-label">
+                      公演スケジュール
+                    </p>
+
+                    <span className="event-detail-performance-count">
+                      全
+                      {performances.length}
+                      公演
+                    </span>
+                  </div>
 
                   <div className="event-detail-performance-list">
-                    {performances.map(
+                    {visiblePerformances.map(
                       (
                         performance,
                         index
@@ -458,7 +495,11 @@ function EventDetailPage() {
 
                                 <h3>
                                   {performance.name ||
-                                    `公演回 ${index + 1}`}
+                                    `公演回 ${
+                                      showAllPerformances
+                                        ? index + 1
+                                        : index + 1
+                                    }`}
                                 </h3>
                               </div>
                             </div>
@@ -505,6 +546,30 @@ function EventDetailPage() {
                       }
                     )}
                   </div>
+
+                  {hasHiddenPerformances && (
+                    <div className="event-detail-performance-toggle">
+                      <button
+                        className="event-detail-performance-toggle-button"
+                        type="button"
+                        aria-expanded={
+                          showAllPerformances
+                        }
+                        onClick={() =>
+                          setShowAllPerformances(
+                            (
+                              currentValue
+                            ) =>
+                              !currentValue
+                          )
+                        }
+                      >
+                        {showAllPerformances
+                          ? "公演スケジュールを閉じる"
+                          : `残り${hiddenPerformanceCount}公演を表示`}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
