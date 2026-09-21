@@ -7,7 +7,6 @@ import {
 } from "react-router";
 
 import EventForm from "../../components/event/EventForm";
-
 import {
   loadEvents,
   saveEvents,
@@ -16,11 +15,9 @@ import {
 import type { Event } from "../../types/Event";
 import { DEFAULT_EVENT_TAGS } from "../../types/EventTag";
 
-
 interface EventDetailLocationState {
   justCreated?: boolean;
 }
-
 
 function formatDate(date: string): string {
   if (!date) {
@@ -29,7 +26,6 @@ function formatDate(date: string): string {
 
   return date.replaceAll("-", "/");
 }
-
 
 function EventDetailPage() {
   const { eventId } = useParams();
@@ -44,16 +40,16 @@ function EventDetailPage() {
     () => loadEvents()
   );
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] =
+    useState(false);
 
-  const [showCreatedMessage, setShowCreatedMessage] =
-    useState(Boolean(locationState?.justCreated));
+  const [
+    showCreatedMessage,
+    setShowCreatedMessage,
+  ] = useState(
+    Boolean(locationState?.justCreated)
+  );
 
-
-  /*
-    詳細ページを開いたときは、
-    必ずページ上部から表示する。
-  */
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -62,13 +58,6 @@ function EventDetailPage() {
     });
   }, [eventId]);
 
-
-  /*
-    新規登録直後だけ登録完了通知を表示する。
-
-    ブラウザ履歴に justCreated が残り続けないよう、
-    一度表示したら location.state を空にする。
-  */
   useEffect(() => {
     if (!locationState?.justCreated) {
       return;
@@ -86,11 +75,10 @@ function EventDetailPage() {
     navigate,
   ]);
 
-
   const event = events.find(
-    (currentEvent) => currentEvent.id === eventId
+    (currentEvent) =>
+      currentEvent.id === eventId
   );
-
 
   if (!event) {
     return (
@@ -119,23 +107,23 @@ function EventDetailPage() {
     );
   }
 
-
-  const selectedTags = DEFAULT_EVENT_TAGS.filter(
-    (tag) => event.tagIds?.includes(tag.id)
-  );
+  const selectedTags =
+    DEFAULT_EVENT_TAGS.filter((tag) =>
+      event.tagIds?.includes(tag.id)
+    );
 
   const scheduleItems =
     event.schedule?.filter(
-      (item) => item.time.trim() !== ""
+      (item) =>
+        item.time.trim() !== ""
     ) ?? [];
 
-  const startDate = formatDate(event.startDate);
-  const endDate = formatDate(event.endDate);
+  const startDate =
+    formatDate(event.startDate);
 
+  const endDate =
+    formatDate(event.endDate);
 
-  /*
-    イベント編集を保存
-  */
   const handleSaveEvent = (
     updatedEvent: Event
   ) => {
@@ -158,14 +146,11 @@ function EventDetailPage() {
     });
   };
 
-
-  /*
-    イベント削除
-  */
   const handleDeleteEvent = () => {
-    const shouldDelete = window.confirm(
-      `「${event.title}」を削除しますか？\nこの操作は取り消せません。`
-    );
+    const shouldDelete =
+      window.confirm(
+        `「${event.title}」を削除しますか？\nこの操作は取り消せません。`
+      );
 
     if (!shouldDelete) {
       return;
@@ -181,10 +166,6 @@ function EventDetailPage() {
     navigate("/events");
   };
 
-
-  /*
-    編集画面
-  */
   if (isEditing) {
     return (
       <main className="event-detail-page">
@@ -206,7 +187,6 @@ function EventDetailPage() {
           </button>
         </div>
 
-
         <section className="event-detail-edit-section">
           <div className="event-detail-edit-heading">
             <p className="section-label">
@@ -222,10 +202,11 @@ function EventDetailPage() {
             </p>
           </div>
 
-
           <EventForm
             editingEvent={event}
-            onSaveEvent={handleSaveEvent}
+            onSaveEvent={
+              handleSaveEvent
+            }
             onCancel={() => {
               setIsEditing(false);
 
@@ -241,11 +222,8 @@ function EventDetailPage() {
     );
   }
 
-
   return (
     <main className="event-detail-page">
-
-      {/* 一覧へ戻る */}
       <div className="event-detail-back">
         <Link
           className="text-link"
@@ -255,8 +233,6 @@ function EventDetailPage() {
         </Link>
       </div>
 
-
-      {/* 新規登録直後だけ表示 */}
       {showCreatedMessage && (
         <div
           className="event-created-message"
@@ -281,14 +257,8 @@ function EventDetailPage() {
         </div>
       )}
 
-
-      {/* イベント全体を包む白いシート */}
       <article className="event-detail-sheet">
-
-        {/* イベント上部 */}
         <header className="event-detail-header">
-
-          {/* 編集・削除 */}
           <div className="event-detail-actions">
             <button
               className="event-edit-button"
@@ -310,12 +280,13 @@ function EventDetailPage() {
             <button
               className="event-delete-button"
               type="button"
-              onClick={handleDeleteEvent}
+              onClick={
+                handleDeleteEvent
+              }
             >
               削除
             </button>
           </div>
-
 
           <p className="page-eyebrow">
             EVENT
@@ -325,23 +296,22 @@ function EventDetailPage() {
             {event.title}
           </h1>
 
-
           {selectedTags.length > 0 && (
             <div className="event-detail-tags">
-              {selectedTags.map((tag) => (
-                <span
-                  className="event-detail-tag"
-                  key={tag.id}
-                >
-                  {tag.name}
-                </span>
-              ))}
+              {selectedTags.map(
+                (tag) => (
+                  <span
+                    className="event-detail-tag"
+                    key={tag.id}
+                  >
+                    {tag.name}
+                  </span>
+                )
+              )}
             </div>
           )}
         </header>
 
-
-        {/* イベント基本情報 */}
         <section
           className="event-detail-information"
           aria-labelledby="event-info-heading"
@@ -356,10 +326,9 @@ function EventDetailPage() {
             </h2>
           </div>
 
-
           <div className="event-detail-info-grid">
-
-            {(startDate || endDate) && (
+            {(startDate ||
+              endDate) && (
               <div className="event-detail-info-item">
                 <span
                   className="event-detail-info-icon"
@@ -374,18 +343,20 @@ function EventDetailPage() {
                   </p>
 
                   <p className="event-detail-info-value">
-                    {startDate || "未定"}
+                    {startDate ||
+                      "未定"}
 
                     {endDate &&
-                      endDate !== startDate &&
+                      endDate !==
+                        startDate &&
                       ` 〜 ${endDate}`}
                   </p>
                 </div>
               </div>
             )}
 
-
-            {scheduleItems.length > 0 && (
+            {scheduleItems.length >
+              0 && (
               <div className="event-detail-info-item">
                 <span
                   className="event-detail-info-icon"
@@ -400,25 +371,32 @@ function EventDetailPage() {
                   </p>
 
                   <div className="event-detail-schedule">
-                    {scheduleItems.map((item) => (
-                      <div
-                        className="event-detail-schedule-row"
-                        key={item.id}
-                      >
-                        <span>
-                          {item.label}
-                        </span>
+                    {scheduleItems.map(
+                      (item) => (
+                        <div
+                          className="event-detail-schedule-row"
+                          key={
+                            item.id
+                          }
+                        >
+                          <span>
+                            {
+                              item.label
+                            }
+                          </span>
 
-                        <strong>
-                          {item.time}
-                        </strong>
-                      </div>
-                    ))}
+                          <strong>
+                            {
+                              item.time
+                            }
+                          </strong>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
             )}
-
 
             {event.venue && (
               <div className="event-detail-info-item">
@@ -441,7 +419,6 @@ function EventDetailPage() {
               </div>
             )}
 
-
             {event.officialUrl && (
               <div className="event-detail-info-item">
                 <span
@@ -458,7 +435,9 @@ function EventDetailPage() {
 
                   <a
                     className="event-detail-official-link"
-                    href={event.officialUrl}
+                    href={
+                      event.officialUrl
+                    }
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -467,7 +446,6 @@ function EventDetailPage() {
                 </div>
               </div>
             )}
-
 
             {event.memo && (
               <div className="event-detail-info-item event-detail-info-item-full">
@@ -480,7 +458,7 @@ function EventDetailPage() {
 
                 <div className="event-detail-info-content">
                   <p className="event-detail-info-label">
-                    メモ
+                    イベント補足
                   </p>
 
                   <p className="event-detail-memo">
@@ -490,10 +468,10 @@ function EventDetailPage() {
               </div>
             )}
 
-
             {!startDate &&
               !endDate &&
-              scheduleItems.length === 0 &&
+              scheduleItems.length ===
+                0 &&
               !event.venue &&
               !event.officialUrl &&
               !event.memo && (
@@ -506,8 +484,6 @@ function EventDetailPage() {
           </div>
         </section>
 
-
-        {/* イベントに紐づくメモ */}
         <section
           className="event-memo-section"
           aria-labelledby="event-memo-heading"
@@ -526,7 +502,6 @@ function EventDetailPage() {
               必要になった情報を追加して管理できます。
             </p>
           </div>
-
 
           <div className="event-memo-empty">
             <div
@@ -550,8 +525,8 @@ function EventDetailPage() {
               type="button"
               onClick={() => {
                 /*
-                  次に作るメモタイプ選択ページへ
-                  遷移させる予定。
+                  次にメモタイプ選択ページへ
+                  接続します。
                 */
               }}
             >
@@ -559,11 +534,9 @@ function EventDetailPage() {
             </button>
           </div>
         </section>
-
       </article>
     </main>
   );
 }
-
 
 export default EventDetailPage;

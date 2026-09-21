@@ -1,8 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import type {
-  Event,
-  EventScheduleItem,
-} from "../../types/Event";
+import type { Event } from "../../types/Event";
 import { DEFAULT_EVENT_TAGS } from "../../types/EventTag";
 
 interface EventFormProps {
@@ -11,29 +8,6 @@ interface EventFormProps {
   editingEvent?: Event | null;
 }
 
-type ScheduleType = EventScheduleItem["type"];
-
-interface ScheduleDefinition {
-  type: ScheduleType;
-  label: string;
-}
-
-const LIVE_SCHEDULE: ScheduleDefinition[] = [
-  { type: "doorsOpen", label: "開場" },
-  { type: "start", label: "開演" },
-  { type: "expectedEnd", label: "終演予定" },
-];
-
-const MOVIE_SCHEDULE: ScheduleDefinition[] = [
-  { type: "screeningStart", label: "上映開始" },
-  { type: "screeningEnd", label: "上映終了" },
-];
-
-const TALK_WITH_MOVIE_SCHEDULE: ScheduleDefinition[] = [
-  { type: "talkStart", label: "トーク開始" },
-  { type: "talkEnd", label: "トーク終了" },
-];
-
 function EventForm({
   onSaveEvent,
   onCancel,
@@ -41,24 +15,14 @@ function EventForm({
 }: EventFormProps) {
   const [title, setTitle] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-
-  const [schedule, setSchedule] = useState<EventScheduleItem[]>([]);
-
   const [venue, setVenue] = useState("");
   const [officialUrl, setOfficialUrl] = useState("");
   const [memo, setMemo] = useState("");
+  const [schedule, setSchedule] = useState<Event["schedule"]>([]);
 
   const isEditing = Boolean(editingEvent);
-
-  const hasLiveTag =
-    selectedTagIds.includes("live") ||
-    selectedTagIds.includes("stage");
-
-  const hasMovieTag = selectedTagIds.includes("movie");
-  const hasTalkTag = selectedTagIds.includes("talk");
 
   useEffect(() => {
     if (editingEvent) {
@@ -66,61 +30,21 @@ function EventForm({
       setSelectedTagIds(editingEvent.tagIds ?? []);
       setStartDate(editingEvent.startDate);
       setEndDate(editingEvent.endDate);
-      setSchedule(editingEvent.schedule ?? []);
       setVenue(editingEvent.venue);
       setOfficialUrl(editingEvent.officialUrl ?? "");
       setMemo(editingEvent.memo ?? "");
+      setSchedule(editingEvent.schedule ?? []);
     } else {
       setTitle("");
       setSelectedTagIds([]);
       setStartDate("");
       setEndDate("");
-      setSchedule([]);
       setVenue("");
       setOfficialUrl("");
       setMemo("");
+      setSchedule([]);
     }
   }, [editingEvent]);
-
-  const getScheduleValue = (type: ScheduleType) => {
-    return (
-      schedule.find((item) => item.type === type)?.time ?? ""
-    );
-  };
-
-  const updateScheduleItem = (
-    type: ScheduleType,
-    label: string,
-    time: string
-  ) => {
-    setSchedule((currentSchedule) => {
-      const existingItem = currentSchedule.find(
-        (item) => item.type === type
-      );
-
-      if (existingItem) {
-        return currentSchedule.map((item) =>
-          item.type === type
-            ? {
-                ...item,
-                label,
-                time,
-              }
-            : item
-        );
-      }
-
-      return [
-        ...currentSchedule,
-        {
-          id: crypto.randomUUID(),
-          type,
-          label,
-          time,
-        },
-      ];
-    });
-  };
 
   const handleToggleTag = (tagId: string) => {
     setSelectedTagIds((currentTagIds) => {
@@ -134,7 +58,56 @@ function EventForm({
     });
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const updateScheduleTime = (
+    id: string,
+    label: string,
+    time: string
+  ) => {
+    setSchedule((currentSchedule = []) => {
+      const existingItem = currentSchedule.find(
+        (item) => item.id === id
+      );
+
+      if (existingItem) {
+        return currentSchedule.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                label,
+                time,
+              }
+            : item
+        );
+      }
+
+      return [
+        ...currentSchedule,
+        {
+          id,
+          label,
+          time,
+        },
+      ];
+    });
+  };
+
+  const getScheduleTime = (id: string) => {
+    return (
+      schedule?.find((item) => item.id === id)?.time ?? ""
+    );
+  };
+
+  const hasLiveOrStage =
+    selectedTagIds.includes("live") ||
+    selectedTagIds.includes("stage");
+
+  const hasMovie = selectedTagIds.includes("movie");
+
+  const hasTalk = selectedTagIds.includes("talk");
+
+  const handleSubmit = (
+    event: FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
     const trimmedTitle = title.trim();
@@ -150,39 +123,16 @@ function EventForm({
       tagIds: selectedTagIds,
       startDate,
       endDate,
-      schedule,
       venue: venue.trim(),
       officialUrl: officialUrl.trim() || undefined,
       memo: memo.trim() || undefined,
+      schedule:
+        schedule?.filter(
+          (item) => item.time.trim() !== ""
+        ) ?? [],
     };
 
     onSaveEvent(savedEvent);
-  };
-
-  const renderScheduleField = ({
-    type,
-    label,
-  }: ScheduleDefinition) => {
-    return (
-      <div className="form-field-half" key={type}>
-        <label htmlFor={`schedule-${type}`}>
-          {label}
-        </label>
-
-        <input
-          id={`schedule-${type}`}
-          type="time"
-          value={getScheduleValue(type)}
-          onChange={(event) =>
-            updateScheduleItem(
-              type,
-              label,
-              event.target.value
-            )
-          }
-        />
-      </div>
-    );
   };
 
   return (
@@ -205,7 +155,7 @@ function EventForm({
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="form-field-full">
+        <div className="form-field form-field-full">
           <label htmlFor="event-title">
             イベント名 *
           </label>
@@ -222,7 +172,7 @@ function EventForm({
           />
         </div>
 
-        <div className="event-tag-field">
+        <div className="event-tag-field form-field-full">
           <div>
             <span className="event-tag-label">
               イベントタグ
@@ -265,7 +215,7 @@ function EventForm({
           </div>
         </div>
 
-        <div className="form-field-half">
+        <div className="form-field">
           <label htmlFor="event-start-date">
             開始日
           </label>
@@ -280,7 +230,7 @@ function EventForm({
           />
         </div>
 
-        <div className="form-field-half">
+        <div className="form-field">
           <label htmlFor="event-end-date">
             終了日
           </label>
@@ -295,25 +245,160 @@ function EventForm({
           />
         </div>
 
-        {hasLiveTag &&
-          LIVE_SCHEDULE.map(renderScheduleField)}
-
-        {hasMovieTag &&
-          MOVIE_SCHEDULE.map(renderScheduleField)}
-
-        {hasMovieTag &&
-          hasTalkTag &&
-          TALK_WITH_MOVIE_SCHEDULE.map(
-            renderScheduleField
-          )}
-
-        {hasTalkTag && !hasMovieTag && (
+        {hasLiveOrStage && (
           <>
-            {LIVE_SCHEDULE.map(renderScheduleField)}
+            <div className="form-field">
+              <label htmlFor="doors-open">
+                開場
+              </label>
+
+              <input
+                id="doors-open"
+                type="time"
+                value={getScheduleTime("doors-open")}
+                onChange={(event) =>
+                  updateScheduleTime(
+                    "doors-open",
+                    "開場",
+                    event.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="performance-start">
+                開演
+              </label>
+
+              <input
+                id="performance-start"
+                type="time"
+                value={getScheduleTime(
+                  "performance-start"
+                )}
+                onChange={(event) =>
+                  updateScheduleTime(
+                    "performance-start",
+                    "開演",
+                    event.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="performance-end">
+                終演予定
+              </label>
+
+              <input
+                id="performance-end"
+                type="time"
+                value={getScheduleTime(
+                  "performance-end"
+                )}
+                onChange={(event) =>
+                  updateScheduleTime(
+                    "performance-end",
+                    "終演予定",
+                    event.target.value
+                  )
+                }
+              />
+            </div>
           </>
         )}
 
-        <div className="form-field-full">
+        {hasMovie && (
+          <>
+            <div className="form-field">
+              <label htmlFor="screening-start">
+                上映開始
+              </label>
+
+              <input
+                id="screening-start"
+                type="time"
+                value={getScheduleTime(
+                  "screening-start"
+                )}
+                onChange={(event) =>
+                  updateScheduleTime(
+                    "screening-start",
+                    "上映開始",
+                    event.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="screening-end">
+                上映終了
+              </label>
+
+              <input
+                id="screening-end"
+                type="time"
+                value={getScheduleTime(
+                  "screening-end"
+                )}
+                onChange={(event) =>
+                  updateScheduleTime(
+                    "screening-end",
+                    "上映終了",
+                    event.target.value
+                  )
+                }
+              />
+            </div>
+          </>
+        )}
+
+        {hasTalk && (
+          <>
+            <div className="form-field">
+              <label htmlFor="talk-start">
+                トーク開始
+              </label>
+
+              <input
+                id="talk-start"
+                type="time"
+                value={getScheduleTime("talk-start")}
+                onChange={(event) =>
+                  updateScheduleTime(
+                    "talk-start",
+                    "トーク開始",
+                    event.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="talk-end">
+                トーク終了
+              </label>
+
+              <input
+                id="talk-end"
+                type="time"
+                value={getScheduleTime("talk-end")}
+                onChange={(event) =>
+                  updateScheduleTime(
+                    "talk-end",
+                    "トーク終了",
+                    event.target.value
+                  )
+                }
+              />
+            </div>
+          </>
+        )}
+
+        <div className="form-field form-field-full">
           <label htmlFor="event-venue">
             会場名
           </label>
@@ -329,7 +414,7 @@ function EventForm({
           />
         </div>
 
-        <div className="form-field-full">
+        <div className="form-field form-field-full">
           <label htmlFor="event-official-url">
             公式サイトURL
           </label>
@@ -345,9 +430,9 @@ function EventForm({
           />
         </div>
 
-        <div className="form-field-full">
+        <div className="form-field form-field-full">
           <label htmlFor="event-memo">
-            メモ
+            イベント補足
           </label>
 
           <textarea
@@ -356,7 +441,7 @@ function EventForm({
             onChange={(event) =>
               setMemo(event.target.value)
             }
-            placeholder="整理券、入場時間、確認事項など"
+            placeholder="整理券、入場方法、注意事項など"
             rows={4}
           />
         </div>
