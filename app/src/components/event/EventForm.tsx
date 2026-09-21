@@ -1,18 +1,43 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { Event } from "../../types/Event";
 
 interface EventFormProps {
-  onAddEvent: (event: Event) => void;
+  onSaveEvent: (event: Event) => void;
   onCancel: () => void;
+  editingEvent?: Event | null;
 }
 
-function EventForm({ onAddEvent, onCancel }: EventFormProps) {
+function EventForm({
+  onSaveEvent,
+  onCancel,
+  editingEvent = null,
+}: EventFormProps) {
   const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [venue, setVenue] = useState("");
   const [officialUrl, setOfficialUrl] = useState("");
   const [memo, setMemo] = useState("");
+
+  const isEditing = Boolean(editingEvent);
+
+  useEffect(() => {
+    if (editingEvent) {
+      setTitle(editingEvent.title);
+      setStartDate(editingEvent.startDate);
+      setEndDate(editingEvent.endDate);
+      setVenue(editingEvent.venue);
+      setOfficialUrl(editingEvent.officialUrl ?? "");
+      setMemo(editingEvent.memo ?? "");
+    } else {
+      setTitle("");
+      setStartDate("");
+      setEndDate("");
+      setVenue("");
+      setOfficialUrl("");
+      setMemo("");
+    }
+  }, [editingEvent]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -24,8 +49,8 @@ function EventForm({ onAddEvent, onCancel }: EventFormProps) {
       return;
     }
 
-    const newEvent: Event = {
-      id: crypto.randomUUID(),
+    const savedEvent: Event = {
+      id: editingEvent?.id ?? crypto.randomUUID(),
       title: trimmedTitle,
       startDate,
       endDate,
@@ -34,15 +59,23 @@ function EventForm({ onAddEvent, onCancel }: EventFormProps) {
       memo: memo.trim() || undefined,
     };
 
-    onAddEvent(newEvent);
+    onSaveEvent(savedEvent);
   };
 
   return (
-    <section className="event-form-section" aria-labelledby="new-event-heading">
+    <section
+      className="event-form-section"
+      aria-labelledby="event-form-heading"
+    >
       <div className="section-heading">
         <div>
-          <p className="section-label">NEW EVENT</p>
-          <h2 id="new-event-heading">新しいイベント</h2>
+          <p className="section-label">
+            {isEditing ? "EDIT EVENT" : "NEW EVENT"}
+          </p>
+
+          <h2 id="event-form-heading">
+            {isEditing ? "イベントを編集" : "新しいイベント"}
+          </h2>
         </div>
       </div>
 
@@ -121,7 +154,9 @@ function EventForm({ onAddEvent, onCancel }: EventFormProps) {
             キャンセル
           </button>
 
-          <button type="submit">イベントを追加</button>
+          <button type="submit">
+            {isEditing ? "変更を保存" : "イベントを追加"}
+          </button>
         </div>
       </form>
     </section>
