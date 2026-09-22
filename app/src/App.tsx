@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router";
+import { OshiIcon } from "./components/common/OshiIcon";
 import EventPage from "./pages/Event/EventPage";
 import EventDetailPage from "./pages/Event/EventDetailPage";
 import HomePage from "./pages/Home/HomePage";
@@ -42,7 +43,7 @@ function App() {
               : "bottom-nav-link"
           }
         >
-          <span aria-hidden="true">⌂</span>
+          <OshiIcon name="home" size={25} />
           <span>ホーム</span>
         </NavLink>
 
@@ -54,7 +55,7 @@ function App() {
               : "bottom-nav-link"
           }
         >
-          <span aria-hidden="true">♡</span>
+          <OshiIcon name="event" size={25} />
           <span>イベント</span>
         </NavLink>
 
@@ -66,7 +67,7 @@ function App() {
               : "bottom-nav-link"
           }
         >
-          <span aria-hidden="true">⚙</span>
+          <OshiIcon name="settings" size={25} />
           <span>設定</span>
         </NavLink>
       </nav>
