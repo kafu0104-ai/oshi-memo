@@ -2003,3 +2003,23 @@ section[aria-labelledby="event-list-heading"] > div {
     width: 100%;
   }
 }
+/* =========================
+   Icon layout
+========================= */
+
+.icon-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-heading img {
+  flex-shrink: 0;
+}
+
+.primary-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
