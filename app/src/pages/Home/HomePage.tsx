@@ -39,16 +39,14 @@ function HomePage() {
               ライブ、ショップ、コラボなどの予定を確認できます。
             </p>
           </div>
-
-          <Link className="text-link" to="/events">
-            すべて見る
-          </Link>
         </div>
 
-        <Link className="primary-link-button" to="/events">
-          <OshiIcon name="event" size={22} />
-          <span>イベント一覧を開く</span>
-        </Link>
+        <div className="home-event-link">
+          <Link className="primary-link-button" to="/events">
+            <OshiIcon name="event" size={22} />
+            <span>イベント一覧を開く</span>
+          </Link>
+        </div>
       </section>
     </main>
   );
