@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
-  <title>OshiMemo Icon</title>
+  <title>やることリスト</title>
   <g fill="none" stroke="#544C40" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="14" y="10" width="36" height="44" rx="5" fill="#F7F1ED" stroke="#544C40"/>
-    <rect x="20" y="18" width="8" height="8" rx="2" fill="#E4C1B5" stroke="#544C40"/>
-    <rect x="20" y="30" width="8" height="8" rx="2" fill="#E4C1B5" stroke="#544C40"/>
-    <rect x="20" y="42" width="8" height="8" rx="2" fill="#E4C1B5" stroke="#544C40"/>
-    <path d="M21 22 L24 25 L28 19" fill="none" stroke="#544C40"/>
-    <path d="M21 34 L24 37 L28 31" fill="none" stroke="#544C40"/>
-    <path d="M32 22 L44 22" stroke="#544C40"/>
-    <path d="M32 34 L44 34" stroke="#544C40"/>
-    <path d="M32 46 L44 46" stroke="#544C40"/>
+    <rect x="12" y="12" width="40" height="40" rx="6" fill="#F7F1ED"/>
+
+    <rect x="19" y="21" width="6" height="6" rx="1"/>
+    <path d="M31 24 H44"/>
+
+    <rect x="19" y="31" width="6" height="6" rx="1"/>
+    <path d="M31 34 H44"/>
+
+    <rect x="19" y="41" width="6" height="6" rx="1"/>
+    <path d="M31 44 H44"/>
   </g>
 </svg>

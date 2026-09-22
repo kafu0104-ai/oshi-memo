@@ -1,8 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
-  <title>OshiMemo Icon</title>
-  <g fill="none" stroke="#544C40" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="32" cy="32" r="9" fill="#F7F1ED" stroke="#544C40"/>
-    <path d="M32 8 V14 M32 50 V56 M8 32 H14 M50 32 H56 M15 15 L19 19 M45 45 L49 49 M15 49 L19 45 M45 19 L49 15" fill="none" stroke="#544C40"/>
-    <circle cx="32" cy="32" r="20" fill="#E4C1B5" stroke="#544C40"/>
+  <title>設定</title>
+
+  <g
+    fill="none"
+    stroke="#544C40"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <!-- シンプルな歯車 -->
+    <path
+      d="
+        M28 10
+        H36
+        L37.5 16
+
+        C40 16.8 42.2 18.1 44.2 19.8
+        L50 18
+        L54 25
+        L49.5 29
+
+        C50.2 31.5 50.2 34 49.5 36.5
+        L54 40
+        L50 47
+        L44.2 45.2
+
+        C42.2 46.9 40 48.2 37.5 49
+        L36 55
+        H28
+        L26.5 49
+
+        C24 48.2 21.8 46.9 19.8 45.2
+        L14 47
+        L10 40
+        L14.5 36.5
+
+        C13.8 34 13.8 31.5 14.5 29
+        L10 25
+        L14 18
+        L19.8 19.8
+
+        C21.8 18.1 24 16.8 26.5 16
+        Z
+      "
+    />
+
+    <!-- 中央も塗りなし -->
+    <circle cx="32" cy="32.5" r="7" />
   </g>
 </svg>
