@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { OshiIcon } from "../../components/common/OshiIcon";
 
 function HomePage() {
   return (
@@ -12,7 +13,14 @@ function HomePage() {
       </header>
 
       <section className="home-section">
-        <h2>やることリスト</h2>
+        <div className="home-section-heading">
+          <div>
+            <h2 className="icon-heading">
+              <OshiIcon name="todo" size={30} />
+              <span>やることリスト</span>
+            </h2>
+          </div>
+        </div>
 
         <div className="empty-card">
           <p>現在、対応が必要な項目はありません。</p>
@@ -22,7 +30,11 @@ function HomePage() {
       <section className="home-section">
         <div className="home-section-heading">
           <div>
-            <h2>イベント</h2>
+            <h2 className="icon-heading">
+              <OshiIcon name="schedule" size={30} />
+              <span>イベント</span>
+            </h2>
+
             <p>ライブ、ショップ、コラボなどを管理します。</p>
           </div>
 
@@ -32,7 +44,8 @@ function HomePage() {
         </div>
 
         <Link className="primary-link-button" to="/events">
-          イベント一覧を開く
+          <OshiIcon name="event" size={22} />
+          <span>イベント一覧を開く</span>
         </Link>
       </section>
     </main>
