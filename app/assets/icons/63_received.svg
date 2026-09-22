@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <title>受取</title>
+  <g fill="none" stroke="#544C40" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="8" y="22" width="39" height="28" rx="4" fill="#F7F1ED"/>
+    <path d="M10 25 L27.5 38 L45 25"/>
+    <path d="M10 47 L22 36"/>
+    <path d="M45 47 L33 36"/>
+
+    <circle cx="48" cy="19" r="9" fill="#E4C1B5"/>
+    <path d="M43.5 19 L47 22.5 L52.5 16"/>
+  </g>
+</svg>

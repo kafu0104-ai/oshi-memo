@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <title>手渡し</title>
+  <g fill="none" stroke="#544C40" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- ハート -->
+    <path
+      d="M32 26
+         C27 20 19 23 20 29
+         C21 34 27 38 32 42
+         C37 38 43 34 44 29
+         C45 23 37 20 32 26 Z"
+      fill="#E4C1B5"
+    />
+
+    <!-- 上向きの手のひら -->
+    <path d="M7 45 H17"/>
+    <path d="M17 45 C21 45 24 48 28 49"/>
+    <path d="M28 49 H41"/>
+    <path d="M41 49 C45 49 49 46 53 42"/>
+    <path d="M53 42 C55 40 54 37 52 36 C50 35 48 36 46 38 L40 42"/>
+    <path d="M40 42 H29 C27 42 26 40 27 38 C27.5 37 29 36 31 36 H37"/>
+  </g>
+</svg>

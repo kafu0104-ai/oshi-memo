@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <title>同行者</title>
+  <g fill="none" stroke="#544C40" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="23" cy="22" r="7" fill="#F7F1ED"/>
+    <circle cx="41" cy="22" r="7" fill="#E4C1B5"/>
+
+    <path d="M10 49 C11 39 15 34 23 34 C29 34 32 37 33 41"/>
+    <path d="M31 41 C32 37 35 34 41 34 C49 34 53 39 54 49"/>
+
+    <path d="M10 49 H54"/>
+  </g>
+</svg>

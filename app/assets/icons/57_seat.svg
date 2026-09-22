@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <title>OshiMemo Icon</title>
+  <g fill="none" stroke="#544C40" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 14 V32 C17 36 20 39 24 39 H40 C44 39 47 36 47 32 V14"/>
+    <path d="M15 30 H49 V42 C49 46 46 49 42 49 H22 C18 49 15 46 15 42 Z" fill="#F7F1ED"/>
+    <path d="M21 49 V54 M43 49 V54"/>
+    <rect x="23" y="20" width="18" height="12" rx="3" fill="#E4C1B5"/>
+  </g>
+</svg>

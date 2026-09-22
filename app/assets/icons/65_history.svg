@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <title>履歴</title>
+  <g fill="none" stroke="#544C40" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="33" cy="33" r="17" fill="#F7F1ED"/>
+    <path d="M33 23 V33 L40 38"/>
+
+    <!-- 戻る方向の履歴矢印 -->
+    <path d="M18 18 H9 V9" stroke="#E4C1B5"/>
+    <path
+      d="M10 18
+         C15 10 24 6 33 6
+         C48 6 58 18 58 33"
+      stroke="#E4C1B5"
+    />
+  </g>
+</svg>

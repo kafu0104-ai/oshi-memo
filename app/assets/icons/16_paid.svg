@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
-  <title>OshiMemo Icon</title>
+  <title>支払い済み</title>
   <g fill="none" stroke="#544C40" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="10" y="18" width="44" height="30" rx="5" fill="#E4C1B5" stroke="#544C40"/>
-    <path d="M10 27 L54 27" stroke="#544C40"/>
-    <rect x="16" y="34" width="10" height="6" rx="2" fill="#FFFFFF" stroke="#544C40"/>
-    <path d="M34 39 L48 39" stroke="#544C40"/>
+    <rect x="7" y="17" width="42" height="30" rx="5" fill="#F7F1ED"/>
+    <path d="M7 26 H49"/>
+    <path d="M13 39 H25"/>
+    <circle cx="49" cy="42" r="10" fill="#E4C1B5"/>
+    <path d="M44.5 42 L48 45.5 L54 38.5"/>
   </g>
 </svg>

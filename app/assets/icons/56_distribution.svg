@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <title>分配</title>
+  <g fill="none" stroke="#544C40" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5" y="16" width="16" height="32" rx="4" fill="#F7F1ED"/>
+    <path d="M10 21 H16"/>
+    <circle cx="13" cy="43" r="1.1" fill="#544C40" stroke="none"/>
+
+    <path d="M25 27 L30 32 L25 37"/>
+    <path d="M32 27 L37 32 L32 37"/>
+
+    <rect x="43" y="16" width="16" height="32" rx="4" fill="#E4C1B5"/>
+    <path d="M48 21 H54"/>
+    <circle cx="51" cy="43" r="1.1" fill="#544C40" stroke="none"/>
+  </g>
+</svg>
