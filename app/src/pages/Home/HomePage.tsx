@@ -32,10 +32,12 @@ function HomePage() {
           <div>
             <h2 className="icon-heading">
               <OshiIcon name="schedule" size={30} />
-              <span>イベント</span>
+              <span>今後の予定</span>
             </h2>
 
-            <p>ライブ、ショップ、コラボなどを管理します。</p>
+            <p>
+              ライブ、ショップ、コラボなどの予定を確認できます。
+            </p>
           </div>
 
           <Link className="text-link" to="/events">
