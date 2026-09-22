@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   Link,
   useLocation,
@@ -6,7 +7,9 @@ import {
   useParams,
 } from "react-router";
 
+import { OshiIcon } from "../../components/common/OshiIcon";
 import EventForm from "../../components/event/EventForm";
+
 import {
   loadEvents,
   saveEvents,
@@ -305,12 +308,11 @@ function EventDetailPage() {
           className="event-created-message"
           role="status"
         >
-          <span
-            className="event-created-icon"
-            aria-hidden="true"
-          >
-            ✓
-          </span>
+          <OshiIcon
+            name="complete"
+            size={28}
+            alt=""
+          />
 
           <div>
             <strong>
@@ -341,7 +343,12 @@ function EventDetailPage() {
                 });
               }}
             >
-              編集
+              <OshiIcon
+                name="edit"
+                size={18}
+                alt=""
+              />
+              <span>編集</span>
             </button>
 
             <button
@@ -351,7 +358,12 @@ function EventDetailPage() {
                 handleDeleteEvent
               }
             >
-              削除
+              <OshiIcon
+                name="delete"
+                size={18}
+                alt=""
+              />
+              <span>削除</span>
             </button>
           </div>
 
@@ -401,7 +413,11 @@ function EventDetailPage() {
                   className="event-detail-info-icon"
                   aria-hidden="true"
                 >
-                  📅
+                  <OshiIcon
+                    name="schedule"
+                    size={28}
+                    alt=""
+                  />
                 </span>
 
                 <div className="event-detail-info-content">
@@ -429,7 +445,11 @@ function EventDetailPage() {
                   className="event-detail-info-icon"
                   aria-hidden="true"
                 >
-                  🎭
+                  <OshiIcon
+                    name="live-concert"
+                    size={28}
+                    alt=""
+                  />
                 </span>
 
                 <div className="event-detail-info-content">
@@ -563,7 +583,11 @@ function EventDetailPage() {
                     className="event-detail-info-icon"
                     aria-hidden="true"
                   >
-                    🕐
+                    <OshiIcon
+                      name="schedule"
+                      size={28}
+                      alt=""
+                    />
                   </span>
 
                   <div className="event-detail-info-content">
@@ -605,7 +629,11 @@ function EventDetailPage() {
                   className="event-detail-info-icon"
                   aria-hidden="true"
                 >
-                  📍
+                  <OshiIcon
+                    name="place"
+                    size={28}
+                    alt=""
+                  />
                 </span>
 
                 <div className="event-detail-info-content">
@@ -626,7 +654,11 @@ function EventDetailPage() {
                   className="event-detail-info-icon"
                   aria-hidden="true"
                 >
-                  🔗
+                  <OshiIcon
+                    name="external-link"
+                    size={28}
+                    alt=""
+                  />
                 </span>
 
                 <div className="event-detail-info-content">
@@ -642,7 +674,7 @@ function EventDetailPage() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    公式サイトを開く ↗
+                    公式サイトを開く
                   </a>
                 </div>
               </div>
@@ -654,7 +686,11 @@ function EventDetailPage() {
                   className="event-detail-info-icon"
                   aria-hidden="true"
                 >
-                  📝
+                  <OshiIcon
+                    name="free-memo"
+                    size={28}
+                    alt=""
+                  />
                 </span>
 
                 <div className="event-detail-info-content">
@@ -710,7 +746,11 @@ function EventDetailPage() {
             {shouldRecommendTicket && (
               <article className="event-module-card">
                 <div className="event-module-icon">
-                  🎫
+                  <OshiIcon
+                    name="ticket"
+                    size={38}
+                    alt=""
+                  />
                 </div>
 
                 <div className="event-module-content">
@@ -732,7 +772,14 @@ function EventDetailPage() {
                       */
                     }}
                   >
-                    ＋ チケット情報を登録
+                    <OshiIcon
+                      name="add"
+                      size={18}
+                      alt=""
+                    />
+                    <span>
+                      チケット情報を登録
+                    </span>
                   </button>
                 </div>
               </article>
@@ -741,7 +788,11 @@ function EventDetailPage() {
             {shouldRecommendShopping && (
               <article className="event-module-card">
                 <div className="event-module-icon">
-                  🛍
+                  <OshiIcon
+                    name="shopping-memo"
+                    size={38}
+                    alt=""
+                  />
                 </div>
 
                 <div className="event-module-content">
@@ -764,7 +815,14 @@ function EventDetailPage() {
                       */
                     }}
                   >
-                    ＋ 買い物メモを作る
+                    <OshiIcon
+                      name="add"
+                      size={18}
+                      alt=""
+                    />
+                    <span>
+                      買い物メモを作る
+                    </span>
                   </button>
                 </div>
               </article>
@@ -777,7 +835,11 @@ function EventDetailPage() {
                     className="event-memo-empty-icon"
                     aria-hidden="true"
                   >
-                    ♡
+                    <OshiIcon
+                      name="oshi"
+                      size={38}
+                      alt=""
+                    />
                   </div>
 
                   <h3>
@@ -804,7 +866,14 @@ function EventDetailPage() {
                 */
               }}
             >
-              ＋ その他の管理を追加
+              <OshiIcon
+                name="add"
+                size={18}
+                alt=""
+              />
+              <span>
+                その他の管理を追加
+              </span>
             </button>
           </div>
         </section>
