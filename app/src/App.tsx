@@ -4,18 +4,30 @@ import EventPage from "./pages/Event/EventPage";
 import EventDetailPage from "./pages/Event/EventDetailPage";
 import HomePage from "./pages/Home/HomePage";
 import SettingsPage from "./pages/Settings/SettingsPage";
+import TicketPage from "./pages/Ticket/TicketPage";
 
 function App() {
   return (
     <div className="app-shell">
       <Routes>
         <Route path="/" element={<HomePage />} />
+
         <Route path="/events" element={<EventPage />} />
+
         <Route
           path="/events/:eventId"
           element={<EventDetailPage />}
         />
-        <Route path="/settings" element={<SettingsPage />} />
+
+        <Route
+          path="/events/:eventId/tickets"
+          element={<TicketPage />}
+        />
+
+        <Route
+          path="/settings"
+          element={<SettingsPage />}
+        />
 
         <Route
           path="*"
@@ -43,7 +55,10 @@ function App() {
               : "bottom-nav-link"
           }
         >
-          <OshiIcon name="home" size={25} />
+          <OshiIcon
+            name="home"
+            size={25}
+          />
           <span>ホーム</span>
         </NavLink>
 
@@ -55,7 +70,10 @@ function App() {
               : "bottom-nav-link"
           }
         >
-          <OshiIcon name="event" size={25} />
+          <OshiIcon
+            name="event"
+            size={25}
+          />
           <span>イベント</span>
         </NavLink>
 
@@ -67,7 +85,10 @@ function App() {
               : "bottom-nav-link"
           }
         >
-          <OshiIcon name="settings" size={25} />
+          <OshiIcon
+            name="settings"
+            size={25}
+          />
           <span>設定</span>
         </NavLink>
       </nav>
