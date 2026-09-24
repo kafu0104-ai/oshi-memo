@@ -2055,3 +2055,16 @@ section[aria-labelledby="event-list-heading"] > div {
   justify-content: center;
   gap: 8px;
 }
+/* Ticket reception editor */
+.ticket-options { min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--color-border, #ded8d2); border-radius: 16px; }
+.ticket-options legend, .ticket-date legend { font-weight: 700; padding: 0 6px; }
+.ticket-options > p { font-size: .9rem; }
+.ticket-option-row, .ticket-form-row { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.ticket-option-row { margin: 16px 0; }
+.ticket-option-row .form-field, .ticket-form-row .form-field { flex: 1 1 160px; min-width: 0; }
+.ticket-editor input, .ticket-editor select { width: 100%; min-width: 0; box-sizing: border-box; }
+.ticket-date { border: 0; padding: 0; margin: 0; min-width: 0; }
+.ticket-date legend { padding: 0; margin-bottom: 8px; }
+.ticket-date .form-field > span { font-size: .8rem; }
+.ticket-editor h2 { scroll-margin-top: 24px; }
+.ticket-editor select { padding: 12px; border: 1px solid #ded8d2; border-radius: 12px; background: white; color: inherit; font: inherit; }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ReceptionForm from "./ReceptionForm";
 import {
   Link,
   useParams,
@@ -68,124 +69,27 @@ function TicketPage() {
   const [isAddingReception, setIsAddingReception] =
     useState(false);
 
-  const [receptionName, setReceptionName] =
-    useState("");
-
-  const [
-    applicationStartDate,
-    setApplicationStartDate,
-  ] = useState("");
-
-  const [
-    applicationStartTime,
-    setApplicationStartTime,
-  ] = useState("");
-
-  const [
-    applicationDeadlineDate,
-    setApplicationDeadlineDate,
-  ] = useState("");
-
-  const [
-    applicationDeadlineTime,
-    setApplicationDeadlineTime,
-  ] = useState("");
-
-  const [resultDate, setResultDate] =
-    useState("");
-
-  const [resultTime, setResultTime] =
-    useState("");
-
-  const [memo, setMemo] =
-    useState("");
+  const [editingReception, setEditingReception] = useState<TicketReception>();
+  const [message, setMessage] = useState("");
 
   const event = events.find(
     (currentEvent) =>
       currentEvent.id === eventId,
   );
 
-  const resetReceptionForm = () => {
-    setReceptionName("");
-    setApplicationStartDate("");
-    setApplicationStartTime("");
-    setApplicationDeadlineDate("");
-    setApplicationDeadlineTime("");
-    setResultDate("");
-    setResultTime("");
-    setMemo("");
-  };
-
-  const handleCancelReception = () => {
-    resetReceptionForm();
-    setIsAddingReception(false);
-  };
-
-  const handleSaveReception = () => {
-    if (!eventId) {
-      return;
-    }
-
-    const trimmedName =
-      receptionName.trim();
-
-    if (!trimmedName) {
-      window.alert(
-        "受付名を入力してください。",
-      );
-      return;
-    }
-
-    const newReception: TicketReception = {
-      id: createId(),
-      name: trimmedName,
-
-      applicationStartDate:
-        applicationStartDate || undefined,
-
-      applicationStartTime:
-        applicationStartTime || undefined,
-
-      applicationDeadlineDate:
-        applicationDeadlineDate || undefined,
-
-      applicationDeadlineTime:
-        applicationDeadlineTime || undefined,
-
-      resultDate:
-        resultDate || undefined,
-
-      resultTime:
-        resultTime || undefined,
-
-      seatTypes: [],
-      fees: [],
-      applications: [],
-
-      memo:
-        memo.trim() || undefined,
-    };
-
-    const nextTicket: Ticket = ticket
-      ? {
-          ...ticket,
-          receptions: [
-            ...ticket.receptions,
-            newReception,
-          ],
-        }
-      : {
-          id: createId(),
-          eventId,
-          receptions: [
-            newReception,
-          ],
-        };
-
-    saveTicket(nextTicket);
-    setTicket(nextTicket);
-
-    resetReceptionForm();
+  const handleSaveReception = (reception: TicketReception) => {
+    if (!eventId) return;
+    const current = loadTicketByEventId(eventId) ?? ticket;
+    const existing = current?.receptions.find(item => item.id === reception.id);
+    if (editingReception && !existing) throw new Error("受付が見つかりません。ページを再読み込みしてください。");
+    const updated = { ...existing, ...reception, applications: existing?.applications ?? [] };
+    const next: Ticket = current
+      ? { ...current, receptions: existing ? current.receptions.map(item => item.id === updated.id ? updated : item) : [...current.receptions, updated] }
+      : { id: createId(), eventId, receptions: [updated] };
+    saveTicket(next);
+    setTicket(next);
+    setMessage(editingReception ? "受付を更新しました。" : "受付を登録しました。");
+    setEditingReception(undefined);
     setIsAddingReception(false);
   };
 
@@ -264,6 +168,7 @@ function TicketPage() {
             </p>
           </div>
 
+          {message && <p role="status">{message}</p>}
           {receptions.length > 0 && (
             <div className="event-module-list">
               {receptions.map(
@@ -317,6 +222,13 @@ function TicketPage() {
                         </p>
                       </div>
 
+                      {reception.seatTypes?.map(seat => <p key={seat.id}>{seat.name}：{seat.price.toLocaleString("ja-JP")}円／枚</p>)}
+                      {reception.fees?.map(fee => <p key={fee.id}>{fee.name}：{fee.amount.toLocaleString("ja-JP")}円（{fee.unit === "perTicket" ? "1枚ごと" : "1申込ごと"}）</p>)}
+                      <button type="button" className="secondary-button" disabled={isAddingReception} aria-label={`${reception.name}を編集`} onClick={() => {
+                        setEditingReception(reception);
+                        setIsAddingReception(true);
+                        setMessage("");
+                      }}>受付を編集</button>
                       {reception.memo && (
                         <p>
                           {reception.memo}
@@ -391,172 +303,11 @@ function TicketPage() {
             )}
 
           {isAddingReception && (
-            <div className="event-detail-edit-section">
-              <div className="event-detail-edit-heading">
-                <p className="section-label">
-                  ADD RECEPTION
-                </p>
-
-                <h2>
-                  受付を追加
-                </h2>
-
-                <p>
-                  FC先行・シリアル先行・一般販売など、
-                  ひとつの受付単位で登録します。
-                </p>
-              </div>
-
-              <div className="form-stack">
-                <label className="form-field">
-                  <span>
-                    受付名
-                  </span>
-
-                  <input
-                    type="text"
-                    value={receptionName}
-                    onChange={(event) =>
-                      setReceptionName(
-                        event.target.value,
-                      )
-                    }
-                    placeholder="例：FC先行"
-                  />
-                </label>
-
-                <div className="form-field">
-                  <span>
-                    申込開始
-                  </span>
-
-                  <div className="form-row">
-                    <input
-                      type="date"
-                      value={
-                        applicationStartDate
-                      }
-                      onChange={(event) =>
-                        setApplicationStartDate(
-                          event.target.value,
-                        )
-                      }
-                    />
-
-                    <input
-                      type="time"
-                      value={
-                        applicationStartTime
-                      }
-                      onChange={(event) =>
-                        setApplicationStartTime(
-                          event.target.value,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="form-field">
-                  <span>
-                    申込締切
-                  </span>
-
-                  <div className="form-row">
-                    <input
-                      type="date"
-                      value={
-                        applicationDeadlineDate
-                      }
-                      onChange={(event) =>
-                        setApplicationDeadlineDate(
-                          event.target.value,
-                        )
-                      }
-                    />
-
-                    <input
-                      type="time"
-                      value={
-                        applicationDeadlineTime
-                      }
-                      onChange={(event) =>
-                        setApplicationDeadlineTime(
-                          event.target.value,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="form-field">
-                  <span>
-                    当落発表
-                  </span>
-
-                  <div className="form-row">
-                    <input
-                      type="date"
-                      value={resultDate}
-                      onChange={(event) =>
-                        setResultDate(
-                          event.target.value,
-                        )
-                      }
-                    />
-
-                    <input
-                      type="time"
-                      value={resultTime}
-                      onChange={(event) =>
-                        setResultTime(
-                          event.target.value,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-
-                <label className="form-field">
-                  <span>
-                    メモ
-                  </span>
-
-                  <textarea
-                    value={memo}
-                    onChange={(event) =>
-                      setMemo(
-                        event.target.value,
-                      )
-                    }
-                    placeholder="受付についての補足があれば入力"
-                    rows={4}
-                  />
-                </label>
-
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={
-                      handleCancelReception
-                    }
-                  >
-                    キャンセル
-                  </button>
-
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={
-                      handleSaveReception
-                    }
-                  >
-                    受付を登録
-                  </button>
-                </div>
-              </div>
-            </div>
+            <ReceptionForm key={editingReception?.id ?? "new"}
+              reception={editingReception}
+              onSave={handleSaveReception}
+              onCancel={() => { setIsAddingReception(false); setEditingReception(undefined); }}
+            />
           )}
         </section>
       </article>
