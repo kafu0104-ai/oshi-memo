@@ -329,43 +329,41 @@ function EventDetailPage() {
       <article className="event-detail-sheet">
         <header className="event-detail-header">
           <div className="event-detail-actions">
-            <button
-              className="event-edit-button"
-              type="button"
-              onClick={() => {
-                setShowCreatedMessage(false);
-                setIsEditing(true);
+  <button
+    className="event-edit-button"
+    type="button"
+    aria-label="イベントを編集"
+    onClick={() => {
+      setShowCreatedMessage(false);
+      setIsEditing(true);
 
-                window.scrollTo({
-                  top: 0,
-                  left: 0,
-                  behavior: "smooth",
-                });
-              }}
-            >
-              <OshiIcon
-                name="edit"
-                size={18}
-                alt=""
-              />
-              <span>編集</span>
-            </button>
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "smooth",
+      });
+    }}
+  >
+    <OshiIcon
+      name="edit"
+      size={18}
+      alt=""
+    />
+  </button>
 
-            <button
-              className="event-delete-button"
-              type="button"
-              onClick={
-                handleDeleteEvent
-              }
-            >
-              <OshiIcon
-                name="delete"
-                size={18}
-                alt=""
-              />
-              <span>削除</span>
-            </button>
-          </div>
+  <button
+    className="event-delete-button"
+    type="button"
+    aria-label="イベントを削除"
+    onClick={handleDeleteEvent}
+  >
+    <OshiIcon
+      name="delete"
+      size={18}
+      alt=""
+    />
+  </button>
+</div>
 
           <p className="page-eyebrow">
             EVENT
