@@ -658,40 +658,43 @@ section[aria-labelledby="event-list-heading"] > div {
 .event-detail-actions {
   display: flex;
   justify-content: flex-end;
-
   gap: 8px;
-
   margin-bottom: 24px;
 }
 
 .event-edit-button,
 .event-delete-button {
-  min-height: 38px;
-  padding: 0 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
-  font-size: 0.84rem;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+
+  border-radius: 12px;
+
+  flex-shrink: 0;
 }
 
 .event-edit-button {
+  border: 1px solid transparent;
   background: var(--color-primary-soft);
 }
 
 .event-edit-button:hover {
-  background:
-    rgba(228, 193, 181, 0.5);
+  background: rgba(228, 193, 181, 0.5);
 }
 
 .event-delete-button {
-  border: 1px solid
-    var(--color-danger-border);
-
+  border: 1px solid var(--color-danger-border);
   background: transparent;
   color: var(--color-danger);
 }
 
 .event-delete-button:hover {
-  background:
-    var(--color-danger-background);
+  background: var(--color-danger-background);
 }
 
 .event-detail-header h1 {
