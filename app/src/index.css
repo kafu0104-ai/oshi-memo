@@ -829,21 +829,21 @@ section[aria-labelledby="event-list-heading"] > div {
 
 .event-detail-schedule {
   display: grid;
-
   gap: 7px;
-
-  max-width: 360px;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .event-detail-schedule-row {
   display: grid;
   grid-template-columns:
-    minmax(100px, 1fr)
-    auto;
+    max-content
+    max-content;
 
   align-items: center;
+  justify-content: start;
 
-  gap: 18px;
+  gap: 16px;
 
   color: var(--color-text);
 
