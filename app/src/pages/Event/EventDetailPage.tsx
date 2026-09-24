@@ -346,7 +346,7 @@ function EventDetailPage() {
   >
     <OshiIcon
       name="edit"
-      size={18}
+      size={22}
       alt=""
     />
   </button>
@@ -359,7 +359,7 @@ function EventDetailPage() {
   >
     <OshiIcon
       name="delete"
-      size={18}
+      size={22}
       alt=""
     />
   </button>
