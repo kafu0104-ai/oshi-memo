@@ -764,11 +764,8 @@ function EventDetailPage() {
                     className="event-module-button"
                     type="button"
                     onClick={() => {
-                      /*
-                        次の工程で
-                        チケット管理ページへ接続します。
-                      */
-                    }}
+  navigate(`/events/${event.id}/tickets`);
+}}
                   >
                     <OshiIcon
                       name="add"
