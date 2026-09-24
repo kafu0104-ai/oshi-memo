@@ -1401,10 +1401,26 @@ section[aria-labelledby="event-list-heading"] > div {
 }
 
 .event-module-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
   min-height: 42px;
   padding: 0 18px;
 
   font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.event-module-button img {
+  flex-shrink: 0;
+}
+
+.event-module-button span {
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .event-module-empty {
