@@ -1,15 +1,51 @@
+import AuthCallbackPage from "./pages/Shared/AuthCallbackPage";
+import PersonalSyncPage from "./pages/Settings/PersonalSyncPage";
+import SharedShoppingPage from "./pages/Shared/SharedShoppingPage";
+import { JoinShoppingPage } from "./pages/Shared/JoinRequests";
 import { NavLink, Route, Routes } from "react-router";
+import BackToTop from "./components/common/BackToTop";
+import RouteScrollReset from "./components/common/RouteScrollReset";
 import { OshiIcon } from "./components/common/OshiIcon";
 import EventPage from "./pages/Event/EventPage";
 import EventDetailPage from "./pages/Event/EventDetailPage";
 import HomePage from "./pages/Home/HomePage";
+import CompanionSettingsPage from "./pages/Settings/CompanionSettingsPage";
+import TagSettingsPage from "./pages/Settings/TagSettingsPage";
 import SettingsPage from "./pages/Settings/SettingsPage";
+import TicketEditPage from "./pages/Ticket/TicketEditPage";
+import { AllTasksPage } from "./pages/Home/TicketTodos";
+import TicketTaskPage, { CompletedTasksPage } from "./pages/Home/TicketTaskPage";
 import TicketPage from "./pages/Ticket/TicketPage";
+
+import ThemeSettingsPage from "./pages/Settings/ThemeSettingsPage";
+
+import ShoppingPage from "./pages/Shopping/ShoppingPage";
+
+import FeatureEventsPage from "./pages/Home/FeatureEventsPage";
+
+import ExchangePage from "./pages/Exchange/ExchangePage";
 
 function App() {
   return (
     <div className="app-shell">
+      <RouteScrollReset />
       <Routes>
+        <Route path="/settings/sync" element={<PersonalSyncPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/shared" element={<SharedShoppingPage />} />
+        <Route path="/shared/join" element={<JoinShoppingPage />} />
+        <Route path="/shared/:roomId" element={<SharedShoppingPage />} />
+        <Route path="/exchange" element={<ExchangePage />} />
+        <Route path="/shopping" element={<FeatureEventsPage kind="shopping" />} />
+        <Route path="/tickets" element={<FeatureEventsPage kind="tickets" />} />
+        <Route path="/events/:eventId/shopping" element={<ShoppingPage />} />
+        <Route path="/settings/theme" element={<ThemeSettingsPage />} />
+        <Route path="/settings/companions" element={<CompanionSettingsPage />} />
+        <Route path="/settings/tags" element={<TagSettingsPage />} />
+        <Route path="/tasks" element={<AllTasksPage />} />
+        <Route path="/tasks/completed" element={<CompletedTasksPage />} />
+        <Route path="/tasks/:ticketId/:receptionId/:applicationId/:taskId" element={<TicketTaskPage />} />
+        <Route path="/events/:eventId/tickets/:receptionId/edit" element={<TicketEditPage />} />
         <Route path="/" element={<HomePage />} />
 
         <Route path="/events" element={<EventPage />} />
@@ -41,6 +77,8 @@ function App() {
           }
         />
       </Routes>
+
+      <BackToTop />
 
       <nav
         className="bottom-navigation"

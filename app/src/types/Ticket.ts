@@ -58,6 +58,7 @@ export type TicketDistributionMethod =
  * 指定席 12,000円
  */
 export interface TicketSeatType {
+  hasBenefit?: boolean;
   id: string;
 
   /**
@@ -104,6 +105,9 @@ export interface TicketFee {
  * 同行者との精算情報
  */
 export interface TicketSettlement {
+  tagIds?: string[];
+  important?: boolean;
+  amountMode?: "auto" | "manual";
   id: string;
 
   /**
@@ -140,6 +144,10 @@ export interface TicketSettlement {
  * チケット代金の支払い情報
  */
 export interface TicketPayment {
+  settlementRequired?: boolean;
+  tagIds?: string[];
+  important?: boolean;
+  method?: "creditCard" | "payPay" | "dPayment" | "auPayment" | "other";
   /**
    * 支払期限
    * YYYY-MM-DD
@@ -371,6 +379,8 @@ export interface TicketApplication {
  * などをすべて扱う。
  */
 export interface TicketReception {
+  /** 未設定の既存データは抽選として扱う。 */
+  receptionType?: "lottery" | "general" | "admission";
   id: string;
 
   /**

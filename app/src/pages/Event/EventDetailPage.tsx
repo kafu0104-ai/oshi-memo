@@ -1,3 +1,6 @@
+import GenreSummary from "../../components/event/GenreSummary";
+import { isLottery, receptionDates, receptionStatuses } from "../../services/ticketReception";
+import VenueMapLink from "../../components/common/VenueMapLink";
 import { useEffect, useState } from "react";
 
 import {
@@ -9,9 +12,11 @@ import {
 
 import { OshiIcon } from "../../components/common/OshiIcon";
 import EventForm from "../../components/event/EventForm";
+import { hasShoppingMemo, shoppingKey } from "../../services/shopping";
 
 import {
   loadEvents,
+  loadTicketByEventId,
   saveEvents,
 } from "../../services/storage";
 
@@ -29,11 +34,13 @@ const TICKET_RECOMMENDED_TAG_IDS = [
   "stage",
   "movie",
   "talk",
+  "exhibition",
 ];
 
 const SHOPPING_RECOMMENDED_TAG_IDS = [
   "goods-sale",
   "online-sale",
+  "collaboration-food",
 ];
 
 function formatDate(date: string): string {
@@ -73,14 +80,16 @@ function EventDetailPage() {
   );
 
   useEffect(() => {
-    window.scrollTo({
+    if (location.hash) {
+      requestAnimationFrame(() => document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: "start" }));
+    } else window.scrollTo({
       top: 0,
       left: 0,
       behavior: "instant",
     });
 
     setShowAllPerformances(false);
-  }, [eventId]);
+  }, [eventId, location.hash]);
 
   useEffect(() => {
     if (!locationState?.justCreated) {
@@ -179,6 +188,10 @@ function EventDetailPage() {
   const endDate =
     formatDate(event.endDate);
 
+  const ticketReceptions = eventId ? (loadTicketByEventId(eventId)?.receptions ?? []) : [];
+  const shoppingExists = hasShoppingMemo(eventId ?? "");
+  const hasTicketInformation = ticketReceptions.length > 0;
+
   const shouldRecommendTicket =
     event.tagIds?.some((tagId) =>
       TICKET_RECOMMENDED_TAG_IDS.includes(
@@ -232,6 +245,7 @@ function EventDetailPage() {
     );
 
     saveEvents(nextEvents);
+    localStorage.removeItem(shoppingKey(event.id));
 
     navigate("/events");
   };
@@ -642,6 +656,7 @@ function EventDetailPage() {
                   <p className="event-detail-info-value">
                     {event.venue}
                   </p>
+                  <VenueMapLink venue={event.venue} />
                 </div>
               </div>
             )}
@@ -721,6 +736,7 @@ function EventDetailPage() {
           </div>
         </section>
 
+        <GenreSummary event={event}/>
         <section
           className="event-memo-section"
           aria-labelledby="event-memo-heading"
@@ -741,8 +757,8 @@ function EventDetailPage() {
           </div>
 
           <div className="event-module-list">
-            {shouldRecommendTicket && (
-              <article className="event-module-card">
+            {(shouldRecommendTicket || hasTicketInformation) && (
+              <article className="event-module-card event-ticket-card">
                 <div className="event-module-icon">
                   <OshiIcon
                     name="ticket"
@@ -752,35 +768,41 @@ function EventDetailPage() {
                 </div>
 
                 <div className="event-module-content">
-                  <h3>
-                    チケット・申込
-                  </h3>
-
-                  <p>
-                    先行・申込・当落・支払い・発券・分配・座席までまとめて管理できます。
-                  </p>
-
-                  <button
-                    className="event-module-button"
-                    type="button"
-                    onClick={() => {
-  navigate(`/events/${event.id}/tickets`);
-}}
-                  >
-                    <OshiIcon
-                      name="add"
-                      size={18}
-                      alt=""
-                    />
-                    <span>
-                      チケット情報を登録
-                    </span>
-                  </button>
+                  <div className="event-ticket-heading"><h3>チケット情報</h3>
+                    {ticketReceptions.length === 1 && <Link className="event-ticket-edit" to={`/events/${event.id}/tickets/${ticketReceptions[0].id}/edit`} aria-label={`${ticketReceptions[0].name}を編集`} title="編集"><OshiIcon name="edit" size={28} alt="" /></Link>}
+                  </div>
+                  {hasTicketInformation ? (
+                    <div className="event-ticket-list">
+                      {ticketReceptions.map(reception => (
+                        <section className="event-ticket-summary" key={reception.id} aria-labelledby={`ticket-${reception.id}`}>
+                          <div className="event-ticket-heading"><h4 id={`ticket-${reception.id}`}>{reception.name}</h4>
+                            {ticketReceptions.length > 1 && <Link className="event-ticket-edit" to={`/events/${event.id}/tickets/${reception.id}/edit`} aria-label={`${reception.name}を編集`} title="編集"><OshiIcon name="edit" size={28} alt="" /></Link>}
+                          </div>
+                          {reception.applications.map((application, index) => <p className="icon-heading" key={application.id}>
+                            {isLottery(reception) && (application.status === "won" || application.status === "lost") && <OshiIcon name={application.status} size={24} alt="" />}
+                            {reception.seatTypes.find(seat => seat.id === application.seatTypeId)?.name ?? `${isLottery(reception) ? "申込" : "購入"} ${index + 1}`}：{receptionStatuses(reception)[application.status]}
+                          </p>)}
+                          <dl>
+                            {receptionDates(reception).map(([label, dateKey, timeKey]) => [label, reception[dateKey], reception[timeKey]]).map(([label, date, time]) => (date || time) && (
+                              <div key={label}><dt>{label}</dt><dd>{[date ? formatDate(date) : "", time].filter(Boolean).join(" ")}</dd></div>
+                            ))}
+                            {reception.seatTypes?.map(seat => <div key={seat.id}><dt>{seat.name || "チケット"}{seat.hasBenefit ? "（特典あり）" : ""}</dt><dd>{seat.price.toLocaleString("ja-JP")}円／枚</dd></div>)}
+                            {reception.fees?.map(fee => <div key={fee.id}><dt>{fee.name}</dt><dd>{fee.amount.toLocaleString("ja-JP")}円（{fee.unit === "perTicket" ? "1枚ごと" : "1申込ごと"}）</dd></div>)}
+                          </dl>
+                          {reception.memo && <p className="event-ticket-memo">{reception.memo}</p>}
+                        </section>
+                      ))}
+                    </div>
+                  ) : <p>申込・販売日程・券種・料金・手数料を登録できます。</p>}
                 </div>
+                  <Link className="event-ticket-add" to={`/events/${event.id}/tickets`}>
+                    <span className="event-ticket-add-icon" aria-hidden="true">＋</span>
+                    <span>{hasTicketInformation ? "チケット情報を追加" : "チケット情報を登録"}</span>
+                  </Link>
               </article>
             )}
 
-            {shouldRecommendShopping && (
+            {(shouldRecommendShopping || shoppingExists) && (
               <article className="event-module-card">
                 <div className="event-module-icon">
                   <OshiIcon
@@ -800,30 +822,15 @@ function EventDetailPage() {
                     購入したグッズをまとめて管理できます。
                   </p>
 
-                  <button
-                    className="event-module-button"
-                    type="button"
-                    onClick={() => {
-                      /*
-                        買い物メモ実装時に
-                        接続します。
-                      */
-                    }}
-                  >
-                    <OshiIcon
-                      name="add"
-                      size={18}
-                      alt=""
-                    />
-                    <span>
-                      買い物メモを作る
-                    </span>
-                  </button>
+                  <Link className="event-ticket-add" to={`/events/${event.id}/shopping`}>
+                    <OshiIcon name={shoppingExists ? "shopping-memo" : "add"} size={18} alt="" />
+                    <span>{shoppingExists ? "買い物メモを開く" : "買い物メモを追加"}</span>
+                  </Link>
                 </div>
               </article>
             )}
 
-            {!shouldRecommendTicket &&
+            {!shouldRecommendTicket && !hasTicketInformation &&
               !shouldRecommendShopping && (
                 <div className="event-module-empty">
                   <div

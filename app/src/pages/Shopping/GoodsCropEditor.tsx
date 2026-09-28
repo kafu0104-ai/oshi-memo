@@ -1,0 +1,14 @@
+import { useRef, useState } from 'react';
+import { cropImage, type Crop } from '../../services/goodsLayout';
+export default function GoodsCropEditor({source,initial,onApply}:{source:string;initial:Crop;onApply:(image:string,crop:Crop)=>void}){
+ const [crop,setCrop]=useState(initial),[busy,setBusy]=useState(false),[error,setError]=useState(''),[open,setOpen]=useState(false);
+ const [local,setLocal]=useState(source.startsWith('data:')?source:'');
+ const start=useRef<{x:number;y:number}|null>(null);
+ async function prepare(){
+   setOpen(true);if(local)return;setBusy(true);setError('');
+   try{const response=await fetch('/api/goods-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:source}),signal:AbortSignal.timeout(30000)});const data=await response.json();if(!response.ok)throw new Error();setLocal(data.html);}catch{setError('画像を読み込めませんでした。もう一度「トリミング」を押してください。');}finally{setBusy(false);}
+ }
+ return <div><button type="button" disabled={busy} aria-expanded={open} onClick={prepare}>トリミング</button>{open&&<div><p>画像の上を指でなぞって、残す範囲を囲んでください。下のスライダーでも調整できます。</p>{busy&&<p role="status">画像を処理中…</p>}{local&&<div className="goods-crop-preview" onPointerDown={e=>{if(busy)return;e.currentTarget.setPointerCapture(e.pointerId);const r=e.currentTarget.getBoundingClientRect();start.current={x:(e.clientX-r.left)/r.width*100,y:(e.clientY-r.top)/r.height*100};}} onPointerMove={e=>{if(!start.current)return;const r=e.currentTarget.getBoundingClientRect();const x=Math.max(0,Math.min(100,(e.clientX-r.left)/r.width*100)),y=Math.max(0,Math.min(100,(e.clientY-r.top)/r.height*100));const sx=start.current.x,sy=start.current.y;setCrop({x:Math.min(sx,x),y:Math.min(sy,y),width:Math.max(1,Math.abs(x-sx)),height:Math.max(1,Math.abs(y-sy))});}} onPointerUp={()=>{start.current=null;}} onPointerCancel={()=>{start.current=null;}}><img src={local} draggable={false} alt="切り抜く範囲の確認"/><span style={{left:`${crop.x}%`,top:`${crop.y}%`,width:`${crop.width}%`,height:`${crop.height}%`}}/></div>}
+ {(['x','y','width','height'] as const).map((key,index)=><label className="form-field" key={key}>{['左右の位置','上下の位置','幅','高さ'][index]}<input disabled={busy||!local} type="range" min={key==='width'||key==='height'?1:0} max={key==='width'?100-crop.x:key==='height'?100-crop.y:99} step="1" value={crop[key]} onChange={e=>{const value=Number(e.target.value);setCrop(old=>({...old,[key]:value,...(key==='x'?{width:Math.min(old.width,100-value)}:key==='y'?{height:Math.min(old.height,100-value)}:{})}));}}/></label>)}
+ <button type="button" disabled={busy||!local} onClick={async()=>{setBusy(true);setError('');try{onApply(await cropImage(local,crop),crop);setOpen(false);}catch{setError('切り抜けませんでした。もう一度お試しください。');}finally{setBusy(false);}}}>この範囲を使う</button><button type="button" onClick={()=>setOpen(false)}>閉じる</button>{error&&<p role="alert">{error}</p>}</div>}</div>;
+}

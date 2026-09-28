@@ -66,9 +66,17 @@ type OshiIconName =
   | "received"
   | "message"
   | "history"
-  | "external-link";
+  | "external-link"
+  | "movie-genre"
+  | "stage-genre"
+  | "exhibition-genre"
+  | "online-sale-genre";
 
 const ICON_PATHS: Record<OshiIconName, string> = {
+  "online-sale-genre": "/genre-icons/online-sale.svg",
+  "movie-genre": "/genre-icons/movie.svg",
+  "stage-genre": "/genre-icons/stage.svg",
+  "exhibition-genre": "/genre-icons/exhibition.svg",
   "shopping-memo": "/assets/icons/01_shopping-memo.svg",
   benefit: "/assets/icons/02_benefit.svg",
   buyers: "/assets/icons/03_buyers.svg",

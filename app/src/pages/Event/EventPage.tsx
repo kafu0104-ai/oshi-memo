@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 import EventForm from "../../components/event/EventForm";
 import EventList from "../../components/event/EventList";
@@ -14,9 +14,10 @@ import type { Event } from "../../types/Event";
 
 function EventPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [events, setEvents] = useState<Event[]>([]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(searchParams.get("new") === "1");
 
 
   useEffect(() => {
@@ -25,10 +26,10 @@ function EventPage() {
 
 
   const handleSaveEvent = (event: Event) => {
-    const nextEvents = [...events, event];
+    const nextEvents = [...loadEvents(), event];
 
-    setEvents(nextEvents);
     saveEvents(nextEvents);
+    setEvents(nextEvents);
 
     setIsFormOpen(false);
 
@@ -56,24 +57,9 @@ function EventPage() {
 
   return (
     <main>
-      <header className="page-header">
-        <div>
-          <p className="page-eyebrow">
-            OSHI-MEMO
-          </p>
-
-          <h1>推しメモ</h1>
-
-          <p>
-            推し活で「あ、忘れてた…」をなくすアプリ。
-          </p>
-        </div>
-      </header>
-
-
       <section className="event-page-toolbar">
         <div>
-          <h2>イベント一覧</h2>
+          <h1>{isFormOpen ? "イベント登録" : "イベント一覧"}</h1>
 
           <p>
             ライブ、ショップ、コラボなどを
@@ -100,11 +86,11 @@ function EventPage() {
       )}
 
 
-      <EventList
+      {!isFormOpen && <EventList
         events={events}
         onEditEvent={() => {}}
         onDeleteEvent={() => {}}
-      />
+      />}
     </main>
   );
 }

@@ -6,6 +6,8 @@
  * OshiMemo全体で再利用するマスターデータ。
  */
 export interface Companion {
+  /** Hide from new selections while retaining historical references. */
+  deleted?: boolean;
   id: string;
 
   /**

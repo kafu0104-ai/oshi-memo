@@ -86,7 +86,38 @@ export interface EventPerformance {
 /**
  * イベント
  */
+export interface AttendanceEntry {
+  id: string;
+  date: string;
+  time: string;
+  result: "結果待ち" | "当選" | "落選";
+}
+
+export interface EntryPeriod {
+  queueNumber?: string;
+  queueEntryTime?: string;
+  queueMeetingTime?: string;
+  id: string;
+  name?: string;
+  applicationStart?: string;
+  applicationEnd?: string;
+  startDate: string;
+  endDate: string;
+  method: string;
+  resultDate: string;
+  resultTime: string;
+  entries: AttendanceEntry[];
+}
+
 export interface Event {
+  entryPeriods?: EntryPeriod[];
+  attendanceEntries?: AttendanceEntry[];
+  mainGenreId?: string;
+  attendanceDate?: string;
+  attendanceTime?: string;
+  genreDetails?: Record<string, string>;
+  extraModules?: Record<string, Record<string, string>>;
+
   id: string;
 
   /**

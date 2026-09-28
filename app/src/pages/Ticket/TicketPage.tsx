@@ -1,3 +1,6 @@
+import DeleteReception from "./DeleteReception";
+import { receptionDates } from "../../services/ticketReception";
+import { generateId } from "../../services/id";
 import { useState } from "react";
 import ReceptionForm from "./ReceptionForm";
 import {
@@ -10,9 +13,10 @@ import { OshiIcon } from "../../components/common/OshiIcon";
 import {
   loadEvents,
   loadTicketByEventId,
-  saveTicket,
+  saveTicketWithCompanions,
 } from "../../services/storage";
 
+import type { Companion } from "../../types/Companion";
 import type { Event } from "../../types/Event";
 import type {
   Ticket,
@@ -20,7 +24,7 @@ import type {
 } from "../../types/Ticket";
 
 function createId(): string {
-  return crypto.randomUUID();
+  return generateId();
 }
 
 function formatDate(date: string): string {
@@ -77,18 +81,18 @@ function TicketPage() {
       currentEvent.id === eventId,
   );
 
-  const handleSaveReception = (reception: TicketReception) => {
+  const handleSaveReception = (reception: TicketReception, newCompanions: Companion[]) => {
     if (!eventId) return;
     const current = loadTicketByEventId(eventId) ?? ticket;
     const existing = current?.receptions.find(item => item.id === reception.id);
-    if (editingReception && !existing) throw new Error("受付が見つかりません。ページを再読み込みしてください。");
-    const updated = { ...existing, ...reception, applications: existing?.applications ?? [] };
+    if (editingReception && !existing) throw new Error("チケット情報が見つかりません。ページを再読み込みしてください。");
+    const updated = { ...existing, ...reception, applications: reception.applications };
     const next: Ticket = current
       ? { ...current, receptions: existing ? current.receptions.map(item => item.id === updated.id ? updated : item) : [...current.receptions, updated] }
       : { id: createId(), eventId, receptions: [updated] };
-    saveTicket(next);
+    saveTicketWithCompanions(next, newCompanions);
     setTicket(next);
-    setMessage(editingReception ? "受付を更新しました。" : "受付を登録しました。");
+    setMessage(editingReception ? "チケット情報を更新しました。" : "チケット情報を登録しました。");
     setEditingReception(undefined);
     setIsAddingReception(false);
   };
@@ -155,16 +159,16 @@ function TicketPage() {
         >
           <div className="event-memo-heading">
             <p className="section-label">
-              RECEPTION
+              TICKET INFORMATION
             </p>
 
             <h2 id="ticket-reception-heading">
-              受付情報
+              チケット情報
             </h2>
 
             <p>
-              先行・申込・当落など、
-              チケットの受付単位で管理します。
+              申込日程・料金などを、
+              先行・一般販売などの申込枠ごとに管理します。
             </p>
           </div>
 
@@ -191,44 +195,16 @@ function TicketPage() {
                       </h3>
 
                       <div className="ticket-reception-summary">
-                        <p>
-                          <strong>
-                            申込開始：
-                          </strong>{" "}
-                          {formatDateTime(
-                            reception.applicationStartDate,
-                            reception.applicationStartTime,
-                          )}
-                        </p>
-
-                        <p>
-                          <strong>
-                            申込締切：
-                          </strong>{" "}
-                          {formatDateTime(
-                            reception.applicationDeadlineDate,
-                            reception.applicationDeadlineTime,
-                          )}
-                        </p>
-
-                        <p>
-                          <strong>
-                            当落発表：
-                          </strong>{" "}
-                          {formatDateTime(
-                            reception.resultDate,
-                            reception.resultTime,
-                          )}
-                        </p>
+                        {receptionDates(reception).map(([label, date, time]) => <p key={date}><strong>{label}：</strong> {formatDateTime(reception[date], reception[time])}</p>)}
                       </div>
 
-                      {reception.seatTypes?.map(seat => <p key={seat.id}>{seat.name}：{seat.price.toLocaleString("ja-JP")}円／枚</p>)}
+                      {reception.seatTypes?.map(seat => <p key={seat.id}>{seat.name || "チケット"}{seat.hasBenefit ? "（特典あり）" : ""}：{seat.price.toLocaleString("ja-JP")}円／枚</p>)}
                       {reception.fees?.map(fee => <p key={fee.id}>{fee.name}：{fee.amount.toLocaleString("ja-JP")}円（{fee.unit === "perTicket" ? "1枚ごと" : "1申込ごと"}）</p>)}
                       <button type="button" className="secondary-button" disabled={isAddingReception} aria-label={`${reception.name}を編集`} onClick={() => {
                         setEditingReception(reception);
                         setIsAddingReception(true);
                         setMessage("");
-                      }}>受付を編集</button>
+                      }}>チケット情報を編集</button>
                       {reception.memo && (
                         <p>
                           {reception.memo}
@@ -251,12 +227,12 @@ function TicketPage() {
                 />
 
                 <h3>
-                  受付はまだ登録されていません
+                  チケット情報はまだ登録されていません
                 </h3>
 
                 <p>
                   FC先行・シリアル先行・一般販売など、
-                  チケットの受付情報を登録できます。
+                  チケット情報を登録できます。
                 </p>
 
                 <button
@@ -273,7 +249,7 @@ function TicketPage() {
                   />
 
                   <span>
-                    受付を追加
+                    チケット情報を追加
                   </span>
                 </button>
               </div>
@@ -296,18 +272,23 @@ function TicketPage() {
                   />
 
                   <span>
-                    受付を追加
+                    チケット情報を追加
                   </span>
                 </button>
               </div>
             )}
 
           {isAddingReception && (
+            <>
             <ReceptionForm key={editingReception?.id ?? "new"}
               reception={editingReception}
               onSave={handleSaveReception}
               onCancel={() => { setIsAddingReception(false); setEditingReception(undefined); }}
             />
+            {editingReception && <DeleteReception eventId={event.id} receptionId={editingReception.id} name={editingReception.name} onDeleted={() => {
+              setTicket(loadTicketByEventId(event.id)); setIsAddingReception(false); setEditingReception(undefined); setMessage("チケット情報を削除しました。");
+            }} />}
+            </>
           )}
         </section>
       </article>

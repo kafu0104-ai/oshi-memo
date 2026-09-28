@@ -1,5 +1,6 @@
 interface TimeSelectProps {
   id: string;
+  disabled?: boolean;
   value: string;
   onChange: (value: string) => void;
 }
@@ -18,6 +19,7 @@ const MINUTES = Array.from(
 
 function TimeSelect({
   id,
+  disabled = false,
   value,
   onChange,
 }: TimeSelectProps) {
@@ -60,6 +62,7 @@ function TimeSelect({
   return (
     <div className="time-select">
       <select
+        disabled={disabled}
         id={`${id}-hour`}
         value={hour}
         onChange={(event) =>
@@ -91,6 +94,7 @@ function TimeSelect({
       </span>
 
       <select
+        disabled={disabled}
         id={`${id}-minute`}
         value={minute}
         onChange={(event) =>
@@ -104,6 +108,7 @@ function TimeSelect({
           --
         </option>
 
+        {minute && !MINUTES.includes(minute) && <option value={minute}>{minute}（保存済み）</option>}
         {MINUTES.map((item) => (
           <option
             key={item}

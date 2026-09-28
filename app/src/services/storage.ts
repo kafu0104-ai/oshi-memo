@@ -177,3 +177,16 @@ export function saveCompanion(
 
   saveCompanions(companions);
 }
+/** Save a ticket and newly added companions together; restore companions if ticket storage fails. */
+export function saveTicketWithCompanions(ticket: Ticket, additions: Companion[]): void {
+  if (additions.length === 0) { saveTicket(ticket); return; }
+  const previous = localStorage.getItem(COMPANIONS_KEY);
+  const companions = loadCompanions();
+  saveCompanions([...companions, ...additions.filter(c => !companions.some(existing => existing.id === c.id))]);
+  try { saveTicket(ticket); }
+  catch (error) {
+    if (previous === null) localStorage.removeItem(COMPANIONS_KEY);
+    else localStorage.setItem(COMPANIONS_KEY, previous);
+    throw error;
+  }
+}

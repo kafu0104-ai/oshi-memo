@@ -1,0 +1,2 @@
+# Separate deployment checkout; original development files stay in place.
+.sites-deploy/
