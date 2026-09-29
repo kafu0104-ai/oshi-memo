@@ -1,7 +1,7 @@
 export type DmStage = 'initial'|'address'|'sent'|'received'|'thanks';
 export const dmStages:Record<DmStage,string>={initial:'初回の確認',address:'梱包・発送の了承と住所提示',sent:'発送の連絡',received:'受け取りの連絡',thanks:'相手の受け取りへの返信・お礼'};
 export interface ExchangeTemplateFields {
-  bundle?:boolean; handToday?:boolean; handArea?:string; handUntil?:string; laterMail?:boolean;
+  bundle?:boolean; handToday?:boolean; handArea?:string; handUntil?:string; laterMail?:boolean; mailPreferred?:boolean;
   dmStage?:DmStage; greeting?:string; photo?:boolean; considerate?:boolean;
   addressMode?:'none'|'image'|'text'; samePacking?:boolean; thankAddress?:boolean;
   schedule?:'near'|'same'|'none'; shippingDate?:string; sentDate?:string;
@@ -24,7 +24,7 @@ export function createExchangeText(f:ExchangeTemplateFields, kind:ExchangeTempla
     f.bundle&&'まとめての交換を優先しております。',
     f.handToday&&f.location?.trim()&&`現在、${f.location.trim()}におります。`,
     f.handToday&&`本日${f.handUntil?.trim() ? f.handUntil.trim()+'まで' : ''}、${f.handArea?.trim() ? f.handArea.trim()+'にて' : ''}手渡し交換可能です。`,
-    f.laterMail&&(f.handToday?'後日、郵送での交換も可能です。':'後日、郵送での交換が可能です。')
+    f.mailPreferred?'郵送での交換を希望しております。':f.laterMail&&'後日、郵送での交換も可能です。'
   ].filter(Boolean).join('\n');
   if(kind==='post') return [`【交換】${title ? ' ' + title : ''}`,goods,conditions,clean(f.note),'検索からでもお気軽にお声がけください。よろしくお願いいたします。'].filter(Boolean).join('\n\n');
   const greeting=f.partner.trim()?`${f.partner.trim()}様`:'';

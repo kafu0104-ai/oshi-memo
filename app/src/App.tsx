@@ -1,3 +1,4 @@
+import CalendarSettingsPage from "./pages/Settings/CalendarSettingsPage";
 import AuthCallbackPage from "./pages/Shared/AuthCallbackPage";
 import PersonalSyncPage from "./pages/Settings/PersonalSyncPage";
 import SharedShoppingPage from "./pages/Shared/SharedShoppingPage";
@@ -30,6 +31,7 @@ function App() {
     <div className="app-shell">
       <RouteScrollReset />
       <Routes>
+        <Route path="/settings/calendar" element={<CalendarSettingsPage />} />
         <Route path="/settings/sync" element={<PersonalSyncPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/shared" element={<SharedShoppingPage />} />

@@ -68,5 +68,10 @@ test('募集文はチェックした交換条件だけを表示する',()=>{
  const off=api.createExchangeText({...f,bundle:false,handToday:false,laterMail:false},'post');
  for(const part of ['カフェ','14時','手渡し','郵送','まとめて'])assert.ok(!off.includes(part));
  assert.match(api.createExchangeText({...f,handUntil:'',handArea:''},'post'),/本日、手渡し交換可能です/);
- assert.match(api.createExchangeText({...f,handToday:false},'post'),/郵送での交換が可能/);
+ assert.match(api.createExchangeText({...f,handToday:false},'post'),/郵送での交換も可能/);
+});
+
+test('郵送希望と後日郵送可能を別の文面にする',()=>{
+ assert.match(api.createExchangeText({...fields,mailPreferred:true},'post'),/郵送での交換を希望/);
+ assert.doesNotMatch(api.createExchangeText({...fields,mailPreferred:true,laterMail:true},'post'),/後日/);
 });

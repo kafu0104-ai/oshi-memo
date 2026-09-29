@@ -1,3 +1,4 @@
+import AutoTextarea from "../common/AutoTextarea";
 import { OshiIcon } from "../common/OshiIcon";
 import { genreIcons, mainGenre, initialEntryPeriods } from "../../services/eventGenres";
 import OfficialImport from "./OfficialImport";
@@ -325,13 +326,13 @@ function EventForm({
         );
 
     if (genre !== "movie" && startDate && endDate && startDate > endDate) { setSaveError("終了日は開始日以降に設定してください。"); return; }
-    if (selectedTags.includes("goods-sale") && entryPeriods.some(period=>period.method === "抽選" && period.applicationStart && period.applicationEnd && period.applicationStart > period.applicationEnd)) { setSaveError("抽選申込締切は開始日時以降に設定してください。"); return; }
+    if (selectedTags.some(tag=>["goods-sale","live","stage","talk","exhibition","collaboration-food","movie"].includes(tag)) && entryPeriods.some(period=>period.method === "抽選" && period.applicationStart && period.applicationEnd && period.applicationStart > period.applicationEnd)) { setSaveError("抽選申込締切は開始日時以降に設定してください。"); return; }
     const savedEvent: Event = {
       ...editingEvent,
       mainGenreId: genre || undefined,
       attendanceDate: attendanceDate || undefined,
       attendanceTime: attendanceTime || undefined,
-      entryPeriods: selectedTags.includes("goods-sale") || editingEvent?.entryPeriods ? entryPeriods : undefined,
+      entryPeriods: selectedTags.some(tag=>["goods-sale","live","stage","talk","exhibition","collaboration-food","movie"].includes(tag)) || editingEvent?.entryPeriods ? entryPeriods : undefined,
       genreDetails: details,
       extraModules: modules,
       id:
@@ -381,153 +382,7 @@ function EventForm({
     <button type="button" className="secondary-button" onClick={onCancel}>キャンセル</button>
   </section>;
   const selectedTags = Array.from(new Set([genre,...selectedTagIds]));
-  return (
-    <section
-      className="event-form-section"
-      aria-labelledby="event-form-heading"
-    >
-      <div className="section-heading">
-        <div>
-          <p className="section-label">
-            {isEditing
-              ? "EDIT EVENT"
-              : "NEW EVENT"}
-          </p>
-
-          <h2 id="event-form-heading">
-            {isEditing
-              ? "イベントを編集"
-              : "新しいイベント"}
-          </h2>
-        </div>
-      </div>
-
-      <form className="event-registration-form" onSubmit={handleSubmit}>
-        <div className="form-field-full genre-selected"><OshiIcon name={genreIcons[genre]} size={32}/><strong>{DEFAULT_EVENT_TAGS.find(tag=>tag.id === genre)?.name}</strong>{!isEditing && <button type="button" className="secondary-button" onClick={()=>setChoosingGenre(true)}>選び直す</button>}<p>メインジャンルは保存後に変更できません。</p></div>
-        <OfficialImport url={officialUrl} onUrlChange={setOfficialUrl} current={{title,startDate,endDate,venue,openingTime:details.openingTime,closingTime:details.closingTime}} onApply={(fields,rounds)=>{
-          if(rounds.length){
-            setSelectedTagIds(current=>current.includes("goods-sale")?current:[...current,"goods-sale"]);
-            setEntryPeriods(current=>{const next=[...current];for(const round of rounds){if(!next.some(item=>item.method === "抽選" && item.name === round.name && item.applicationStart === round.applicationStart && item.applicationEnd === round.applicationEnd && item.resultDate === round.resultDate))next.push({...round,id:generateId(),method:"抽選",resultTime:"",entries:[]});}return next.filter(item=>item.method || item.entries.some(entry=>entry.date||entry.time));});
-          }
-          if(fields.title)setTitle(fields.title);
-          if(fields.startDate)setStartDate(fields.startDate);
-          if(fields.endDate)setEndDate(fields.endDate);
-          if(fields.venue)setVenue(fields.venue);
-          setDetails(previous=>({...previous,...(fields.openingTime?{openingTime:fields.openingTime}:{}),...(fields.closingTime?{closingTime:fields.closingTime}:{})}));
-        }}/>
-        <div className="form-field form-field-full">
-          <label htmlFor="event-title">
-            {genre === "movie" || genre === "stage" ? "作品名" : "イベント名"} *
-          </label>
-
-          <input
-            id="event-title"
-            type="text"
-            value={title}
-            onChange={(event) =>
-              setTitle(
-                event.target.value
-              )
-            }
-            placeholder={genre === "movie" || genre === "stage" ? "作品名を入力" : "イベント名を入力"}
-            required
-          />
-        </div>
-
-        <div className="event-tag-field form-field-full">
-          <div>
-            <span className="event-tag-label">
-              イベントタグ
-            </span>
-
-            <p className="event-tag-description">
-              メインジャンルは選択済みです。追加タグを選ぶと入力項目と追加機能が増えます
-            </p>
-          </div>
-
-          <div className="event-tag-list">
-            {DEFAULT_EVENT_TAGS.map(
-              (tag) => {
-                const isSelected =
-                  selectedTagIds.includes(
-                    tag.id
-                  );
-
-                return (
-                  <button
-                    key={tag.id}
-                    disabled={tag.id === genre}
-                    className={
-                      isSelected
-                        ? "event-tag-button is-selected"
-                        : "event-tag-button"
-                    }
-                    type="button"
-                    aria-pressed={
-                      isSelected
-                    }
-                    onClick={() =>
-                      handleToggleTag(
-                        tag.id
-                      )
-                    }
-                  >
-                    {isSelected && (
-                      <span
-                        aria-hidden="true"
-                      >
-                        ✓{" "}
-                      </span>
-                    )}
-
-                    {tag.name}{tag.id === genre ? "（メイン）" : ""}
-                  </button>
-                );
-              }
-            )}
-          </div>
-        </div>
-
-        {genre !== "movie" && <div className="form-field">
-          <label htmlFor="event-start-date">
-            {genre === "online-sale" ? "販売・受注開始日" : "開催開始日"}
-          </label>
-
-          <input
-            id="event-start-date"
-            type="date"
-            value={startDate}
-            onChange={(event) =>
-              setStartDate(
-                event.target.value
-              )
-            }
-          />
-        </div>}
-
-        {genre !== "movie" && <div className="form-field">
-          <label htmlFor="event-end-date">
-            {genre === "online-sale" ? "販売・受注締切日" : "開催終了日"}
-          </label>
-
-          <input
-            id="event-end-date"
-            type="date"
-            value={endDate}
-            onChange={(event) =>
-              setEndDate(
-                event.target.value
-              )
-            }
-          />
-        </div>}
-
-        {genre !== "online-sale" && !selectedTags.includes("goods-sale") && <fieldset className="form-field-full genre-fields attendance-fields">
-          <label className="form-field"><span>{genre === "movie" ? "鑑賞日" : "自分が参加・来場する日"}</span><input type="date" value={attendanceDate} onChange={e=>setAttendanceDate(e.target.value)}/></label>
-          <label className="form-field"><span>{genre === "movie" ? "上映開始" : "参加・入場予定時刻"}</span><input type="time" value={attendanceTime} onChange={e=>setAttendanceTime(e.target.value)}/></label>
-          {genre === "movie" && <label className="form-field"><span>上映終了予定</span><input type="time" value={details.screeningEnd ?? ""} onChange={e=>setDetails({...details,screeningEnd:e.target.value})}/></label>}
-        </fieldset>}
-        {hasPerformanceTag && (
+  const performanceFields = hasPerformanceTag && (
           <div className="event-performance-field form-field-full">
             <div className="event-performance-heading">
               <div>
@@ -852,9 +707,8 @@ function EventForm({
                           公演回メモ
                         </label>
 
-                        <input
+                        <AutoTextarea
                           id={`performance-memo-${performance.id}`}
-                          type="text"
                           value={
                             performance.memo ??
                             ""
@@ -894,7 +748,154 @@ function EventForm({
               </button>
             )}
           </div>
-        )}
+        );
+  return (
+    <section
+      className="event-form-section"
+      aria-labelledby="event-form-heading"
+    >
+      <div className="section-heading">
+        <div>
+          <p className="section-label">
+            {isEditing
+              ? "EDIT EVENT"
+              : "NEW EVENT"}
+          </p>
+
+          <h2 id="event-form-heading">
+            {isEditing
+              ? "イベントを編集"
+              : "新しいイベント"}
+          </h2>
+        </div>
+      </div>
+
+      <form className="event-registration-form" onSubmit={handleSubmit}>
+        <div className="form-field-full genre-selected"><OshiIcon name={genreIcons[genre]} size={32}/><strong>{DEFAULT_EVENT_TAGS.find(tag=>tag.id === genre)?.name}</strong>{!isEditing && <button type="button" className="secondary-button" onClick={()=>setChoosingGenre(true)}>選び直す</button>}<p>メインジャンルは保存後に変更できません。</p></div>
+        <OfficialImport url={officialUrl} onUrlChange={setOfficialUrl} current={{title,startDate,endDate,venue,openingTime:details.openingTime,closingTime:details.closingTime}} onApply={(fields,rounds)=>{
+          if(rounds.length){
+            setSelectedTagIds(current=>current.includes("goods-sale")?current:[...current,"goods-sale"]);
+            setEntryPeriods(current=>{const next=[...current];for(const round of rounds){if(!next.some(item=>item.method === "抽選" && item.name === round.name && item.applicationStart === round.applicationStart && item.applicationEnd === round.applicationEnd && item.resultDate === round.resultDate))next.push({...round,id:generateId(),method:"抽選",resultTime:"",entries:[]});}return next.filter(item=>item.method || item.entries.some(entry=>entry.date||entry.time));});
+          }
+          if(fields.title)setTitle(fields.title);
+          if(fields.startDate)setStartDate(fields.startDate);
+          if(fields.endDate)setEndDate(fields.endDate);
+          if(fields.venue)setVenue(fields.venue);
+          setDetails(previous=>({...previous,...(fields.openingTime?{openingTime:fields.openingTime}:{}),...(fields.closingTime?{closingTime:fields.closingTime}:{})}));
+        }}/>
+        <div className="form-field form-field-full">
+          <label htmlFor="event-title">
+            {genre === "movie" || genre === "stage" ? "作品名" : "イベント名"} *
+          </label>
+
+          <input
+            id="event-title"
+            type="text"
+            value={title}
+            onChange={(event) =>
+              setTitle(
+                event.target.value
+              )
+            }
+            placeholder={genre === "movie" || genre === "stage" ? "作品名を入力" : "イベント名を入力"}
+            required
+          />
+        </div>
+
+        <div className="event-tag-field form-field-full">
+          <div>
+            <span className="event-tag-label">
+              イベントタグ
+            </span>
+
+            <p className="event-tag-description">
+              メインジャンルは選択済みです。追加タグを選ぶと入力項目と追加機能が増えます
+            </p>
+          </div>
+
+          <div className="event-tag-list">
+            {DEFAULT_EVENT_TAGS.map(
+              (tag) => {
+                const isSelected =
+                  selectedTagIds.includes(
+                    tag.id
+                  );
+
+                return (
+                  <button
+                    key={tag.id}
+                    disabled={tag.id === genre}
+                    className={
+                      isSelected
+                        ? "event-tag-button is-selected"
+                        : "event-tag-button"
+                    }
+                    type="button"
+                    aria-pressed={
+                      isSelected
+                    }
+                    onClick={() =>
+                      handleToggleTag(
+                        tag.id
+                      )
+                    }
+                  >
+                    {isSelected && (
+                      <span
+                        aria-hidden="true"
+                      >
+                        ✓{" "}
+                      </span>
+                    )}
+
+                    {tag.name}{tag.id === genre ? "（メイン）" : ""}
+                  </button>
+                );
+              }
+            )}
+          </div>
+        </div>
+
+        {genre !== "movie" && <div className="form-field">
+          <label htmlFor="event-start-date">
+            {genre === "online-sale" ? "販売・受注開始日" : "開催開始日"}
+          </label>
+
+          <input
+            id="event-start-date"
+            type="date"
+            value={startDate}
+            onChange={(event) =>
+              setStartDate(
+                event.target.value
+              )
+            }
+          />
+        </div>}
+
+        {genre !== "movie" && <div className="form-field">
+          <label htmlFor="event-end-date">
+            {genre === "online-sale" ? "販売・受注締切日" : "開催終了日"}
+          </label>
+
+          <input
+            id="event-end-date"
+            type="date"
+            value={endDate}
+            onChange={(event) =>
+              setEndDate(
+                event.target.value
+              )
+            }
+          />
+        </div>}
+
+        {genre !== "online-sale" && !selectedTags.includes("goods-sale") && <fieldset className="form-field-full genre-fields attendance-fields">
+          <label className="form-field"><span>{genre === "movie" ? "鑑賞日" : "自分が参加・来場する日"}</span><input type="date" value={attendanceDate} onChange={e=>setAttendanceDate(e.target.value)}/></label>
+          <label className="form-field"><span>{genre === "movie" ? "上映開始" : "参加・入場予定時刻"}</span><input type="time" value={attendanceTime} onChange={e=>setAttendanceTime(e.target.value)}/></label>
+          {genre === "movie" && <label className="form-field"><span>上映終了予定</span><input type="time" value={details.screeningEnd ?? ""} onChange={e=>setDetails({...details,screeningEnd:e.target.value})}/></label>}
+        </fieldset>}
+        {genre !== "live" && performanceFields}
 
         <div className="form-field form-field-full">
           <label htmlFor="event-venue">
@@ -922,7 +923,7 @@ function EventForm({
             イベント補足
           </label>
 
-          <textarea
+          <AutoTextarea
             id="event-memo"
             value={memo}
             onChange={(event) =>
@@ -931,13 +932,14 @@ function EventForm({
               )
             }
             placeholder="整理券、入場方法、注意事項など"
-            rows={4}
+            rows={2}
           />
         </div>
 
-        {selectedTags.includes("goods-sale") && <EntryPeriods value={entryPeriods} onChange={setEntryPeriods}/>}
+        {selectedTags.some(tag=>["goods-sale","live","stage","talk","exhibition","collaboration-food","movie"].includes(tag)) && <EntryPeriods ticketMode={genre !== "goods-sale"} value={entryPeriods} onChange={setEntryPeriods}/>}
         <ExtraModules tags={selectedTags} value={modules} onChange={setModules} lottery={details.saleType === "抽選"}/>
         <p className="form-field-full">{selectedTags.some(tag=>["goods-sale","online-sale","collaboration-food"].includes(tag)) ? "保存後に買い物メモを追加できます。" : ""} {selectedTags.some(tag=>["live","stage","movie","talk","exhibition"].includes(tag)) ? "保存後にチケット情報を追加できます。" : ""}</p>
+        {genre === "live" && performanceFields}
         {saveError && <p className="form-field-full" role="alert">{saveError}</p>}
         <div className="form-actions">
           <button

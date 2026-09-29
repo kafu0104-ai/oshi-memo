@@ -1,3 +1,4 @@
+import HomeCalendar from "./HomeCalendar";
 import { loadEvents } from "../../services/storage";
 import { localToday } from "../../services/ticketTasks";
 import { nextDate, upcomingEvents } from "../../services/upcomingEvents";
@@ -21,6 +22,7 @@ function HomePage() {
       <h2 id="home-tasks-heading" className="icon-heading"><OshiIcon name="announcement" size={24}/><span>やることのお知らせ</span></h2>
       <TicketTodos />
     </section>
+    <HomeCalendar />
     <nav className="home-feature-grid" aria-label="アプリの機能">
       {features.map(feature=><Link key={feature.to} to={feature.to} className="home-feature-tile"><OshiIcon name={feature.icon} size={34}/><strong>{feature.name}</strong><span>{feature.description}</span></Link>)}
     </nav>

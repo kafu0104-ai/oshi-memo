@@ -379,6 +379,7 @@ export interface TicketApplication {
  * などをすべて扱う。
  */
 export interface TicketReception {
+  sourceEntryPeriodId?: string;
   /** 未設定の既存データは抽選として扱う。 */
   receptionType?: "lottery" | "general" | "admission";
   id: string;

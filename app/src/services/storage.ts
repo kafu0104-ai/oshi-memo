@@ -1,3 +1,5 @@
+import { mergeEventTickets } from "./eventTickets";
+import { generateId } from "./id";
 import type { Event } from "../types/Event";
 import type { Ticket } from "../types/Ticket";
 import type { Companion } from "../types/Companion";
@@ -67,7 +69,16 @@ export function loadEvents(): Event[] {
 export function saveEvents(
   events: Event[],
 ): void {
+  const previous=localStorage.getItem(EVENTS_KEY);
+  const tickets=loadTickets();
+  const nextTickets=mergeEventTickets(events,loadEvents(),tickets,generateId);
   saveArray(EVENTS_KEY, events);
+  try {
+    if(JSON.stringify(nextTickets)!==JSON.stringify(tickets))saveTickets(nextTickets);
+  } catch(error) {
+    if(previous===null)localStorage.removeItem(EVENTS_KEY);else localStorage.setItem(EVENTS_KEY,previous);
+    throw error;
+  }
 }
 
 

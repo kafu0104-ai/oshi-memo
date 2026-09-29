@@ -1,6 +1,6 @@
 // Only personal app records are transferable. Authentication tokens and sync metadata
 // must never be included, even when new browser storage keys are introduced.
-const fixedKeys=['oshi-memo-events','oshi-memo-tickets','oshi-memo-companions','oshi-memo-task-tags','oshi-memo-theme','oshi-memo-exchanges'];
+const fixedKeys=['oshi-memo-events','oshi-memo-tickets','oshi-memo-companions','oshi-memo-task-tags','oshi-memo-theme','oshi-memo-exchanges','oshi-memo-calendar','oshi-memo-exchange-history'];
 export const personalKey=(key:string)=>fixedKeys.includes(key)||/^oshi-memo-shopping-[a-zA-Z0-9_-]+$/.test(key);
 export interface PersonalSnapshot {version:1; records:Record<string,string>}
 export function validateSnapshot(value:unknown):PersonalSnapshot {

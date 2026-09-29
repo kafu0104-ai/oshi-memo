@@ -2608,3 +2608,116 @@ form.goods-import-form { display:flex; flex-direction:column; gap:16px; min-widt
 .exchange-template-tabs button { font-weight:500; padding:10px 18px; }
 .exchange-template-tabs button[aria-pressed="true"] { outline:2px solid #b75c60; outline-offset:2px; }
 .exchange-editor textarea { box-sizing:border-box; width:100%; min-width:0; font-size:16px; }
+
+.home-calendar { background:var(--color-surface,#fff); border:1px solid var(--color-border); border-radius:22px; padding:16px; margin:20px 0; min-width:0; font-weight:var(--calendar-weight,400); }
+.home-calendar h2,.home-calendar h3,.home-calendar a,.home-calendar button,.home-calendar label,.home-calendar select { font-weight:var(--calendar-weight,400); }
+.calendar-heading { display:flex; gap:8px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px; }
+.calendar-heading h2,.calendar-heading h3 { margin:0; font-size:1.1rem; }
+.calendar-heading button { padding:6px 12px; }
+.calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; }
+.calendar-weekday { text-align:center; font-size:.85rem; }
+.calendar-day { min-width:0; border-radius:10px; padding:5px 0; min-height:48px; background:transparent; color:var(--color-text); border:1px solid transparent; }
+.calendar-day[aria-current=date] { text-decoration:underline; text-underline-offset:4px; }
+.calendar-day[aria-pressed=true] { border:2px solid #a6535b; background:#f6e8e8; }
+.calendar-dots { display:flex; justify-content:center; align-items:center; gap:3px; min-height:13px; }
+.calendar-dots i,.calendar-legend i { display:inline-block; width:8px; height:8px; border:1px solid #777; border-radius:50%; flex-shrink:0; }
+.calendar-legend { display:flex; flex-wrap:wrap; gap:8px 14px; margin:14px 0; font-size:.85rem; }
+.calendar-legend span { display:flex; gap:5px; align-items:center; }
+.calendar-plan { display:grid; gap:8px; padding:12px 0; border-top:1px solid var(--color-border); overflow-wrap:anywhere; }
+.calendar-plan label { display:flex; align-items:center; gap:8px; }
+.calendar-plan select,.calendar-settings select { min-width:0; max-width:100%; font-size:16px; padding:8px; border-radius:8px; }
+.calendar-badge { display:inline-block; width:fit-content; max-width:100%; padding:4px 10px; border-radius:8px; border:1px solid #777; overflow-wrap:anywhere; }
+.calendar-settings { max-width:720px; margin-inline:auto; }
+.calendar-label-editor { display:grid; gap:12px; padding:16px; background:white; border:1px solid var(--color-border); border-radius:16px; min-width:0; }
+.calendar-label-editor input { min-width:0; box-sizing:border-box; font-size:16px; }
+.calendar-palette { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.calendar-palette button { width:32px; height:32px; padding:0; border:1px solid #777; }
+.calendar-palette button[aria-pressed=true] { outline:2px solid #333; outline-offset:2px; }
+.calendar-color-wheel { width:180px; height:180px; margin:16px auto; border-radius:50%; background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red); display:grid; place-items:center; touch-action:none; cursor:crosshair; }
+.calendar-color-wheel span { display:grid; place-items:center; width:120px; height:120px; border-radius:50%; border:3px solid white; pointer-events:none; }
+.calendar-color-wheel:focus-visible { outline:3px solid #333; outline-offset:4px; }
+.calendar-color-picker input[type=range] { padding:0; }
+
+.home-calendar .calendar-heading button[aria-label="前の月"],
+.home-calendar .calendar-heading button[aria-label="次の月"],
+.home-calendar .calendar-toggle { background:transparent; border:0; box-shadow:none; color:var(--color-text); }
+.home-calendar .calendar-toggle { padding:0; font-size:inherit; border-radius:0; }
+.calendar-collapsed { margin:0; font-size:.9rem; }
+
+.shopping-confirm-item { display:flex; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--border, #e5ddd8); }
+.shopping-confirm-item > img { width:64px; height:64px; object-fit:contain; flex-shrink:0; }
+.shopping-confirm-item > div { min-width:0; }
+.shopping-confirm-item p { margin:4px 0; }
+
+/* Compact shopping memo: buyer tabs and merchandise take priority. */
+.shopping-compact { padding-bottom:calc(190px + env(safe-area-inset-bottom)); }
+.shopping-heading,.shopping-buyer-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.shopping-heading { margin:16px 0; }
+.shopping-heading h1 { font-size:1.25rem; margin:0; }
+.shopping-heading a { white-space:nowrap; font-size:.8rem; }
+.shopping-compact .shopping-summary { gap:8px; margin:12px 0; }
+.shopping-compact .shopping-summary > div { padding:12px 8px; border-radius:14px; text-align:center; }
+.shopping-compact .shopping-summary span { font-size:.75rem; }
+.shopping-compact .shopping-summary strong { font-size:1.15rem; color:var(--color-primary-dark,var(--color-text)); }
+.shopping-buyer-heading { margin-top:20px; }
+.shopping-buyer-heading small { font-weight:400; font-size:.7rem; color:var(--color-subtext); }
+.shopping-compact .buyer-edit-link { padding:4px; background:transparent; border:0; border-radius:0; font-size:.75rem; min-height:36px; color:var(--color-subtext); }
+.shopping-compact .shopping-tabs { gap:8px; margin:8px 0 12px; }
+.shopping-compact .shopping-tabs button { padding:9px 16px; font-size:.85rem; min-height:42px; background:var(--color-card); border:1px solid var(--color-border); }
+.shopping-compact .shopping-tabs button[aria-pressed="true"] { background:var(--color-primary); outline:none; border-color:#b85c5c; }
+.shopping-compact .shopping-tabs .buyer-add-tab { border-style:dashed; }
+.shopping-buyer-note { margin:0 0 16px; padding:8px 10px; border-radius:10px; background:color-mix(in srgb,var(--color-primary) 20%,transparent); font-size:.75rem; }
+.shopping-compact .shopping-filters { padding:0; background:transparent; border:0; border-radius:0; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.shopping-compact .shopping-filters > label:first-child { grid-column:1/-1; }
+.shopping-compact .shopping-filters label { font-size:.75rem; gap:4px; }
+.shopping-compact .shopping-filters input,.shopping-compact .shopping-filters select { padding:10px 12px; border-radius:12px; }
+.shopping-compact .shopping-filters select { padding-right:36px; }
+.shopping-compact .shopping-panel { padding:16px; border-radius:16px; margin:14px 0; }
+.shopping-compact .shopping-products { gap:10px; }
+.shopping-compact .shopping-product { flex-wrap:nowrap; padding:12px; gap:12px; border-radius:16px; }
+.shopping-compact .product-thumbnail { width:64px; flex:0 0 64px; }
+.shopping-compact .product-thumbnail-button { height:64px; }
+.shopping-compact .shopping-product-info { flex:1; min-width:0; }
+.shopping-compact .shopping-product h2 { font-size:.95rem; margin:0 0 4px; }
+.shopping-compact .shopping-product p { margin:4px 0; font-size:.75rem; }
+.shopping-product-tools { margin:8px 0; font-size:.75rem; }
+.shopping-product-tools summary { cursor:pointer; color:var(--color-subtext); }
+.shopping-compact .shopping-order { grid-template-columns:minmax(0,1fr); margin-top:8px; padding-top:8px; gap:8px; }
+.shopping-compact .shopping-order label { font-size:.75rem; gap:4px; }
+.shopping-compact .shopping-quantity { justify-content:flex-end; }
+.shopping-compact .shopping-quantity input { width:56px; }
+.shopping-compact .shopping-quantity button { width:44px; min-height:44px; border-radius:12px; }
+.shopping-bottom-actions { position:fixed; bottom:calc(72px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); width:min(100%,760px); display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px 12px; background:var(--color-card); border-top:1px solid var(--color-border); z-index:99; }
+.shopping-bottom-actions button { font-size:.8rem; padding:10px; border-radius:12px; min-height:44px; }
+.shopping-bottom-actions button:first-child { background:var(--color-card); border:1px solid var(--color-border); }
+.shopping-compact .shopping-share { scroll-margin-bottom:160px; scroll-margin-top:16px; }
+
+.shopping-compact .shopping-summary strong { color:var(--color-text); }
+.shopping-compact .shopping-panel.shopping-filters { padding:0; border:0; margin:16px 0; }
+.shopping-compact .shopping-total-note { margin:0; font-size:.7rem; }
+
+.shopping-compact .shopping-complete-button { display:block; width:100%; min-height:48px; margin-top:20px; padding:12px 20px; }
+
+.shopping-compact .shopping-load-more { display:block; width:100%; min-height:48px; margin:20px 0; padding:12px 20px; }
+/* Leave room above both shopping actions and the main navigation. */
+body:has(.shopping-bottom-actions) button.back-to-top { bottom:calc(152px + env(safe-area-inset-bottom)); }
+.bonus-panel .shopping-buyer-heading { margin:0; }
+.bonus-panel h2 { margin:0; font-size:1rem; }
+.bonus-editor { display:grid; gap:12px; margin:16px 0; padding:0; box-shadow:none; border:0; background:none; }
+.bonus-editor-row { display:flex; gap:8px; align-items:end; }
+.bonus-editor-row label { flex:1; }
+.bonus-editor-row button { padding:10px; flex-shrink:0; }
+.bonus-allocation-row { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:10px 0; }
+.bonus-allocation-row > span { min-width:0; overflow-wrap:anywhere; font-size:.85rem; }
+.bonus-allocation-row .shopping-quantity { flex-shrink:0; }
+.shopping-compact .bonus-allocation-row .shopping-quantity input { width:48px; padding:10px 2px; }
+.bonus-balance { margin:14px 0 0; padding:10px; border-radius:10px; background:color-mix(in srgb,var(--color-primary) 20%,transparent); font-size:.85rem; }
+.bonus-balance.is-over { color:#973b3b; background:#fff0ed; }
+
+.shopping-stock-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin:8px 0; }
+.shopping-compact .shopping-stock-row .shopping-sold-out { flex-direction:row; align-items:center; white-space:nowrap; font-size:.8rem; min-height:44px; gap:6px; }
+.shopping-compact .shopping-sold-out input { width:22px; height:22px; flex-shrink:0; }
+
+.exchange-history-heading { display:flex; align-items:center; gap:12px; justify-content:space-between; }
+.exchange-history-heading strong { min-width:0; overflow-wrap:anywhere; }
+.exchange-history-heading > button { flex:0 0 auto; width:auto; margin:0; padding:8px 16px; min-height:44px; font-size:0.875rem; }

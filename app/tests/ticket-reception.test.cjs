@@ -13,7 +13,7 @@ test('legacy receptions remain lottery; general dates never include result',()=>
  assert.equal(helpers.isLottery({}),true);
  assert.equal(helpers.receptionDates({}).length,3);
  assert.equal(helpers.receptionDates({receptionType:'general'}).some(row=>row[1]==='resultDate'),false);
- assert.equal(helpers.receptionStatuses({receptionType:'general'}).won,'購入確定');
+ assert.equal(helpers.receptionStatuses({receptionType:'general'}).won,'購入済み');
 });
 test('general purchase reminders ignore old lottery result dates',()=>{
  assert.equal(tasks('general','applied')[0].title,'チケットを購入する');
@@ -31,7 +31,7 @@ test('confirmed general purchases retain payment tasks and amounts',()=>{
 test('admission tickets have purchase status and no lottery reminders',()=>{
  assert.equal(helpers.isLottery({receptionType:'admission'}),false);
  assert.equal(helpers.receptionDates({receptionType:'admission'}).some(row=>row[1]==='resultDate'),false);
- assert.equal(helpers.receptionStatuses({receptionType:'admission'}).won,'購入確定');
+ assert.equal(helpers.receptionStatuses({receptionType:'admission'}).won,'購入済み');
  assert.equal(tasks('admission','applied').length,0);
  assert.equal(helpers.receptionDates({receptionType:'admission'}).length,0);
  assert.equal(tasks('admission','won').length,0);
@@ -56,4 +56,14 @@ test('legacy single ticket inference does not duplicate its application',()=>{
  const saved=helpers.withLotteryEntries(reception,()=>{throw Error('unexpected new record')});
  assert.equal(saved.applications.length,1);assert.equal(saved.applications[0].id,'old');
  assert.equal(saved.applications[0].seatTypeId,'s');assert.equal(saved.applications[0].quantity,2);
+});
+
+test('selected companion creates a receipt task only after purchase and completes on receipt',()=>{
+ const {withCompanionSettlements}=load('src/services/companionSettlements.ts');
+ const app=withCompanionSettlements({companionIds:['friend'],fulfillment:{payment:{payerId:'self',isPaid:true,settlements:[]}}},()=> 'receipt');
+ const receipt=tasks('general','won',app.fulfillment).find(t=>t.settlementId==='receipt');
+ assert.ok(receipt.title.endsWith('からチケット代を受け取る'));assert.equal(receipt.completed,false);assert.equal(receipt.amount,1000);
+ assert.equal(tasks('general','notApplied',app.fulfillment).some(t=>t.settlementId==='receipt'),false);
+ app.fulfillment.payment.settlements[0].isSettled=true;
+ assert.equal(tasks('general','won',app.fulfillment).find(t=>t.settlementId==='receipt').completed,true);
 });

@@ -23,6 +23,7 @@ export function extractGoods(html:string, base:string):{products:GoodsCandidate[
   }
   doc.querySelectorAll('script[type="application/ld+json"]').forEach(script=>{try{visit(JSON.parse(script.textContent||''));}catch{/* malformed metadata is skipped */}});
   if(new URL(base).hostname==='chiikawapark-tokyo.jp')products.push(...parkGoods(html,base));
+  if(new URL(base).hostname==='www.broccoli.co.jp'&&new URL(base).pathname.startsWith('/event_sp/agf/'))products.push(...broccoliAgfGoods(doc,base));
   const images=[...new Set(Array.from(doc.querySelectorAll('img')).map(img=>safeGoodsUrl(img.getAttribute('data-src')||img.getAttribute('src'),base)).filter(Boolean))].slice(0,100);
   return {products:products.filter((p,i)=>products.findIndex(x=>x.name===p.name&&x.price===p.price&&x.image===p.image)===i).slice(0,1000),images};
 }
@@ -66,4 +67,31 @@ export function parkGoods(html:string,base:string):GoodsCandidate[]{
       return variants.map((variant,index)=>{const number=numbers[index]||'';return {name:item.title as string,variant,category:typeof item.category==='string'?item.category:'',limit,image:safeGoodsUrl(imgs[0]?.url,base),sourceUrl:base,price:(numbers.length===variants.length&&/^(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(number))?number.replace(/,/g,''):''};});
     });
   }catch{return [];}
+}
+
+
+export function broccoliAgfGoods(doc:Document,base:string):GoodsCandidate[]{
+ const text=(node:Element|null)=>node?.textContent?.replace(/\s+/g,' ').trim()||'';
+ const result:GoodsCandidate[]=[];
+ for(const card of Array.from(doc.querySelectorAll('.p-goods__item'))){
+  const id=card.querySelector('[data-modal-page]')?.getAttribute('data-modal-page')||'';
+  const modal=Array.from(doc.querySelectorAll('.p-modal_item')).find(el=>id&&el.classList.contains(id));
+  const name=text(card.querySelector('.p-goods__name'));
+  const price=text(card.querySelector('.p-goods__price')).match(/([\d,]+)\s*円/)?.[1].replaceAll(',','')||'';
+  if(!name||!price)continue;
+  const rows=Array.from(modal?.querySelectorAll('tr')||[]);
+  const limitText=text(rows.find(row=>text(row.querySelector('th')).includes('購入制限'))?.querySelector('td')||null).normalize('NFKC');
+  const limit=limitText.match(/(?:各|様)\s*(\d+)\s*(?:個|点|枚|冊)/)?.[1]||'';
+  const kindCell=rows.find(row=>text(row.querySelector('th')).includes('種類数'))?.querySelector('td');
+  const random=/ランダム/.test(text(kindCell||null));
+  const names=Array.from(modal?.querySelectorAll('.p-modal_item__kindname')||[]).map(el=>text(el).replace(/^[｢「]|[｣」]$/g,''));
+  const photos=Array.from(modal?.querySelectorAll('.p-modal_item__gallery img')||[]).map(img=>safeGoodsUrl(img.getAttribute('src'),base));
+  const image=safeGoodsUrl(card.querySelector('img')?.getAttribute('src'),base);
+  const common={name,price,sourceUrl:base,category:text(card.querySelector('.p-goods__sell')),limit};
+  // Only pair individual images when the official ordered lists match exactly.
+  if(!random&&names.length>1&&names.length===photos.length){
+    names.forEach((variant,i)=>result.push({...common,variant,image:photos[i]||image}));
+  }else result.push({...common,image,variant:random?'ランダム':''});
+ }
+ return result;
 }

@@ -1,3 +1,4 @@
+import { withCompanionSettlements } from "../../services/companionSettlements";
 import TicketQuantityInput from "../../components/common/TicketQuantityInput";
 import { isLottery, receptionStatuses } from "../../services/ticketReception";
 import { generateId } from "../../services/id";
@@ -25,6 +26,12 @@ export default function TicketPayments({ reception, companions, onChange, onComp
   const [message, setMessage] = useState("");
   const activeCompanions = companions.filter(c => !c.deleted);
   function update(app: TicketApplication) {
+    const previous=reception.applications.find(a=>a.id===app.id);
+    if(app.fulfillment?.payment.payerId==='self'&&(previous?.fulfillment?.payment.payerId!=='self'||JSON.stringify(previous?.companionIds)!==JSON.stringify(app.companionIds))){
+      app=withCompanionSettlements(app,generateId);
+      const f=app.fulfillment!;
+      app={...app,fulfillment:{...f,payment:{...f.payment,settlements:f.payment.settlements.filter(s=>s.direction!=='receive'||s.isSettled||app.companionIds.includes(s.companionId))}}};
+    }
     onChange({ ...reception, applications: reception.applications.some(a => a.id === app.id)
       ? reception.applications.map(a => a.id === app.id ? app : a) : [...reception.applications, app] });
   }
@@ -67,18 +74,18 @@ export default function TicketPayments({ reception, companions, onChange, onComp
       const share = ticketShare(reception, app);
       const change = (next: typeof payment) => update({ ...app, fulfillment: { ...fulfillment, payment: next } });
       return <section key={app.id}>
-        {payment.payerId && payment.payerId !== "self" && <>
-        <h4>支払者との精算</h4><p>支払者を変更しても登録済みの精算は残ります。不要になった精算は削除してください。</p><p>支払いとは別に記録します。チケット代と手数料から1人1枚分を自動計算します。必要なら手入力に変更できます。</p>
+        {payment.payerId && (payment.payerId !== "self" || payment.settlements.length>0) && <>
+        <h4>{payment.payerId === "self" ? "同行者との精算" : "支払者との精算"}</h4><p>支払者を変更しても登録済みの精算は残ります。不要になった精算は削除してください。</p><p>支払いとは別に記録します。チケット代と手数料から1人1枚分を自動計算します。必要なら手入力に変更できます。</p>
         {payment.settlements.map(settlement => <div className="ticket-options" key={settlement.id}>
           <p>{companions.find(c => c.id === settlement.companionId)?.name ?? "未登録の同行者"} {settlement.direction === "receive" ? "から受け取る" : "へ支払う"}</p>
           <label className="ticket-check"><input type="checkbox" checked={settlement.amountMode === "auto" || (settlement.amountMode === undefined && settlement.amount === 0)} disabled={settlement.isSettled} onChange={e => change({ ...payment, settlements: payment.settlements.map(s => s.id === settlement.id ? { ...s, amountMode: e.target.checked ? "auto" : "manual", amount: settlementAmount(reception, app, s) ?? s.amount } : s) })}/>チケット代・手数料から自動計算</label>
           <label className="form-field">精算金額（円）<input type="number" min="0" step="1" required readOnly={settlement.isSettled || settlement.amountMode === "auto" || (settlement.amountMode === undefined && settlement.amount === 0)} value={settlementAmount(reception, app, settlement) ?? ""} onChange={e => { const value = e.target.valueAsNumber; if (!Number.isSafeInteger(value) || value < 0) return; change({ ...payment, settlements: payment.settlements.map(s => s.id === settlement.id ? { ...s, amount: value, amountMode: "manual" } : s) }); }}/></label>
           <label className="ticket-check"><input type="checkbox" checked={settlement.isSettled} disabled={settlementAmount(reception, app, settlement) === undefined} onChange={e => change({ ...payment, settlements: payment.settlements.map(s => s.id === settlement.id ? { ...s, isSettled: e.target.checked, settledDate: e.target.checked ? s.settledDate : undefined, amount: settlementAmount(reception, app, s) ?? s.amount } : s) })}/>{settlement.direction === "receive" ? "受領済み" : "相手へ支払い済み"}</label>
-          {settlement.isSettled && settlement.direction === "pay" && <label className="form-field">
-            <span>相手への支払日</span>
+          {settlement.isSettled && <label className="form-field">
+            <span>{settlement.direction==="receive"?"受領日":"相手への支払日"}</span>
             <input type="date" value={settlement.settledDate ?? ""} onChange={e => change({ ...payment, settlements: payment.settlements.map(s => s.id === settlement.id ? { ...s, settledDate: e.target.value || undefined } : s) })} />
           </label>}
-          <button type="button" className="secondary-button" onClick={() => change({ ...payment, settlements: payment.settlements.filter(s => s.id !== settlement.id) })}>この精算を削除</button>
+          {!(payment.payerId==="self"&&settlement.direction==="receive"&&app.companionIds.includes(settlement.companionId))&&<button type="button" className="secondary-button" onClick={() => change({ ...payment, settlements: payment.settlements.filter(s => s.id !== settlement.id) })}>この精算を削除</button>}
         </div>)}
 
         {payment.payerId && payment.payerId !== "self" && !payment.settlements.some(s => s.companionId === payment.payerId && s.direction === "pay") && <button type="button" onClick={() => change({ ...payment, settlementRequired: true, settlements: [...payment.settlements, { id: generateId(), companionId: payment.payerId!, direction: "pay", important: true, tagIds: ["important", "payment"], amount: share ?? 0, amountMode: "auto", isSettled: false }] })}>相手への支払いを登録</button>}

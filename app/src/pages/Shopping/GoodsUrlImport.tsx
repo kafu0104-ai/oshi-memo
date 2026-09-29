@@ -51,7 +51,7 @@ export default function GoodsUrlImport({onAdd,existing}:{onAdd:(products:Shoppin
   const ready=(row:LayoutCandidate&ProductSales)=>!salesError(row)&&!!row.name.trim()&&/^\d+$/.test(row.price)&&Number(row.price)<=99999999&&(!row.limit||(/^\d+$/.test(row.limit)&&Number(row.limit)>=1&&Number(row.limit)<=9999));
   const readyCount=rows.filter(ready).length;
   function patch(index:number,value:Partial<LayoutCandidate&ProductSales&{selected:boolean;importKey?:string;variant?:string;category?:string;limit?:string}>){setRows(old=>old.map((row,i)=>i===index?{...row,...value}:row));}
-  return <details className="shopping-panel"><summary>グッズページURLから追加</summary>
+  return <details className="shopping-panel" open><summary>グッズページURLから追加</summary>
     <div className="goods-url-import"><label className="form-field">グッズページURL<input type="url" inputMode="url" autoCapitalize="none" placeholder="https://…" value={url} disabled={busy} onChange={e=>{setUrl(e.target.value);setRows([]);setImages([]);setSource('');setMessage('');setOcrText('');setOcrImage('');}}/></label><button type="button" disabled={busy||!url.trim()} onClick={read}>{busy?'読み込み中…':'読み込む'}</button>
     <p role="status">{message}</p>
     {source&&<a href={source} target="_blank" rel="noreferrer">公式ページで確認</a>}

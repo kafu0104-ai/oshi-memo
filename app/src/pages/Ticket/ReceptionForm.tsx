@@ -1,3 +1,4 @@
+import { withCompanionSettlements } from "../../services/companionSettlements";
 import TicketQuantityInput from "../../components/common/TicketQuantityInput";
 import { isLottery, receptionDates, withLotteryEntries } from "../../services/ticketReception";
 import { generateId } from "../../services/id";
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export default function ReceptionForm({ reception, onSave, onCancel }: Props) {
-  const [draft, setDraft] = useState<TicketReception>(() => reception ? withLotteryEntries(reception, generateId) : {
+  const [draft, setDraft] = useState<TicketReception>(() => reception ? withLotteryEntries({...reception,applications:reception.applications.map(a=>withCompanionSettlements(a,generateId))}, generateId) : {
     id: generateId(), name: "", seatTypes: [], fees: [], applications: [],
   });
   const admission = draft.receptionType === "admission";

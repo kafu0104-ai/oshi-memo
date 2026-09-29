@@ -94,6 +94,7 @@ export interface AttendanceEntry {
 }
 
 export interface EntryPeriod {
+  paymentDeadline?: string;
   queueNumber?: string;
   queueEntryTime?: string;
   queueMeetingTime?: string;

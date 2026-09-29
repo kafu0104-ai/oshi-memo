@@ -86,7 +86,7 @@ export default function ShoppingImageShare({ title, memo, buyerIds }: { title: s
           ctx.font = "21px sans-serif";
           lines(ctx, buyer, 212, y + 97, 540, 1);
           ctx.fillText(`単価 ${yen(product.price)} × ${order.quantity} = ${yen(product.price * order.quantity)}`, 212, y + 127);
-          lines(ctx, `${memo.soldOut.includes(product.id) ? "売切れ／" : ""}${order.status}${order.memo ? `　${order.memo}` : ""}`, 212, y + 157, 540, 2, 27);
+          if (order.memo) lines(ctx, order.memo, 212, y + 157, 540, 2, 27);
         });
         }
         ctx.fillStyle = "#544c40"; ctx.font = "20px sans-serif";

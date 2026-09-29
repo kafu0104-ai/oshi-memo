@@ -1,3 +1,4 @@
+import type { PurchaseHistory } from "./shoppingHistory";
 import type { GoodsStatus } from "../types/Goods";
 import type { ProductSales } from "./productSales";
 export interface ShoppingProduct extends ProductSales {
@@ -9,6 +10,9 @@ export interface ShoppingProduct extends ProductSales {
 }
 export interface ShoppingOrder { quantity: number; status: GoodsStatus; memo: string }
 export interface ShoppingMemo {
+  purchaseHistory?: PurchaseHistory[];
+  purchaseCycle?: string;
+  purchaseCompletedAt?: string;
   products: ShoppingProduct[];
   buyers: {id:string; name:string}[];
   orders: Record<string, Record<string, ShoppingOrder>>;
