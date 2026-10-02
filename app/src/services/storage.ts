@@ -1,3 +1,4 @@
+import type { EventTicketChanges } from "./eventTicketDraft";
 import { mergeEventTickets } from "./eventTickets";
 import { generateId } from "./id";
 import type { Event } from "../types/Event";
@@ -68,15 +69,33 @@ export function loadEvents(): Event[] {
  */
 export function saveEvents(
   events: Event[],
+  changes?: EventTicketChanges & { eventId: string },
 ): void {
   const previous=localStorage.getItem(EVENTS_KEY);
+  const previousTickets=localStorage.getItem(TICKETS_KEY);
+  const previousCompanions=localStorage.getItem(COMPANIONS_KEY);
   const tickets=loadTickets();
   const nextTickets=mergeEventTickets(events,loadEvents(),tickets,generateId);
-  saveArray(EVENTS_KEY, events);
+  if(changes?.receptions.length){
+    let ticket=nextTickets.find(t=>t.eventId===changes.eventId);
+    if(!ticket){ticket={id:generateId(),eventId:changes.eventId,receptions:[]};nextTickets.push(ticket);}
+    for(const reception of changes.receptions){
+      const existing=ticket.receptions.find(r=>r.sourceEntryPeriodId===reception.sourceEntryPeriodId);
+      const updated={...reception,id:existing?.id ?? reception.id};
+      ticket.receptions=existing?ticket.receptions.map(r=>r.id===existing.id?updated:r):[...ticket.receptions,updated];
+    }
+  }
   try {
+    if(changes?.companions.length){
+      const companions=loadCompanions();
+      saveCompanions([...companions.map(c=>changes.companions.find(item=>item.id===c.id)??c),...changes.companions.filter(c=>!companions.some(existing=>existing.id===c.id))]);
+    }
+    saveArray(EVENTS_KEY, events);
     if(JSON.stringify(nextTickets)!==JSON.stringify(tickets))saveTickets(nextTickets);
   } catch(error) {
-    if(previous===null)localStorage.removeItem(EVENTS_KEY);else localStorage.setItem(EVENTS_KEY,previous);
+    for(const [key,value] of [[EVENTS_KEY,previous],[TICKETS_KEY,previousTickets],[COMPANIONS_KEY,previousCompanions]] as const){
+      if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);
+    }
     throw error;
   }
 }
@@ -193,7 +212,7 @@ export function saveTicketWithCompanions(ticket: Ticket, additions: Companion[])
   if (additions.length === 0) { saveTicket(ticket); return; }
   const previous = localStorage.getItem(COMPANIONS_KEY);
   const companions = loadCompanions();
-  saveCompanions([...companions, ...additions.filter(c => !companions.some(existing => existing.id === c.id))]);
+  saveCompanions([...companions.map(c=>additions.find(item=>item.id===c.id)??c), ...additions.filter(c => !companions.some(existing => existing.id === c.id))]);
   try { saveTicket(ticket); }
   catch (error) {
     if (previous === null) localStorage.removeItem(COMPANIONS_KEY);

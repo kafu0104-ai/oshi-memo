@@ -24,7 +24,7 @@ export default function ProductEditor({product,onSave,onCancel}:{product?:Shoppi
     </section>}
     <label className="form-field">商品名（必須）<input name="name" required defaultValue={product?.name} /></label>
     <label className="form-field">種類・キャラクター<input name="variant" defaultValue={product?.variant} /></label>
-    <div className="shopping-form-row"><label className="form-field">単価（円）<input name="price" type="number" min="0" max="99999999" step="1" required defaultValue={product?.price??0}/></label>
+    <div className="shopping-form-row"><label className="form-field">単価（円）<input name="price" type="number" className="money-input" inputMode="numeric" min="0" max="99999999" step="1" required defaultValue={product?.price??0}/></label>
     <label className="form-field">購入上限（不明なら空欄）<input name="limit" type="number" min="1" max="9999" step="1" defaultValue={product?.limit??""}/></label></div>
     <label className="form-field">カテゴリ<input name="category" defaultValue={product?.category}/></label>
     <ProductSalesFields value={sales} onChange={patch=>setSales(old=>({...old,...patch}))}/>{error&&<p role="alert">{error}</p>}

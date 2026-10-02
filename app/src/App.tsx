@@ -1,3 +1,7 @@
+import NewTicketPage from "./pages/Ticket/NewTicketPage";
+import ShoppingListPage from "./pages/Shopping/ShoppingListPage";
+import NewShoppingMemoPage from "./pages/Shopping/NewShoppingMemoPage";
+import ReceiptTasksPage from "./pages/Home/ReceiptTasksPage";
 import CalendarSettingsPage from "./pages/Settings/CalendarSettingsPage";
 import AuthCallbackPage from "./pages/Shared/AuthCallbackPage";
 import PersonalSyncPage from "./pages/Settings/PersonalSyncPage";
@@ -38,13 +42,17 @@ function App() {
         <Route path="/shared/join" element={<JoinShoppingPage />} />
         <Route path="/shared/:roomId" element={<SharedShoppingPage />} />
         <Route path="/exchange" element={<ExchangePage />} />
-        <Route path="/shopping" element={<FeatureEventsPage kind="shopping" />} />
+        <Route path="/shopping" element={<ShoppingListPage />} />
+        <Route path="/shopping/new" element={<NewShoppingMemoPage />} />
+        <Route path="/shopping/:memoId" element={<ShoppingPage />} />
+        <Route path="/tickets/new" element={<NewTicketPage />} />
         <Route path="/tickets" element={<FeatureEventsPage kind="tickets" />} />
         <Route path="/events/:eventId/shopping" element={<ShoppingPage />} />
         <Route path="/settings/theme" element={<ThemeSettingsPage />} />
         <Route path="/settings/companions" element={<CompanionSettingsPage />} />
         <Route path="/settings/tags" element={<TagSettingsPage />} />
         <Route path="/tasks" element={<AllTasksPage />} />
+        <Route path="/tasks/receipts/:eventId" element={<ReceiptTasksPage />} />
         <Route path="/tasks/completed" element={<CompletedTasksPage />} />
         <Route path="/tasks/:ticketId/:receptionId/:applicationId/:taskId" element={<TicketTaskPage />} />
         <Route path="/events/:eventId/tickets/:receptionId/edit" element={<TicketEditPage />} />
@@ -116,6 +124,8 @@ function App() {
           />
           <span>イベント</span>
         </NavLink>
+
+        <NavLink to="/shopping" className={({isActive})=>isActive?"bottom-nav-link is-active":"bottom-nav-link"}><OshiIcon name="online-sale-genre" size={25}/><span>買い物メモ</span></NavLink>
 
         <NavLink
           to="/settings"

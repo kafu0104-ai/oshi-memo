@@ -1,4 +1,5 @@
-export interface GoodsCandidate { name:string; price:string; image:string; sourceUrl:string; variant?:string; category?:string; limit?:string }
+import type { ProductSales } from "./productSales";
+export interface GoodsCandidate extends ProductSales { name:string; price:string; image:string; sourceUrl:string; variant?:string; category?:string; limit?:string }
 export function safeGoodsUrl(value:unknown, base:string):string {
   if(typeof value!=='string'||!value.trim())return '';
   try{const url=new URL(value,base);return url.protocol==='https:'&&!url.username&&!url.password?url.href:'';}catch{return '';}
@@ -24,6 +25,7 @@ export function extractGoods(html:string, base:string):{products:GoodsCandidate[
   doc.querySelectorAll('script[type="application/ld+json"]').forEach(script=>{try{visit(JSON.parse(script.textContent||''));}catch{/* malformed metadata is skipped */}});
   if(new URL(base).hostname==='chiikawapark-tokyo.jp')products.push(...parkGoods(html,base));
   if(new URL(base).hostname==='www.broccoli.co.jp'&&new URL(base).pathname.startsWith('/event_sp/agf/'))products.push(...broccoliAgfGoods(doc,base));
+  if(new URL(base).hostname==='sp.utapri.com'&&new URL(base).pathname.startsWith('/shuffle_duet/'))products.push(...shuffleDuetGoods(doc,base));
   const images=[...new Set(Array.from(doc.querySelectorAll('img')).map(img=>safeGoodsUrl(img.getAttribute('data-src')||img.getAttribute('src'),base)).filter(Boolean))].slice(0,100);
   return {products:products.filter((p,i)=>products.findIndex(x=>x.name===p.name&&x.price===p.price&&x.image===p.image)===i).slice(0,1000),images};
 }
@@ -92,6 +94,41 @@ export function broccoliAgfGoods(doc:Document,base:string):GoodsCandidate[]{
   if(!random&&names.length>1&&names.length===photos.length){
     names.forEach((variant,i)=>result.push({...common,variant,image:photos[i]||image}));
   }else result.push({...common,image,variant:random?'ランダム':''});
+ }
+ return result;
+}
+
+// Read each product's own release date, never news dates or bonus deadlines.
+export function parseReleaseDate(text:string):string|undefined {
+ const m=text.normalize('NFKC').match(/(\d{4})[年/.\-]\s*(\d{1,2})[月/.\-]\s*(\d{1,2})/);if(!m)return;
+ const y=Number(m[1]),month=Number(m[2]),day=Number(m[3]),d=new Date(Date.UTC(y,month-1,day));
+ if(d.getUTCFullYear()!==y||d.getUTCMonth()!==month-1||d.getUTCDate()!==day)return;
+ return `${y}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+}
+export function shuffleDuetGoods(doc:Document,base:string):GoodsCandidate[]{
+ const text=(el:Element|null)=>el?.textContent?.replace(/\s+/g,' ').trim()||'';
+ const series='うたの☆プリンスさまっ♪シャッフルデュエットCD 「うた☆ケミ」';
+ const rows:GoodsCandidate[]=[];
+ for(const card of Array.from(doc.querySelectorAll('#lineup .lineup_box'))){
+  const name=text(card.querySelector('.ttl')),releaseDate=parseReleaseDate(text(card.querySelector('.release'))),sourceUrl=safeGoodsUrl(card.querySelector('a')?.getAttribute('href'),base);
+  if(name&&releaseDate&&sourceUrl)rows.push({name:`${series} ${name}`,releaseDate,releaseMonth:releaseDate.slice(0,7),sourceUrl,image:safeGoodsUrl(card.querySelector('.jk img')?.getAttribute('src'),base),price:'',category:'CD',saleMethod:'reservation'});
+ }
+ const info=doc.querySelector('#cdinfo');
+ if(info){
+  const fields=new Map(Array.from(info.querySelectorAll('tr')).map(row=>[text(row.querySelector('th')),text(row.querySelector('td'))]));
+  const name=text(info.querySelector('h3 .ltxt')),releaseDate=parseReleaseDate(fields.get('発売日')||'');
+  if(name&&releaseDate)rows.push({name:`${series} ${name}`,releaseDate,releaseMonth:releaseDate.slice(0,7),sourceUrl:base,image:safeGoodsUrl(info.querySelector('.jk img')?.getAttribute('src'),base),price:(fields.get('価格')||'').match(/([\d,]+)円/)?.[1].replaceAll(',','')||'',category:'CD',saleMethod:'reservation'});
+ }
+ return rows;
+}
+export async function enrichGoodsDetails(products:GoodsCandidate[],read:(url:string)=>Promise<string>):Promise<GoodsCandidate[]> {
+ const result=[...products];
+ for(let start=0;start<Math.min(result.length,12);start+=3){
+  await Promise.all(result.slice(start,start+3).map(async(product,offset)=>{
+   const url=new URL(product.sourceUrl);
+   if(product.price||url.hostname!=='sp.utapri.com'||url.pathname!=='/shuffle_duet/duet/'||!/^duet\d{2}$/.test(url.searchParams.get('u')||''))return;
+   try{const detail=extractGoods(await read(url.href),url.href).products.find(p=>p.name===product.name&&p.releaseDate===product.releaseDate);if(detail)result[start+offset]={...product,...detail};}catch{/* Keep lineup information; missing prices remain editable. */}
+  }));
  }
  return result;
 }

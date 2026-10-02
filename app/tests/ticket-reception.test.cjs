@@ -67,3 +67,18 @@ test('selected companion creates a receipt task only after purchase and complete
  app.fulfillment.payment.settlements[0].isSettled=true;
  assert.equal(tasks('general','won',app.fulfillment).find(t=>t.settlementId==='receipt').completed,true);
 });
+
+test('誤追加した券種と自動申込を消し、残す券種の枚数を変えない',()=>{
+ let i=0;const r=helpers.withLotteryEntries({id:'r',name:'受付',seatTypes:[{id:'s1',name:'指定席',price:9800},{id:'s2',name:'',price:0}],fees:[],applications:[{id:'a1',seatTypeId:'s1',quantity:2,status:'notApplied',companionIds:[]}]},()=>`a${++i+1}`);
+ assert.equal(helpers.canRemoveSeat(r,'s2'),true);
+ const next=helpers.withLotteryEntries(helpers.removeUnusedSeat(r,'s2'),()=>`a${++i+1}`);
+ assert.equal(next.seatTypes.length,1);assert.equal(next.applications.length,1);assert.equal(next.applications[0].quantity,2);
+ const empty=helpers.withLotteryEntries(helpers.removeUnusedSeat(next,'s1'),()=>`a${++i+1}`);
+ assert.equal(empty.seatTypes.length,0);assert.equal(empty.applications.length,0);
+});
+test('申込済みや支払情報がある券種を誤って削除しない',()=>{
+ for(const extra of [{status:'applied'},{fulfillment:{payment:{isPaid:true,settlements:[]}}},{performanceId:'p'},{companionIds:['friend']}]){
+ const r={id:'r',name:'受付',seatTypes:[{id:'s',name:'席',price:1000}],fees:[],applications:[{id:'a',seatTypeId:'s',quantity:1,status:'notApplied',companionIds:[],...extra}]};
+ assert.equal(helpers.canRemoveSeat(r,'s'),false);assert.equal(helpers.removeUnusedSeat(r,'s'),r);
+ }
+});

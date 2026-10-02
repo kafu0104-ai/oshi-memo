@@ -7,13 +7,13 @@ export const genreIcons: Record<string, OshiIconName> = {
 export const mainGenre = (event?: Event | null) => event?.mainGenreId ?? event?.tagIds?.find(id => id in genreIcons) ?? "";
 export type GenreField = { key: string; label: string; type?: string; options?: string[] };
 export const genreFields: Record<string, GenreField[]> = {
-  "goods-sale": [{key:"openingTime",label:"営業開始時刻",type:"time"},{key:"closingTime",label:"営業終了時刻",type:"time"},{key:"entryMethod",label:"入場方法",options:["自由入場","整理券","予約","抽選"]}],
+  "goods-sale": [{key:"openingTime",label:"営業開始時刻",type:"time"},{key:"closingTime",label:"営業終了時刻",type:"time"},{key:"lastAdmission",label:"最終入場",type:"time"},{key:"entryMethod",label:"入場方法",options:["自由入場","整理券","予約","抽選"]}],
   live: [{key:"performers",label:"出演者"}],
   stage: [{key:"performers",label:"出演者・キャスト"}],
   movie: [{key:"screen",label:"スクリーン"},{key:"screeningFormat",label:"上映形式",options:["通常","IMAX","4DX","その他"]}],
   talk: [{key:"performers",label:"出演者"},{key:"meetingTime",label:"集合・受付開始",type:"time"}],
   exhibition: [{key:"openingTime",label:"開館時刻",type:"time"},{key:"closingTime",label:"閉館時刻",type:"time"},{key:"lastAdmission",label:"最終入場",type:"time"},{key:"closedDays",label:"休館日"}],
-  "collaboration-food": [{key:"openingTime",label:"営業開始時刻",type:"time"},{key:"closingTime",label:"営業終了時刻",type:"time"},{key:"closedDays",label:"定休日"},{key:"partySize",label:"利用人数",type:"number"},{key:"reservationNeeded",label:"予約の要否",options:["不要","必要","未確認"]}],
+  "collaboration-food": [{key:"openingTime",label:"営業開始時刻",type:"time"},{key:"closingTime",label:"営業終了時刻",type:"time"},{key:"lastAdmission",label:"最終入場",type:"time"},{key:"closedDays",label:"定休日"},{key:"partySize",label:"利用人数",type:"number"},{key:"reservationNeeded",label:"予約の要否",options:["不要","必要","未確認"]}],
   "online-sale": [{key:"saleStartTime",label:"販売・受注開始時刻",type:"time"},{key:"saleEndTime",label:"販売・受注締切時刻",type:"time"},{key:"saleType",label:"販売形式",options:["通常販売","受注","抽選"]},{key:"shippingEstimate",label:"発送予定時期"}],
 };
 export const extraModules: Record<string, {label:string; tags:string[]; fields:GenreField[]}> = {

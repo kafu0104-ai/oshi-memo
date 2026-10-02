@@ -28,7 +28,7 @@ export default function TicketEditPage() {
     <article className="event-detail-sheet">
       {event && reception ? <>
         <p>{event.title}</p>
-        <ReceptionForm key={`${eventId}-${receptionId}`} reception={reception} onSave={save} onCancel={() => navigate(returnTo)} />
+        <ReceptionForm performances={event.performances} key={`${eventId}-${receptionId}`} reception={reception} onSave={save} onCancel={() => navigate(returnTo)} />
         <DeleteReception eventId={event.id} receptionId={reception.id} name={reception.name} onDeleted={() => navigate(returnTo)} />
       </> : <><h1>チケット情報が見つかりません</h1><p>削除されたか、URLが正しくない可能性があります。</p></>}
     </article>

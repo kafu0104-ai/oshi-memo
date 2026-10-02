@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
+import { extractGoods } from '../../services/goodsImport';
 import { extractOfficialFields, extractOfficialLotteries, type ImportedLottery, type OfficialFields } from '../../services/officialImport';
-const labels:Record<keyof OfficialFields,string>={title:'イベント名',startDate:'開催開始日',endDate:'開催終了日',venue:'会場・店舗',openingTime:'営業開始時刻',closingTime:'営業終了時刻'};
+const labels:Record<keyof OfficialFields,string>={title:'イベント名',startDate:'開催開始日',endDate:'開催終了日',venue:'会場・店舗',openingTime:'営業開始時刻',closingTime:'営業終了時刻',lastAdmission:'最終入場時刻',doorsOpen:'開場時刻',startTime:'開演時刻'};
 export default function OfficialImport({url,onUrlChange,current,onApply}:{url:string;onUrlChange:(url:string)=>void;current:OfficialFields;onApply:(fields:OfficialFields,rounds:ImportedLottery[])=>void}){
   const [busy,setBusy]=useState(false),[error,setError]=useState('');
   const [candidates,setCandidates]=useState<OfficialFields|null>(null);
@@ -8,14 +10,16 @@ export default function OfficialImport({url,onUrlChange,current,onApply}:{url:st
   const [rounds,setRounds]=useState<ImportedLottery[]>([]);
   const [chosenRounds,setChosenRounds]=useState<number[]>([]);
   const [source,setSource]=useState('');
+  const [productCount,setProductCount]=useState(0);
   async function read(){
-    setError('');setCandidates(null);setRounds([]);setChosenRounds([]);
+    setError('');setCandidates(null);setProductCount(0);setRounds([]);setChosenRounds([]);
     try {if(new URL(url).protocol!=='https:')throw new Error();}catch{setError('https:// で始まる公式ページのURLを入力してください。');return;}
     setBusy(true);
     try{
       const response=await fetch('/api/official-page',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url}),signal:AbortSignal.timeout(45000)});
       if(!response.headers.get('content-type')?.includes('application/json'))throw new Error('この公開環境ではURL読み込みがまだ利用できません。手入力で登録できます。');
       const data=await response.json();if(!response.ok)throw new Error(data.error || '読み込めませんでした。');
+      setProductCount(extractGoods(data.html,data.url).products.filter(p=>p.releaseDate||p.releaseMonth).length);
       const lottery=extractOfficialLotteries(data.html);setRounds(lottery);
       const fields=extractOfficialFields(data.html);setCandidates(fields);setSource(data.url);
       setSelected(Object.keys(fields).filter(key=>!current[key as keyof OfficialFields]));
@@ -23,10 +27,11 @@ export default function OfficialImport({url,onUrlChange,current,onApply}:{url:st
     }catch(e){setError(e instanceof Error?e.message:'読み込めませんでした。');}finally{setBusy(false);}
   }
   return <section className="form-field-full official-import">
-    <label className="form-field" htmlFor="event-official-url"><span>公式サイトURL（任意）</span><input id="event-official-url" type="url" inputMode="url" autoCapitalize="none" autoCorrect="off" value={url} placeholder="https://…" disabled={busy} onChange={e=>{onUrlChange(e.target.value);setCandidates(null);setError('');}}/></label>
+    <label className="form-field" htmlFor="event-official-url"><span>公式サイトURL（任意）</span><input id="event-official-url" type="url" inputMode="url" autoCapitalize="none" autoCorrect="off" value={url} placeholder="https://…" disabled={busy} onChange={e=>{onUrlChange(e.target.value);setCandidates(null);setProductCount(0);setError('');}}/></label>
     <button type="button" disabled={busy||!url.trim()} onClick={read}>{busy?'読み込み中…':'読み込む'}</button>
     <p>URLがない場合は、そのまま手入力できます。</p>
     {error&&<p role="alert">{error}</p>}
+    {productCount>0&&<div className="official-import-review"><h3>商品・発売日が{productCount}件見つかりました</h3><p>商品ごとの発売日は、買い物メモで登録できます。この画面ではイベントの基本情報を反映します。</p><Link className="task-navigation-button" to={`/shopping/new?source=${encodeURIComponent(source)}`}>買い物メモで商品を登録</Link><p>イベントを先に保存してから、そのイベントの買い物メモで同じURLを読み込むこともできます。</p></div>}
     {candidates&&(Object.keys(candidates).length>0||rounds.length>0)&&<div className="official-import-review">
       <h3>読み取った内容を確認</h3><p>反映する項目にチェックしてください。入力済みの項目は未選択です。</p>
       <a href={source} target="_blank" rel="noopener noreferrer">読み取り元を確認</a>

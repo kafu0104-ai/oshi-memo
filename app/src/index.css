@@ -24,6 +24,7 @@
   --color-subtext: #83796e;
 
   --color-border: #ded5ce;
+  --color-control-border: #8f7969;
   --color-border-soft: rgba(222, 213, 206, 0.72);
 
   --color-shadow: rgba(84, 76, 64, 0.1);
@@ -220,8 +221,9 @@ main {
 ======================================== */
 
 .secondary-button {
-  border: 1px solid var(--color-border);
-  background: transparent;
+  border: 1px solid var(--color-control-border);
+  background: var(--color-card);
+  color: var(--color-text);
 }
 
 .secondary-button:hover {
@@ -1462,6 +1464,8 @@ section[aria-labelledby="event-list-heading"] > div {
 
 .event-other-memo {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   width: 100%;
   margin-top: 20px;
@@ -2155,7 +2159,8 @@ a.upcoming-event { grid-template-columns:minmax(0,1fr) auto; }
 .tag-picker > div { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0; }
 .tag-picker label { display: inline-flex; align-items: center; gap: 6px; }
 .ticket-editor .tag-picker input { width: 18px; height: 18px; }
-.tag-picker small { color: var(--color-subtext); }
+.tag-picker small { display:block; margin-top:12px; line-height:1.7; color: var(--color-subtext); }
+.tag-picker .tag-picker-toggle { display:block; width:fit-content; max-width:100%; margin:12px 0; white-space:normal; }
 .task-completion-form > .task-tag { align-self: flex-start; }
 .task-completion-form select { min-height: 44px; padding: 10px 12px; border: 1px solid var(--color-border-soft); border-radius: 12px; color: var(--color-text); background: white; font: inherit; }
 
@@ -2263,6 +2268,7 @@ button.back-to-top:focus-visible { outline:3px solid var(--color-text); outline-
 .home-feature-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:24px 0; }
 a.home-feature-tile { display:flex; flex-direction:column; align-items:center; gap:10px; padding:24px 12px; border:1px solid var(--color-border); border-radius:22px; background:var(--color-card); color:var(--color-text); text-align:center; text-decoration:none; }
 a.home-feature-tile:hover { background:var(--color-primary-soft); }
+.home-feature-tile > strong { font-weight:600; }
 .home-feature-tile > span { color:var(--color-subtext); font-size:.8rem; font-weight:400; }
 .home-next-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
 .home-next-heading > a { font-size:.85rem; }
@@ -2430,16 +2436,7 @@ a.venue-map-link:focus-visible { outline:2px solid var(--color-text); outline-of
   line-height: 1.4;
 }
 
-.event-registration-form .entry-methods select,
-.shopping-page select {
-  appearance: none;
-  -webkit-appearance: none;
-  padding-right: 44px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23544C40' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 7.5 5 5 5-5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  background-size: 20px 20px;
-}
+
 
 .shopping-tabs .shopping-tab-buyer {
   background: color-mix(in srgb, var(--color-primary) 50%, var(--color-card));
@@ -2664,7 +2661,7 @@ form.goods-import-form { display:flex; flex-direction:column; gap:16px; min-widt
 .shopping-compact .buyer-edit-link { padding:4px; background:transparent; border:0; border-radius:0; font-size:.75rem; min-height:36px; color:var(--color-subtext); }
 .shopping-compact .shopping-tabs { gap:8px; margin:8px 0 12px; }
 .shopping-compact .shopping-tabs button { padding:9px 16px; font-size:.85rem; min-height:42px; background:var(--color-card); border:1px solid var(--color-border); }
-.shopping-compact .shopping-tabs button[aria-pressed="true"] { background:var(--color-primary); outline:none; border-color:#b85c5c; }
+.shopping-compact .shopping-tabs button[aria-pressed="true"] { background:var(--color-primary); outline:none; border-color:var(--color-border); }
 .shopping-compact .shopping-tabs .buyer-add-tab { border-style:dashed; }
 .shopping-buyer-note { margin:0 0 16px; padding:8px 10px; border-radius:10px; background:color-mix(in srgb,var(--color-primary) 20%,transparent); font-size:.75rem; }
 .shopping-compact .shopping-filters { padding:0; background:transparent; border:0; border-radius:0; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
@@ -2721,3 +2718,148 @@ body:has(.shopping-bottom-actions) button.back-to-top { bottom:calc(152px + env(
 .exchange-history-heading { display:flex; align-items:center; gap:12px; justify-content:space-between; }
 .exchange-history-heading strong { min-width:0; overflow-wrap:anywhere; }
 .exchange-history-heading > button { flex:0 0 auto; width:auto; margin:0; padding:8px 16px; min-height:44px; font-size:0.875rem; }
+
+/* Shopping: secondary controls stay compact until needed. */
+.shopping-order-details { min-width:0; font-size:.8rem; }
+.shopping-order-details summary { cursor:pointer; color:var(--color-subtext); padding:8px 0; overflow-wrap:anywhere; }
+.shopping-order-fields { display:grid; gap:10px; padding:8px 0 4px; }
+.shopping-buyer-breakdown { overflow-wrap:anywhere; color:var(--color-subtext); }
+.shopping-compact .shopping-product-info > a { font-size:.75rem; font-weight:400; }
+.shopping-compact .shopping-product-tools button { font-size:.8rem; padding:8px 14px; min-height:44px; }
+
+/* Compact page headers, with wrapping preserved for long titles. */
+main:has(> .page-header) { padding-top:16px; }
+main > .page-header { margin:0 0 20px; }
+main > .page-header h1 { margin:0; font-size:1.375rem; line-height:1.4; letter-spacing:0; overflow-wrap:anywhere; }
+main > .page-header p { margin-top:6px; font-size:.875rem; line-height:1.5; }
+main > .home-brand { min-height:44px; display:flex; align-items:center; justify-content:center; text-align:center; margin-bottom:16px; }
+main > .home-brand h1 { font-size:1.25rem; }
+
+.home-dashboard > .home-brand > div { width:100%; text-align:center; }
+
+/* Shared visual rhythm across forms and task screens. */
+:root { --ui-heading-size:1.125rem; --ui-subheading-size:1rem; --ui-field-gap:6px; --ui-section-gap:20px; }
+main button:not(.home-calendar *) { font-weight:500; }
+main label:not(.home-calendar *) { font-weight:500; }
+main h2:not(.shopping-product h2):not(.home-calendar h2) { font-size:var(--ui-heading-size); line-height:1.5; margin-block:0 12px; }
+main h3:not(.home-calendar h3) { font-size:var(--ui-subheading-size); line-height:1.5; margin-block:0 10px; }
+main .form-field { gap:var(--ui-field-gap); }
+main .form-field input, main .form-field select, main .form-field textarea { min-width:0; max-width:100%; font-size:16px; }
+main .form-actions { gap:10px; margin-top:16px; }
+main .form-actions button { min-height:44px; }
+main .genre-modules > h3 + p { margin-top:0; margin-bottom:16px; font-size:.875rem; line-height:1.6; }
+main .entry-round { margin-block:12px; }
+main .entry-round .genre-fields { gap:12px; }
+
+/* Shared dropdown chrome: keep arrow and text clearance consistent across every page.
+   Root specificity prevents page-level background/padding shorthand from resetting it. */
+#root select:not([multiple]):not([size]),
+#root select[size="1"]:not([multiple]) {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23544C40' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 7.5 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 20px 20px;
+}
+
+/* Entry summaries share typography regardless of linked ticket nesting. */
+.entry-period-summary p { margin:6px 0 18px; font-size:.875rem; line-height:1.7; color:var(--color-subtext); }
+.entry-period-summary .event-ticket-heading { align-items:center; margin-bottom:6px; }
+.entry-period-summary .event-ticket-heading h3 { margin:0; font-size:1rem; }
+.entry-period-summary > :last-child p:last-child { margin-bottom:0; }
+
+/* Secondary navigation within task flows uses the shared outlined treatment. */
+a.task-navigation-button { display:flex; align-items:center; justify-content:center; min-height:44px; padding:12px 20px; margin-block:16px; border:1px solid var(--color-control-border); border-radius:999px; background:var(--color-card); color:var(--color-text); font-size:1rem; font-weight:700; line-height:1.5; text-align:center; text-decoration:none; overflow-wrap:anywhere; }
+a.task-navigation-button:hover { background:var(--color-primary-soft); text-decoration:none; }
+a.task-navigation-button:focus-visible { outline:2px solid var(--color-text); outline-offset:4px; }
+
+.ticket-seat-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; }
+.ticket-seat-heading label { font-weight:700; }
+.ticket-seat-heading .ticket-seat-remove { margin-left:auto; flex:0 0 auto; }
+.ticket-seat-amounts { display:grid; gap:12px; min-width:0; }
+
+/* Embedded ticket forms do not repeat the outer form's padding and spacing. */
+.event-registration-form .ticket-editor-embedded { margin:0; padding:0; }
+.event-registration-form .ticket-editor-embedded .form-stack { padding:0; gap:16px; }
+.ticket-editor .ticket-seat-row { padding:8px 0 12px; gap:10px; }
+.ticket-editor .ticket-seat-row .ticket-check { margin:0; padding:0; min-height:44px; }
+.ticket-editor .ticket-seat-heading { min-height:44px; }
+.ticket-editor .tag-picker label { margin:0; padding:0; min-height:36px; }
+.ticket-editor .tag-picker { padding:4px 0; }
+.ticket-payment-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.ticket-payment-heading h4 { margin:0; }
+.ticket-payment-heading button { flex:0 0 auto; min-height:44px; padding:8px 14px; }
+
+/* Amounts are typed; quantities have explicit touch-friendly adjustment controls. */
+input.money-input, .ticket-quantity-control input { appearance:textfield; -moz-appearance:textfield; }
+input.money-input::-webkit-inner-spin-button, input.money-input::-webkit-outer-spin-button, .ticket-quantity-control input::-webkit-inner-spin-button, .ticket-quantity-control input::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+.ticket-quantity-control { display:flex; align-items:center; gap:6px; min-width:0; }
+.ticket-quantity-control button { flex:0 0 44px; min-width:44px; min-height:44px; padding:0; border-radius:12px; }
+.ticket-editor .ticket-quantity-control input { flex:1 1 0; width:0; min-width:0; text-align:center; }
+@media(max-width:420px) { .ticket-price-quantity { grid-template-columns:minmax(0,1fr); } }
+
+.additional-event-management { display:grid; gap:12px; margin-top:12px; width:100%; max-width:520px; padding:16px; border:1px solid var(--color-border); border-radius:20px; background:#fffdfb; }
+.additional-event-management > button,.additional-event-management > a { width:100%; min-width:0; min-height:44px; padding:12px 16px; line-height:1.5; }
+.additional-event-management .task-navigation-button { margin:0; }
+
+.shopping-list-actions { display:grid; gap:12px; margin-bottom:20px; }
+.shopping-list-actions .task-navigation-button { margin:0; }
+a.shopping-memo-list-card { align-items:center; padding:18px 20px; gap:12px; }
+.shopping-memo-list-card > span:last-child { grid-row:1; color:var(--color-text); }
+
+/* Shared single-choice fields match text input chrome on every screen. */
+#root select:not([multiple]):not([size]), #root select[size="1"]:not([multiple]) { width:100%; min-width:0; min-height:48px; box-sizing:border-box; padding-left:14px; border:1px solid var(--color-border); border-radius:var(--radius-small); background-color:#fff; color:var(--color-text); font-family:inherit; }
+#root select:not([multiple]):focus-visible { outline:2px solid var(--color-primary-dark); outline-offset:2px; }
+
+.shopping-compact .shopping-tabs button:focus-visible { outline:2px solid var(--color-text); outline-offset:2px; }
+
+.bottom-navigation { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.bottom-nav-link { min-width:0; padding-inline:4px; }
+.bottom-nav-link span { white-space:nowrap; }
+.shopping-related-event { display:block; margin-top:6px; font-size:.875rem; color:var(--color-subtext); }
+.shopping-steps { display:flex; list-style:none; padding:0; gap:8px; margin:0 0 20px; }
+.shopping-steps li { flex:1; text-align:center; border-bottom:3px solid var(--color-border); padding:10px 4px; }
+.shopping-steps li[aria-current="step"] { border-color:var(--color-text); background:var(--color-primary-soft); font-weight:700; }
+.shopping-create-product { display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 0; border-bottom:1px solid var(--color-border); }
+.shopping-create-product > span { flex:1 1 160px; overflow-wrap:anywhere; }
+.shopping-create-product small { display:block; color:var(--color-subtext); }
+.shopping-create .shopping-quantity { flex:0 0 auto; }
+.shopping-create .shopping-quantity input { width:64px; }
+.shopping-info-edit { flex:0 0 44px; width:44px; height:44px; padding:8px; background:transparent; }
+.shopping-create .shopping-panel { margin-block:16px; }
+
+/* Keep creation steps reachable even with a long imported product list. */
+.shopping-added-products { margin:16px 0; padding:12px 16px; border:1px solid var(--color-border); border-radius:16px; background:var(--color-surface, #fffdfb); }
+.shopping-added-products > summary { cursor:pointer; font-weight:600; min-height:44px; align-content:center; }
+.shopping-create .shopping-step-actions { position:sticky; bottom:calc(80px + env(safe-area-inset-bottom)); z-index:90; display:flex; flex-wrap:nowrap; gap:12px; padding:12px; border:1px solid var(--color-border); border-radius:20px; background:#fffdfb; box-shadow:0 3px 16px #544c4012; }
+.shopping-step-actions > button:last-child { flex:1; }
+.shopping-step-actions > button { min-height:44px; margin:0; }
+@media (max-width:480px) { .shopping-create .shopping-step-actions { gap:8px; padding:8px; } .shopping-step-actions > button { padding-inline:14px; } }
+
+.shopping-registration-status { display:flex; align-items:center; gap:8px; margin:16px 0 8px; font-weight:600; }
+.shopping-create .shopping-create-product .shopping-plan-choice { display:flex; flex-direction:row; margin:0; align-items:center; gap:10px; flex:1 1 160px; min-width:0; overflow-wrap:anywhere; }
+.shopping-create .shopping-plan-choice input[type="checkbox"] { flex:none; width:22px; height:22px; margin:0; padding:0; }
+
+.shopping-create .shopping-steps li { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:8px 2px; font-size:.8rem; }
+.shopping-step-number { display:grid; place-items:center; width:28px; height:28px; border:1px solid var(--color-border); border-radius:50%; background:#fffdfb; font-size:.9rem; }
+.shopping-steps [aria-current="step"] .shopping-step-number { background:var(--color-primary-soft); border-color:var(--color-text); }
+.shopping-completion { max-width:640px; margin:24px auto; padding:24px; text-align:center; background:#fffdfb; border:1px solid var(--color-border); border-radius:24px; }
+.shopping-completion-symbol { display:flex; justify-content:center; margin:4px 0 16px; }
+.shopping-completion h2 { margin:0 0 8px; font-size:1.4rem; }
+.shopping-completion > p { margin:0; color:var(--color-subtext); }
+.shopping-completion-summary { margin:24px 0; padding:18px; text-align:left; border:1px solid var(--color-border); border-radius:16px; }
+.shopping-completion-summary h3 { display:flex; align-items:center; gap:10px; margin:0 0 16px; font-size:1.1rem; overflow-wrap:anywhere; }
+.shopping-completion-summary h3 img { flex:none; }
+.shopping-completion-summary dl { margin:0; display:grid; gap:10px; }
+.shopping-completion-summary dl > div { display:grid; grid-template-columns:6em minmax(0,1fr); gap:8px; }
+.shopping-completion-summary dt { color:var(--color-subtext); }
+.shopping-completion-summary dd { margin:0; overflow-wrap:anywhere; }
+.shopping-completion-actions { display:grid; gap:12px; }
+@media (max-width:480px) { .shopping-completion { padding:20px 16px; } }
+.shopping-completion h2:focus { outline:none; }
+
+.shopping-heading .shopping-memo-title { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px; min-width:0; overflow-wrap:anywhere; }
+.shopping-memo-category,.shopping-memo-separator { font-size:.85em; font-weight:500; color:var(--color-subtext); }
+.shopping-memo-category { white-space:nowrap; }

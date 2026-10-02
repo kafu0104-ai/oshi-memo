@@ -1,3 +1,4 @@
+import type { EventTicketChanges } from "../../services/eventTicketDraft";
 import GenreSummary from "../../components/event/GenreSummary";
 import { isLottery, receptionDates, receptionStatuses } from "../../services/ticketReception";
 import VenueMapLink from "../../components/common/VenueMapLink";
@@ -12,7 +13,7 @@ import {
 
 import { OshiIcon } from "../../components/common/OshiIcon";
 import EventForm from "../../components/event/EventForm";
-import { hasShoppingMemo, shoppingKey } from "../../services/shopping";
+import { shoppingForEvent, preserveEventShopping } from "../../services/shoppingMemos";
 
 import {
   loadEvents,
@@ -64,6 +65,7 @@ function EventDetailPage() {
     () => loadEvents()
   );
 
+  const [showManagementOptions, setShowManagementOptions] = useState(false);
   const [isEditing, setIsEditing] =
     useState(false);
 
@@ -154,7 +156,7 @@ function EventDetailPage() {
   const performances =
     event.performances?.filter(
       (performance) =>
-        performance.date ||
+        performance.date || performance.venue ||
         performance.name ||
         performance.schedule.some(
           (item) =>
@@ -189,7 +191,7 @@ function EventDetailPage() {
     formatDate(event.endDate);
 
   const ticketReceptions = eventId ? (loadTicketByEventId(eventId)?.receptions ?? []) : [];
-  const shoppingExists = hasShoppingMemo(eventId ?? "");
+  const shoppingExists = shoppingForEvent(eventId ?? "",events).length > 0;
   const hasTicketInformation = ticketReceptions.length > 0;
 
   const shouldRecommendTicket =
@@ -206,8 +208,12 @@ function EventDetailPage() {
       )
     ) ?? false;
 
+  const showTicketModule = shouldRecommendTicket || hasTicketInformation;
+  const showShoppingModule = shouldRecommendShopping || shoppingExists;
+  const hasAdditionalManagement = !showTicketModule || !showShoppingModule;
+
   const handleSaveEvent = (
-    updatedEvent: Event
+    updatedEvent: Event, tickets?: EventTicketChanges
   ) => {
     const nextEvents = events.map(
       (currentEvent) =>
@@ -216,8 +222,8 @@ function EventDetailPage() {
           : currentEvent
     );
 
+    saveEvents(nextEvents,tickets?{...tickets,eventId:updatedEvent.id}:undefined);
     setEvents(nextEvents);
-    saveEvents(nextEvents);
 
     setIsEditing(false);
     setShowAllPerformances(false);
@@ -244,8 +250,8 @@ function EventDetailPage() {
         currentEvent.id !== event.id
     );
 
+    preserveEventShopping(event);
     saveEvents(nextEvents);
-    localStorage.removeItem(shoppingKey(event.id));
 
     navigate("/events");
   };
@@ -272,20 +278,6 @@ function EventDetailPage() {
         </div>
 
         <section className="event-detail-edit-section">
-          <div className="event-detail-edit-heading">
-            <p className="section-label">
-              EDIT EVENT
-            </p>
-
-            <h1>
-              イベントを編集
-            </h1>
-
-            <p>
-              {event.title}
-            </p>
-          </div>
-
           <EventForm
             editingEvent={event}
             onSaveEvent={
@@ -515,6 +507,7 @@ function EventDetailPage() {
                                 </strong>
                               </div>
 
+                              {performance.venue && <div><p>{performance.venue}</p><VenueMapLink venue={performance.venue}/></div>}
                               {performanceSchedule.length >
                                 0 && (
                                 <div className="event-detail-performance-compact-times">
@@ -635,7 +628,7 @@ function EventDetailPage() {
                 </div>
               )}
 
-            {event.venue && (
+            {event.venue && event.liveFormat !== "tour" && (
               <div className="event-detail-info-item">
                 <span
                   className="event-detail-info-icon"
@@ -736,7 +729,7 @@ function EventDetailPage() {
           </div>
         </section>
 
-        <GenreSummary event={event}/>
+        <GenreSummary event={event} receptions={ticketReceptions}/>
         <section
           className="event-memo-section"
           aria-labelledby="event-memo-heading"
@@ -757,7 +750,7 @@ function EventDetailPage() {
           </div>
 
           <div className="event-module-list">
-            {(shouldRecommendTicket || hasTicketInformation) && (
+            {showTicketModule && (
               <article className="event-module-card event-ticket-card">
                 <div className="event-module-icon">
                   <OshiIcon
@@ -802,7 +795,7 @@ function EventDetailPage() {
               </article>
             )}
 
-            {(shouldRecommendShopping || shoppingExists) && (
+            {showShoppingModule && (
               <article className="event-module-card">
                 <div className="event-module-icon">
                   <OshiIcon
@@ -830,8 +823,7 @@ function EventDetailPage() {
               </article>
             )}
 
-            {!shouldRecommendTicket && !hasTicketInformation &&
-              !shouldRecommendShopping && (
+            {!showTicketModule && !showShoppingModule && (
                 <div className="event-module-empty">
                   <div
                     className="event-memo-empty-icon"
@@ -856,17 +848,13 @@ function EventDetailPage() {
               )}
           </div>
 
-          <div className="event-other-memo">
+          {hasAdditionalManagement && <div className="event-other-memo">
             <button
               className="event-other-memo-button"
               type="button"
-              onClick={() => {
-                /*
-                  将来、
-                  チケット・買い物・代行・やること等を
-                  任意追加する画面へ接続します。
-                */
-              }}
+              aria-expanded={showManagementOptions}
+              aria-controls="additional-event-management"
+              onClick={() => setShowManagementOptions(value=>!value)}
             >
               <OshiIcon
                 name="add"
@@ -874,10 +862,14 @@ function EventDetailPage() {
                 alt=""
               />
               <span>
-                その他の管理を追加
+                {showManagementOptions ? '追加メニューを閉じる' : 'その他の管理を追加'}
               </span>
             </button>
-          </div>
+            {showManagementOptions && <div id="additional-event-management" className="additional-event-management">
+              {!showTicketModule && <Link className="task-navigation-button" to={`/events/${event.id}/tickets`}>チケット情報を追加</Link>}
+              {!showShoppingModule && <Link className="task-navigation-button" to={`/events/${event.id}/shopping`}>買い物メモを追加</Link>}
+            </div>}
+          </div>}
         </section>
       </article>
     </main>

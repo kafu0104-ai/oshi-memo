@@ -25,7 +25,27 @@ export function withLotteryEntries(reception: TicketReception, createId: () => s
     !application.seatTypeId && reception.seatTypes.length === 1
       ? { ...application, seatTypeId: reception.seatTypes[0].id } : application);
   return { ...reception, applications: [...applications, ...reception.seatTypes
+    .filter(seat => !reception.omittedApplicationSeatIds?.includes(seat.id))
     .filter(seat => !applications.some(application => application.seatTypeId === seat.id))
     .map(seat => ({ id: createId(), seatTypeId: seat.id, quantity: 1,
       companionIds: [], status: "notApplied" as const }))] };
+}
+
+export function removeReceptionApplication(reception: TicketReception, id: string): TicketReception {
+  const removed = reception.applications.find(a=>a.id===id);
+  const seatId=removed?.seatTypeId ?? (removed && reception.seatTypes.length===1 ? reception.seatTypes[0].id : undefined);
+  return {...reception, applications:reception.applications.filter(a=>a.id!==id), omittedApplicationSeatIds:seatId ? [...new Set([...(reception.omittedApplicationSeatIds??[]),seatId])] : reception.omittedApplicationSeatIds};
+}
+
+/** Empty automatically generated applications must not lock a newly added seat. */
+export function canRemoveSeat(reception: TicketReception, seatId: string): boolean {
+  return reception.applications.filter(a=>a.seatTypeId===seatId).every(a=>
+    a.status === "notApplied" && !a.performanceId && !a.applicationNumber && !a.memo &&
+    !a.preferenceRank && a.companionIds.length===0 && !a.fulfillment);
+}
+export function removeUnusedSeat(reception: TicketReception, seatId: string): TicketReception {
+  if (!canRemoveSeat(reception,seatId)) return reception;
+  return {...reception, seatTypes:reception.seatTypes.filter(s=>s.id!==seatId),
+    applications:reception.applications.filter(a=>a.seatTypeId!==seatId),
+    omittedApplicationSeatIds:reception.omittedApplicationSeatIds?.filter(id=>id!==seatId)};
 }

@@ -10,6 +10,7 @@ export interface ShoppingProduct extends ProductSales {
 }
 export interface ShoppingOrder { quantity: number; status: GoodsStatus; memo: string }
 export interface ShoppingMemo {
+  info?: { title:string; eventId?:string };
   purchaseHistory?: PurchaseHistory[];
   purchaseCycle?: string;
   purchaseCompletedAt?: string;
@@ -30,6 +31,7 @@ export function loadShopping(eventId:string): ShoppingMemo {
   if (!raw) return emptyShopping();
   const data = JSON.parse(raw) as ShoppingMemo;
   if (!Array.isArray(data.products) || !Array.isArray(data.buyers) || !data.orders || !Array.isArray(data.soldOut) || !Array.isArray(data.bonusLabels) || !data.bonuses) throw new Error("買い物メモを読み込めませんでした。");
+  if (data.info !== undefined && (!data.info || typeof data.info.title !== "string" || (data.info.eventId !== undefined && typeof data.info.eventId !== "string"))) throw new Error("買い物メモの基本情報を読み込めませんでした。");
   return data;
 }
 export function saveShopping(eventId:string, memo:ShoppingMemo) { localStorage.setItem(shoppingKey(eventId),JSON.stringify(memo)); }
@@ -42,7 +44,7 @@ export function totals(memo:ShoppingMemo,buyer?:string) {
     for (const p of memo.products) {
       const o=orderFor(memo,b.id,p.id);
       if (o.status === "購入済み") purchased+=p.price*o.quantity;
-      if ((o.status === "見送り" || o.status === "売切れ") || (memo.soldOut.includes(p.id) && o.status !== "購入済み")) continue;
+      if ((o.status === "見送り" || o.status === "売切れ") || (memo.soldOut.includes(p.id) && o.status !== "購入済み" && o.status !== "予約済み")) continue;
       amount+=p.price*o.quantity;count+=o.quantity;
     }
   }

@@ -1,3 +1,4 @@
+import type { EventTicketChanges } from "../../services/eventTicketDraft";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -25,10 +26,10 @@ function EventPage() {
   }, []);
 
 
-  const handleSaveEvent = (event: Event) => {
+  const handleSaveEvent = (event: Event, tickets?: EventTicketChanges) => {
     const nextEvents = [...loadEvents(), event];
 
-    saveEvents(nextEvents);
+    saveEvents(nextEvents,tickets?{...tickets,eventId:event.id}:undefined);
     setEvents(nextEvents);
 
     setIsFormOpen(false);

@@ -21,3 +21,5 @@ test('live park serialized goods are decoded without running scripts',()=>{
  const payload=[1,'abc:{"goodsItems":'+JSON.stringify([{title:'テスト',price:'単品 ¥770 BOX ¥4,620',category:'雑貨',limitText:'各１点',images:[{url:'/test.jpg'}]}])+'}'];
  const rows=api.parkGoods('<script>self.__next_f.push('+JSON.stringify(payload)+')</script>','https://chiikawapark-tokyo.jp/goods/');assert.equal(rows.length,2);assert.equal(rows[1].price,'4620');assert.equal(rows[1].variant,'BOX');assert.equal(rows[0].limit,'1');
 });
+test('発売日はドット区切りと日本語表記を受け付け、不正な日付を取り込まない',()=>{assert.equal(api.parseReleaseDate('2026.12.16[WED]ON SALE'),'2026-12-16');assert.equal(api.parseReleaseDate('2027年1月6日（水）'),'2027-01-06');assert.equal(api.parseReleaseDate('2027.2.30'),undefined);assert.equal(api.parseReleaseDate('発売日未定'),undefined);});
+test('取得できない詳細の価格を捏造せず、一覧の発売日を残す',async()=>{const rows=[{name:'A',price:'',image:'',sourceUrl:'https://sp.utapri.com/shuffle_duet/duet/?u=duet01',releaseDate:'2026-12-16'}];const result=await api.enrichGoodsDetails(rows,async()=>{throw new Error('offline')});assert.equal(result[0].releaseDate,'2026-12-16');assert.equal(result[0].price,'');});

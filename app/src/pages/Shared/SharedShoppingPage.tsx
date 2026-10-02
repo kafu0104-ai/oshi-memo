@@ -1,3 +1,4 @@
+import { listShoppingMemos } from "../../services/shoppingMemos";
 import { InviteManager, MyJoinRequests } from './JoinRequests';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -22,15 +23,15 @@ function SharedList({session}:{session:Session}){
  const [busy,setBusy]=useState(false);
  const [includeOrders,setIncludeOrders]=useState(false);
  const navigate=useNavigate();
- const events=loadEvents();
+ const events=listShoppingMemos(loadEvents()).items;
  useEffect(()=>{let active=true;cloud!.from('shopping_rooms').select('id,title,updated_at').order('updated_at',{ascending:false}).then(({data,error})=>{if(active){setRooms(data??[]);setMessage(error?cloudError(error):'');}});return()=>{active=false;};},[]);
  return <><p>ログイン中：{session.user.email || (typeof session.user.user_metadata.name==='string'?session.user.user_metadata.name:'LINEアカウント')}</p><button type="button" onClick={async()=>{const {error}=await cloud!.auth.signOut();if(error)setMessage('ログアウトできませんでした。もう一度お試しください。');}}>ログアウト</button>
  <p role="status">{message}</p><div className="management-links">{rooms.map(r=><Link className="management-card" key={r.id} to={`/shared/${r.id}`}><strong>{r.title}</strong><span>共有中の買い物メモを開く</span><span aria-hidden="true">›</span></Link>)}</div>
  {!rooms.length&&!message&&<p>まだ共有中の買い物メモはありません。作成するか、友人から届いた招待リンクで参加できます。</p>}
  <MyJoinRequests userId={session.user.id}/><section className="shopping-panel"><h2>買い物メモを共有する</h2><p>選んだイベントの商品を使って、共有用の買い物メモを作ります。作成後はこの画面から全員で同じ内容を編集します。個人用とは別に保存されます。</p>
  {events.length?<form className="shared-form" onSubmit={async e=>{e.preventDefault();const f=new FormData(e.currentTarget);const event=events.find(v=>v.id===f.get('event'));if(!event)return;setBusy(true);try{const name=String(f.get('name')).trim();const memo=sharedSeed(loadShopping(event.id),name,includeOrders);const {data,error}=await cloud!.rpc('create_shopping_room',{p_title:event.title,p_memo:memo,p_name:name});if(error)throw error;navigate(`/shared/${data}`);}catch(error){setMessage(cloudError(error));}finally{setBusy(false);}}}>
- <label>イベント<select name="event" required>{events.map(e=><option key={e.id} value={e.id}>{e.title}</option>)}</select></label><label>共有する相手に表示するあなたの名前<input name="name" required maxLength={80}/></label>
- <label className="shared-checkbox"><input type="checkbox" checked={includeOrders} onChange={e=>setIncludeOrders(e.target.checked)}/>登録済みの購入者・数量・購入状況・商品ごとのメモ・特典の振り分けも共有する</label><p>チェックを外すと商品一覧と特典設定だけを取り込みます。チケット・精算・イベントの個人メモは共有しません。</p><button disabled={busy}>{busy?'作成中…':'共有用の買い物メモを作成'}</button></form>:<p>個人用のイベントを登録すると、共有用の買い物メモを作れます。</p>}</section></>;
+ <label>買い物メモ<select name="event" required>{events.map(e=><option key={e.id} value={e.id}>{e.title}</option>)}</select></label><label>共有する相手に表示するあなたの名前<input name="name" required maxLength={80}/></label>
+ <label className="shared-checkbox"><input type="checkbox" checked={includeOrders} onChange={e=>setIncludeOrders(e.target.checked)}/>登録済みの購入者・数量・購入状況・商品ごとのメモ・特典の振り分けも共有する</label><p>チェックを外すと商品一覧と特典設定だけを取り込みます。チケット・精算・イベントの個人メモは共有しません。</p><button disabled={busy}>{busy?'作成中…':'共有用の買い物メモを作成'}</button></form>:<p>買い物メモを作成すると、共有用のメモを作れます。</p>}</section></>;
 }
 function SharedEditor({id,session}:{id:string;session:Session}){
  const [room,setRoom]=useState<SharedRoom|null>(null);

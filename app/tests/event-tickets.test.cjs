@@ -28,3 +28,14 @@ test('未定・不要では作らず、追加の抽選回は別受付になる',
  const tickets=api.mergeEventTickets([{...event,entryPeriods:[period,{...period,id:'round2'}]}],[],[],id);
  assert.equal(tickets[0].receptions.length,2);
 });
+test('事前購入の料金・枚数・支払者・購入済みを一度で保存',()=>{
+ const e={...event,entryPeriods:[{...period,method:'事前予約・購入',ticketPrice:3500,ticketQuantity:2,ticketPurchased:true,ticketPayerId:'self'}]};
+ const [t]=api.mergeEventTickets([e],[],[],id);const r=t.receptions[0],a=r.applications[0];
+ assert.equal(r.seatTypes[0].price,3500);assert.equal(a.quantity,2);assert.equal(a.status,'won');assert.equal(a.fulfillment.payment.isPaid,true);assert.equal(a.fulfillment.payment.payerId,'self');
+ assert.equal(api.mergeEventTickets([e],[e],[t],id)[0].receptions.length,1);
+});
+test('既存の未払い当選・購入記録は編集画面の初期表示で支払済みにしない',()=>{
+ const [t]=api.mergeEventTickets([event],[],[],id);t.receptions[0].applications[0].status='won';
+ const e={...event,entryPeriods:[{...period,method:'当日購入',ticketPurchased:true}]};
+ assert.equal(api.mergeEventTickets([e],[event],[t],id)[0].receptions[0].applications[0].fulfillment.payment.isPaid,false);
+});

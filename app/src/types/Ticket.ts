@@ -147,7 +147,7 @@ export interface TicketPayment {
   settlementRequired?: boolean;
   tagIds?: string[];
   important?: boolean;
-  method?: "creditCard" | "payPay" | "dPayment" | "auPayment" | "other";
+  method?: "cash" | "convenienceStore" | "bankTransfer" | "creditCard" | "payPay" | "dPayment" | "auPayment" | "other" | "otherMethod";
   /**
    * 支払期限
    * YYYY-MM-DD
@@ -379,6 +379,8 @@ export interface TicketApplication {
  * などをすべて扱う。
  */
 export interface TicketReception {
+  /** Preserve intentional removal of automatically created payment entries. */
+  omittedApplicationSeatIds?: string[];
   sourceEntryPeriodId?: string;
   /** 未設定の既存データは抽選として扱う。 */
   receptionType?: "lottery" | "general" | "admission";

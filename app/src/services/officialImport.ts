@@ -1,4 +1,4 @@
-export type OfficialFields = Partial<Record<'title'|'startDate'|'endDate'|'venue'|'openingTime'|'closingTime',string>>;
+export type OfficialFields = Partial<Record<'title'|'startDate'|'endDate'|'venue'|'openingTime'|'closingTime'|'lastAdmission'|'doorsOpen'|'startTime',string>>;
 export function extractOfficialFields(html:string):OfficialFields {
   const doc=new DOMParser().parseFromString(html,'text/html');
   const fields:OfficialFields={};
@@ -22,14 +22,39 @@ export function extractOfficialFields(html:string):OfficialFields {
   }
   if(!fields.title)fields.title=clean(doc.querySelector('meta[property="og:title"]')?.getAttribute('content')||doc.querySelector('title')?.textContent);
   doc.querySelectorAll('script,style,nav,footer,header,noscript').forEach(node=>node.remove());
-  const text=doc.body.textContent?.replace(/\s+/g,' ')??'';
+  doc.querySelectorAll('br').forEach(br=>br.replaceWith('\n'));
+  const lines=doc.body.textContent??'';
+  const text=lines.replace(/[〖〗【】]/g,' ').replace(/\s+/g,' ');
   // Only labeled event dates; omitted end year/month inherit from the explicit start date.
   if(events.length<=1){
-    const periods=[...text.matchAll(/(?:開催期間|開催日程|開催日時|開催日|会期)\s*[:：]?\s*([^※]{1,120})/g)].map(m=>eventPeriod(m[1])).filter((value):value is {startDate:string;endDate:string}=>!!value);
+    const periods=[...text.matchAll(/(?:開催期間|開催日程|開催日時|開催日|公演日程|公演日|日程|会期)\s*[:：]?\s*([^※]{1,120})/g)].map(m=>eventPeriod(m[1])).filter((value):value is {startDate:string;endDate:string}=>!!value);
     const unique=[...new Map(periods.map(p=>[JSON.stringify(p),p])).values()];
     if(unique.length===1){fields.startDate ||= unique[0].startDate;fields.endDate ||= unique[0].endDate;}
-    const venueLabels=[...doc.querySelectorAll('dt,th')].filter(node=>/^(開催場所|開催会場|会場)$/.test(clean(node.textContent)));
-    if(venueLabels.length===1){const next=venueLabels[0].nextElementSibling;if(next&&/^(DD|TD)$/i.test(next.tagName))fields.venue ||= clean(next.textContent);}
+    // Sites use both definition tables and ordinary sibling spans for access details.
+    const labeledValue=(pattern:RegExp)=>{
+      const values=[...doc.querySelectorAll('dt,th,span,p,div,label')].filter(node=>pattern.test(clean(node.textContent))).flatMap(node=>{
+        const next=node.nextElementSibling;
+        if(!next || (/^(DT|TH)$/i.test(node.tagName)&&!/^(DD|TD)$/i.test(next.tagName)))return [];
+        const copy=next.cloneNode(true) as Element;
+        copy.querySelectorAll('a').forEach(link=>{if(/(?:map|地図)/i.test(link.textContent??''))link.remove();});
+        copy.querySelectorAll('br').forEach(br=>br.replaceWith(' '));
+        const value=clean(copy.textContent);return value?[value]:[];
+      });
+      const unique=[...new Set(values)];return unique.length===1?unique[0]:'';
+    };
+    const labeledVenues=[...lines.matchAll(/[〖【]\s*(?:会場|開催会場|開催場所)\s*[〗】]\s*([^\n〖【]{1,200})/g)].map(match=>clean(match[1]));
+    const uniqueVenues=[...new Set(labeledVenues)];
+    const venue=(uniqueVenues.length===1?uniqueVenues[0]:'') || labeledValue(/^(開催場所|開催会場|会場|施設名|店舗名)$/);
+    const address=labeledValue(/^(住所|所在地)$/);
+    fields.venue ||= [venue,address].filter(Boolean).join(' ／ ');
+    const admission=[...text.normalize('NFKC').matchAll(/最終(?:入場|入館)(?:時刻|時間)?\s*[:：]?\s*([0-2]?\d)(?::|時)\s*([0-5]\d)分?/g)]
+      .filter(match=>Number(match[1])<24).map(match=>match[1].padStart(2,'0')+':'+match[2]);
+    if(new Set(admission).size===1)fields.lastAdmission=admission[0];
+    for(const [label,key] of [['開場','doorsOpen'],['開演','startTime']] as const){
+      const values=[...text.normalize('NFKC').matchAll(new RegExp(label+'\\s*[:：]?\\s*([0-2]?\\d):([0-5]\\d)','g'))]
+        .filter(match=>Number(match[1])<24).map(match=>match[1].padStart(2,'0')+':'+match[2]);
+      if(new Set(values).size===1)fields[key]=values[0];
+    }
     const eventHours=[...text.matchAll(/開催時間\s*[:：]?\s*(?:メイン会場\s*[:：]\s*)?([0-2]?\d):([0-5]\d)\s*[〜～~－–—-]\s*([0-2]?\d):([0-5]\d)/g)];
     const hours=eventHours.length?eventHours:[...text.matchAll(/(?:営業時間|開館時間)\s*[:：]?\s*(?:メイン会場\s*[:：]\s*)?([0-2]?\d):([0-5]\d)\s*[〜～~－–—-]\s*([0-2]?\d):([0-5]\d)/g)];
     if(hours.length===1&&Number(hours[0][1])<24&&Number(hours[0][3])<24){fields.openingTime=hours[0][1].padStart(2,'0')+':'+hours[0][2];fields.closingTime=hours[0][3].padStart(2,'0')+':'+hours[0][4];}

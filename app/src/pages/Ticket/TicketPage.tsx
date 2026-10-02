@@ -115,10 +115,10 @@ function TicketPage() {
         </header>
 
         <Link
-          className="text-link"
+          className="task-navigation-button"
           to="/events"
         >
-          ← イベント一覧へ戻る
+          イベント一覧に戻る
         </Link>
       </main>
     );
@@ -131,10 +131,10 @@ function TicketPage() {
     <main className="event-detail-page">
       <div className="event-detail-back">
         <Link
-          className="text-link"
-          to={`/events/${event.id}`}
+          className="task-navigation-button"
+          to="/tickets"
         >
-          ← イベント詳細へ戻る
+          チケット一覧に戻る
         </Link>
       </div>
 
@@ -280,7 +280,7 @@ function TicketPage() {
 
           {isAddingReception && (
             <>
-            <ReceptionForm key={editingReception?.id ?? "new"}
+            <ReceptionForm performances={event.performances} key={editingReception?.id ?? "new"}
               reception={editingReception}
               onSave={handleSaveReception}
               onCancel={() => { setIsAddingReception(false); setEditingReception(undefined); }}

@@ -50,16 +50,20 @@ export default function ShoppingImageShare({ title, memo, buyerIds }: { title: s
     const next: typeof pages = [];
     try {
       const buyers = memo.buyers.filter(b => buyerIds.includes(b.id));
-      const rows = buyers.flatMap(b => memo.products.flatMap(p => {
-        const order = orderFor(memo, b.id, p.id);
-        return order.quantity > 0 ? [{ buyer: b.name, product: p, order }] : [];
-      }));
+      const rows = memo.products.flatMap(product => {
+        const members = buyers.flatMap(b => {
+          const order = orderFor(memo, b.id, product.id);
+          return order.quantity > 0 ? [{ buyer: b.name, order }] : [];
+        });
+        return members.length ? [{ product, members, quantity: members.reduce((sum, m) => sum + m.order.quantity, 0) }] : [];
+      });
       if (!rows.length) { setMessage("数量を入力した商品がありません。"); return; }
       
       let missing = 0;
       {
         const group = rows;
-        const height = 240 + group.length * 230;
+        const rowHeights = group.map(row => Math.max(214, 150 + row.members.reduce((sum, m) => sum + (m.order.memo ? 90 : 36), 0)));
+        const height = 240 + rowHeights.reduce((sum, h) => sum + h + 16, 0);
         // Keep a single image within mobile canvas dimension and memory limits.
         const scale = Math.min(1, 16000 / height, Math.sqrt(8_000_000 / (800 * height)));
         const canvas = document.createElement("canvas"); canvas.width = Math.floor(800 * scale); canvas.height = Math.floor(height * scale);
@@ -70,13 +74,15 @@ export default function ShoppingImageShare({ title, memo, buyerIds }: { title: s
         lines(ctx, title, 30, 45, 740, 2, 34);
         ctx.font = "22px sans-serif";
         ctx.fillText(`買い物メモ　${rows.length}件`, 30, 120);
+        let rowY = 150;
         for (let start = 0; start < group.length; start += 2) {
         const batch = group.slice(start, start + 2);
         const images = await Promise.all(batch.map(row => thumbnail(row.product.image)));
-        batch.forEach(({ buyer, product, order }, offset) => {
+        batch.forEach(({ product, members, quantity }, offset) => {
           const index = start + offset;
-          const y = 150 + index * 230;
-          ctx.fillStyle = "#ffffff"; ctx.fillRect(24, y, 752, 214);
+          const y = rowY;
+          rowY += rowHeights[index] + 16;
+          ctx.fillStyle = "#ffffff"; ctx.fillRect(24, y, 752, rowHeights[index]);
           ctx.fillStyle = "#eee6df"; ctx.fillRect(38, y + 25, 154, 154);
           const img = images[offset];
           if (img) { const scale = Math.min(154 / img.width, 154 / img.height); const w = img.width * scale, h = img.height * scale; ctx.drawImage(img, 38 + (154 - w) / 2, y + 25 + (154 - h) / 2, w, h); }
@@ -84,9 +90,13 @@ export default function ShoppingImageShare({ title, memo, buyerIds }: { title: s
           ctx.fillStyle = "#544c40"; ctx.font = "bold 24px sans-serif";
           lines(ctx, `${product.name} ${product.variant}`, 212, y + 34, 540, 2);
           ctx.font = "21px sans-serif";
-          lines(ctx, buyer, 212, y + 97, 540, 1);
-          ctx.fillText(`単価 ${yen(product.price)} × ${order.quantity} = ${yen(product.price * order.quantity)}`, 212, y + 127);
-          if (order.memo) lines(ctx, order.memo, 212, y + 157, 540, 2, 27);
+          ctx.fillText(`単価 ${yen(product.price)} × ${quantity} = ${yen(product.price * quantity)}`, 212, y + 97);
+          let memberY = y + 133;
+          for (const member of members) {
+            lines(ctx, `${member.buyer}：${member.order.quantity}点`, 212, memberY, 540, 1);
+            if (member.order.memo) lines(ctx, member.order.memo, 212, memberY + 27, 540, 2, 27);
+            memberY += member.order.memo ? 90 : 36;
+          }
         });
         }
         ctx.fillStyle = "#544c40"; ctx.font = "20px sans-serif";
@@ -106,7 +116,7 @@ export default function ShoppingImageShare({ title, memo, buyerIds }: { title: s
     catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setMessage("共有できませんでした。「画像を保存」または画像の長押しで保存してください。"); }
   }
   return <section className="shopping-image-share" aria-label="画像で共有">
-    <p>選択中の購入者の商品を、サムネ付き画像にまとめます。商品が多い場合も、縦長の1枚にまとめます。</p>
+    <p>選択中の購入者の商品を、サムネ付き画像にまとめます。同じ商品は購入者ごとの数量をまとめ、縦長の1枚にします。</p>
     <button type="button" disabled={busy} onClick={generate}>{busy ? "画像を作成中…" : pages.length ? "最新の内容で画像を作成" : "共有用画像を作成"}</button>
     <p role="status">{message}</p>
     {pages.map(({ url, file }, index) => <div key={url}>

@@ -8,7 +8,7 @@ export function mergeEventTickets(events:Event[], previous:Event[], tickets:Tick
   for(const event of events){
     if(!genres.includes(event.mainGenreId||event.tagIds?.[0]||''))continue;
     for(const period of event.entryPeriods||[]){
-      if(!['抽選','先着・予約','予約','当日購入'].includes(period.method))continue;
+      if(!['抽選','先着・予約','予約','当日購入','事前予約・購入','先着（売切れ次第終了）'].includes(period.method))continue;
       const old=previous.find(e=>e.id===event.id)?.entryPeriods?.find(p=>p.id===period.id);
       // Unchanged rounds do not recreate tickets explicitly removed by the user.
       if(old&&JSON.stringify(old)===JSON.stringify(period))continue;
@@ -33,6 +33,23 @@ export function mergeEventTickets(events:Event[], previous:Event[], tickets:Tick
           const fulfillment=a.fulfillment||{payment:{isPaid:false,settlements:[]},issuance:{isIssued:false},distributions:[],seatAssignments:[]};
           return {...a,fulfillment:{...fulfillment,payment:{...fulfillment.payment,deadlineDate:period.paymentDeadline||undefined}}};
         });
+      }
+      // Inline entry fields only update the simple linked application, preserving detailed records.
+      if(reception.applications.length===1 && reception.seatTypes.length<=1){
+        let app={...reception.applications[0]};
+        if(period.ticketPrice!==undefined && (!existing || old?.ticketPrice!==period.ticketPrice)){
+          const seatId=reception.seatTypes[0]?.id||id();
+          reception.seatTypes=[{...reception.seatTypes[0],id:seatId,name:reception.seatTypes[0]?.name||'チケット',price:period.ticketPrice}];
+          app.seatTypeId=seatId;
+        }
+        if(period.ticketQuantity!==undefined && (!existing || old?.ticketQuantity!==period.ticketQuantity))app.quantity=period.ticketQuantity;
+        if(period.ticketStatus!==undefined && period.method==='抽選' && (!existing || old?.ticketStatus!==period.ticketStatus))app.status=period.ticketStatus;
+        if(period.ticketPurchased!==undefined && period.method!=='抽選' && (!existing || old?.ticketPurchased!==period.ticketPurchased))app.status=period.ticketPurchased?'won':'notApplied';
+        const f=app.fulfillment||{payment:{isPaid:false,settlements:[]},issuance:{isIssued:false},distributions:[],seatAssignments:[]};
+        app.fulfillment={...f,payment:{...f.payment}};
+        if(!existing || old?.ticketPayerId!==period.ticketPayerId)app.fulfillment.payment.payerId=period.ticketPayerId||'self';
+        if(period.ticketPurchased!==undefined && period.method!=='抽選' && (!existing || existing.applications[0].status!==(period.ticketPurchased?'won':'notApplied')))app.fulfillment.payment.isPaid=period.ticketPurchased;
+        reception.applications=[app];
       }
       ticket.receptions=existing?ticket.receptions.map(r=>r.id===existing.id?reception:r):[...ticket.receptions,reception];
     }

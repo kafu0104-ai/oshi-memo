@@ -39,6 +39,7 @@ export interface EventScheduleItem {
  * 映画の上映回などを管理する。
  */
 export interface EventPerformance {
+  venue?: string;
   id: string;
 
   /**
@@ -94,6 +95,12 @@ export interface AttendanceEntry {
 }
 
 export interface EntryPeriod {
+  ticketPrice?: number;
+  ticketQuantity?: number;
+  ticketPurchased?: boolean;
+  ticketStatus?: "notApplied" | "applied" | "won" | "lost";
+  ticketPayerId?: string;
+  bookingUrl?: string;
   paymentDeadline?: string;
   queueNumber?: string;
   queueEntryTime?: string;
@@ -111,6 +118,7 @@ export interface EntryPeriod {
 }
 
 export interface Event {
+  liveFormat?: "single" | "tour";
   entryPeriods?: EntryPeriod[];
   attendanceEntries?: AttendanceEntry[];
   mainGenreId?: string;

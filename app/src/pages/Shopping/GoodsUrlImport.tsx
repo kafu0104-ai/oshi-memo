@@ -1,6 +1,6 @@
 import { productThumbnail } from "../../services/productThumbnail";
 import { useState } from 'react';
-import { extractGoods, goodsFromText } from '../../services/goodsImport';
+import { extractGoods, enrichGoodsDetails, goodsFromText } from '../../services/goodsImport';
 import { layoutCandidates, cropImage, type LayoutCandidate } from '../../services/goodsLayout';
 import GoodsCropEditor from './GoodsCropEditor';
 import ProductSalesFields from "./ProductSalesFields";
@@ -8,8 +8,8 @@ import { salesError, type ProductSales } from "../../services/productSales";
 import { goodsKey } from '../../services/goodsIdentity';
 import { generateId } from '../../services/id';
 import type { ShoppingProduct } from '../../services/shopping';
-export default function GoodsUrlImport({onAdd,existing}:{onAdd:(products:ShoppingProduct[])=>number|false;existing:ShoppingProduct[]}) {
-  const [url,setUrl]=useState(''),[source,setSource]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+export default function GoodsUrlImport({onAdd,existing,initialUrl=''}:{initialUrl?:string;onAdd:(products:ShoppingProduct[])=>number|false;existing:ShoppingProduct[]}) {
+  const [url,setUrl]=useState(initialUrl),[source,setSource]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
   const [rows,setRows]=useState<(LayoutCandidate&ProductSales&{selected:boolean;importKey?:string;variant?:string;category?:string;limit?:string})[]>([]),[images,setImages]=useState<string[]>([]);
   const [ocrText,setOcrText]=useState(''),[ocrImage,setOcrImage]=useState('');
   async function readImage(image:string){
@@ -44,7 +44,13 @@ export default function GoodsUrlImport({onAdd,existing}:{onAdd:(products:Shoppin
       const response=await fetch('/api/official-page',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url}),signal:AbortSignal.timeout(45000)});
       if(!response.headers.get('content-type')?.includes('application/json'))throw new Error('この環境ではURL読み込みが利用できません。');
       const data=await response.json();if(!response.ok)throw new Error(data.error||'読み込めませんでした。');
-      const result=extractGoods(data.html,data.url);setSource(data.url);setRows(result.products.filter(p=>!existing.some(item=>goodsKey(item)===goodsKey(p))).map(p=>({...p,selected:false,importKey:goodsKey(p)})));setImages(result.images);
+      const result=extractGoods(data.html,data.url);
+      setMessage('商品ごとの発売日・価格を確認しています…');
+      result.products=await enrichGoodsDetails(result.products,async detailUrl=>{
+        const response=await fetch('/api/official-page',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:detailUrl}),signal:AbortSignal.timeout(15000)});
+        if(!response.ok)throw new Error('商品詳細を取得できませんでした');const detail=await response.json();return detail.html;
+      });
+      setSource(data.url);setRows(result.products.filter(p=>!existing.some(item=>goodsKey(item)===goodsKey(p))).map(p=>({...p,selected:false,importKey:goodsKey(p)})));setImages(result.images);
       setMessage(result.products.length?'登録済みを除いた商品を表示しています。追加する商品を選んでください。':'商品名・価格を自動で読み取れませんでした。下の画像一覧を開いて、商品画像の文字を読み取ってください。');
     }catch(e){setMessage(e instanceof Error?e.message:'読み込めませんでした。');}finally{setBusy(false);}
   }
@@ -68,7 +74,7 @@ export default function GoodsUrlImport({onAdd,existing}:{onAdd:(products:Shoppin
       <fieldset disabled={busy} style={{display:"contents"}}><div className="shopping-actions"><button type="button" disabled={!readyCount} onClick={()=>setRows(old=>old.map(row=>({...row,selected:ready(row)})))}>入力済みの商品をすべて選択（{readyCount}件）</button><button type="button" onClick={()=>setRows(old=>old.map(row=>({...row,selected:false})))}>選択を解除</button></div>
       <p role="status">{rows.filter(row=>row.selected).length}件を選択中{rows.length>readyCount&&` ／ ${rows.length-readyCount}件は商品名・価格・購入上限の確認が必要です。確認後に個別で選択できます。`}</p>
       <button type="submit" disabled={busy||!rows.some(row=>row.selected)}>選んだ商品を一括追加（{rows.filter(row=>row.selected).length}件）</button>
-      {rows.map((row,index)=><div className="goods-import-row" key={index}><label><input type="checkbox" checked={row.selected} onChange={e=>patch(index,{selected:e.target.checked})}/>追加する</label>{row.image&&<img src={row.image} alt="商品候補" loading="lazy" referrerPolicy="no-referrer"/>}<>{row.image&&<GoodsCropEditor source={row.originalImage||row.image} initial={row.crop||{x:0,y:0,width:100,height:100}} onApply={(image,crop)=>patch(index,{image,crop,originalImage:row.originalImage||row.image})}/>}</><label className="form-field">商品名<input value={row.name} required={row.selected} pattern={row.selected?".*\\S.*":undefined} onChange={e=>patch(index,{name:e.target.value})}/></label><label className="form-field">種類・キャラクター<input value={row.variant??''} onChange={e=>patch(index,{variant:e.target.value})}/></label><label className="form-field">単価（円）<input type="number" min={row.selected?"0":undefined} max={row.selected?"99999999":undefined} step={row.selected?"1":"any"} required={row.selected} value={row.price} placeholder="価格を確認して入力" onChange={e=>patch(index,{price:e.target.value})}/></label><label className="form-field">購入上限（不明なら空欄）<input type="number" min={row.selected?"1":undefined} max={row.selected?"9999":undefined} step={row.selected?"1":"any"} value={row.limit??''} onChange={e=>patch(index,{limit:e.target.value})}/></label><label className="form-field">カテゴリ<input value={row.category??''} onChange={e=>patch(index,{category:e.target.value})}/></label><ProductSalesFields value={row} onChange={value=>patch(index,value)}/>{salesError(row)&&<p role="alert">{salesError(row)}</p>}</div>)}
+      {rows.map((row,index)=><div className="goods-import-row" key={index}><label><input type="checkbox" checked={row.selected} onChange={e=>patch(index,{selected:e.target.checked})}/>追加する</label>{row.image&&<img src={row.image} alt="商品候補" loading="lazy" referrerPolicy="no-referrer"/>}<>{row.image&&<GoodsCropEditor source={row.originalImage||row.image} initial={row.crop||{x:0,y:0,width:100,height:100}} onApply={(image,crop)=>patch(index,{image,crop,originalImage:row.originalImage||row.image})}/>}</><label className="form-field">商品名<input value={row.name} required={row.selected} pattern={row.selected?".*\\S.*":undefined} onChange={e=>patch(index,{name:e.target.value})}/></label><label className="form-field">種類・キャラクター<input value={row.variant??''} onChange={e=>patch(index,{variant:e.target.value})}/></label><label className="form-field">単価（円）<input type="number" className="money-input" inputMode="numeric" min={row.selected?"0":undefined} max={row.selected?"99999999":undefined} step={row.selected?"1":"any"} required={row.selected} value={row.price} placeholder="価格を確認して入力" onChange={e=>patch(index,{price:e.target.value})}/></label><label className="form-field">購入上限（不明なら空欄）<input type="number" min={row.selected?"1":undefined} max={row.selected?"9999":undefined} step={row.selected?"1":"any"} value={row.limit??''} onChange={e=>patch(index,{limit:e.target.value})}/></label><label className="form-field">カテゴリ<input value={row.category??''} onChange={e=>patch(index,{category:e.target.value})}/></label><ProductSalesFields value={row} onChange={value=>patch(index,value)}/>{salesError(row)&&<p role="alert">{salesError(row)}</p>}</div>)}
       <button type="submit" disabled={busy||!rows.some(row=>row.selected)}>選んだ商品を追加</button></fieldset>
     </form>}
     </div></details>;

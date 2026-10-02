@@ -1,3 +1,4 @@
+import { listShoppingMemos } from "../../services/shoppingMemos";
 import { useState } from 'react';
 import { loadEvents } from '../../services/storage';
 import { loadShopping, type ShoppingProduct } from '../../services/shopping';
@@ -7,7 +8,9 @@ export default function ShoppingProductPicker({ onSelect }: { onSelect: (shop: s
     const items: { id: string; title: string; products: ShoppingProduct[] }[] = [];
     let failed = false;
     try {
-      for (const event of loadEvents()) {
+      const catalog=listShoppingMemos(loadEvents());
+      failed=catalog.errors.length>0;
+      for (const event of catalog.items) {
         try {
           const products = loadShopping(event.id).products;
           if (products.length) items.push({ id: event.id, title: event.title, products });
@@ -27,7 +30,7 @@ export default function ShoppingProductPicker({ onSelect }: { onSelect: (shop: s
     <summary>買い物メモから選ぶ</summary>
     {source.failed && <p role="alert">一部の買い物メモを読み込めませんでした。手入力もできます。</p>}
     {!source.items.length ? <p>商品を登録した買い物メモがありません。下の欄に直接入力できます。</p> : <>
-      <label className="form-field">購入場所・イベントを選択<select value={eventId} onChange={e => { setEventId(e.target.value); setProductId(''); setQuery(''); setMessage(''); }}>
+      <label className="form-field">買い物メモを選択<select value={eventId} onChange={e => { setEventId(e.target.value); setProductId(''); setQuery(''); setMessage(''); }}>
         <option value="">選んでください</option>
         {source.items.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
       </select></label>
@@ -39,7 +42,7 @@ export default function ShoppingProductPicker({ onSelect }: { onSelect: (shop: s
           {products.map(item => <option key={item.id} value={item.id}>{item.name} {item.variant}</option>)}
         </select></label>
         {!products.length && <p>検索に一致する商品がありません。</p>}
-        <p className="shopping-note">イベント名と商品名を入力します。入力後も自由に編集できます。</p>
+        <p className="shopping-note">メモ名と商品名を入力します。入力後も自由に編集できます。</p>
         <button type="button" disabled={!product} onClick={() => { if (product) { onSelect(event.title, product.name); setMessage('購入場所・イベントと商品名を入力しました。'); } }}>選択内容を入力</button>
       </>}
     </>}
