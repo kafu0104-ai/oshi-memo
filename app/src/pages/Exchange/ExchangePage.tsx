@@ -13,7 +13,7 @@ export default function ExchangePage(){
   const [view,setView]=useState(params.has('edit')?'records':'compose');
   const [initial]=useState(()=>{try{return {records:loadExchanges(),error:''};}catch{return {records:[] as ExchangeRecord[],error:'取引データを読み込めませんでした。データを保護するため編集を停止しています。'};}});
   const [records,setRecords]=useState(initial.records),[filter,setFilter]=useState('open'),[kind,setKind]=useState(''),[query,setQuery]=useState(''),[message,setMessage]=useState('');
-  const [newRecord,setNewRecord]=useState<ExchangeRecord>();
+  const [newRecord,setNewRecord]=useState<ExchangeRecord | undefined>(()=>fresh());
   const editing=params.get('edit');
   const selected=editing==='new'?newRecord:records.find(r=>r.id===editing);
   const events=loadEvents();

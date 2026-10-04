@@ -26,6 +26,7 @@ export function extractGoods(html:string, base:string):{products:GoodsCandidate[
   if(new URL(base).hostname==='chiikawapark-tokyo.jp')products.push(...parkGoods(html,base));
   if(new URL(base).hostname==='www.broccoli.co.jp'&&new URL(base).pathname.startsWith('/event_sp/agf/'))products.push(...broccoliAgfGoods(doc,base));
   if(new URL(base).hostname==='sp.utapri.com'&&new URL(base).pathname.startsWith('/shuffle_duet/'))products.push(...shuffleDuetGoods(doc,base));
+  if(new URL(base).hostname==='15th.utapri.tv'&&new URL(base).pathname.startsWith('/goods/'))products.push(...anniversaryGoods(doc,base));
   const images=[...new Set(Array.from(doc.querySelectorAll('img')).map(img=>safeGoodsUrl(img.getAttribute('data-src')||img.getAttribute('src'),base)).filter(Boolean))].slice(0,100);
   return {products:products.filter((p,i)=>products.findIndex(x=>x.name===p.name&&x.price===p.price&&x.image===p.image)===i).slice(0,1000),images};
 }
@@ -121,11 +122,33 @@ export function shuffleDuetGoods(doc:Document,base:string):GoodsCandidate[]{
  }
  return rows;
 }
+export function anniversaryGoods(doc:Document,base:string):GoodsCandidate[]{
+ const text=(el:Element|null)=>el?.textContent?.replace(/\s+/g,'').trim()||'';
+ const rows:GoodsCandidate[]=[];
+ for(const card of Array.from(doc.querySelectorAll('.itemList .itemBox'))){
+  const sourceUrl=safeGoodsUrl(card.querySelector('a')?.getAttribute('href'),base);
+  // Purchase bonuses are not standalone products.
+  if(!sourceUrl||new URL(sourceUrl).hostname!=='15th.utapri.tv'||!/^\/goods\/item\d+\.html$/.test(new URL(sourceUrl).pathname))continue;
+  const name=text(card.querySelector('.itemTxt'));
+  if(name)rows.push({name,price:'',image:safeGoodsUrl(card.querySelector('.itemImage img')?.getAttribute('src'),base),sourceUrl});
+ }
+ const detail=doc.querySelector('.itemWrap');
+ if(detail){
+  const name=text(detail.querySelector('.itemTitle .txt02'));
+  const prices=[...text(detail.querySelector('.itemTitle .txt03')).normalize('NFKC').matchAll(/[¥￥]\s*([\d,]+)/g)];
+  if(name)rows.push({name,price:prices.length===1?prices[0][1].replaceAll(',',''):'',image:safeGoodsUrl(detail.querySelector('.slider6-wrap img')?.getAttribute('src'),base),sourceUrl:base});
+ }
+ return rows;
+}
 export async function enrichGoodsDetails(products:GoodsCandidate[],read:(url:string)=>Promise<string>):Promise<GoodsCandidate[]> {
  const result=[...products];
- for(let start=0;start<Math.min(result.length,12);start+=3){
+ for(let start=0;start<Math.min(result.length,30);start+=3){
   await Promise.all(result.slice(start,start+3).map(async(product,offset)=>{
    const url=new URL(product.sourceUrl);
+   if(!product.price&&url.hostname==='15th.utapri.tv'&&/^\/goods\/item\d+\.html$/.test(url.pathname)){
+    try{const detail=extractGoods(await read(url.href),url.href).products.find(p=>p.name===product.name);if(detail)result[start+offset]={...product,...detail};}catch{/* Keep the catalogue entry if a detail request fails. */}
+    return;
+   }
    if(product.price||url.hostname!=='sp.utapri.com'||url.pathname!=='/shuffle_duet/duet/'||!/^duet\d{2}$/.test(url.searchParams.get('u')||''))return;
    try{const detail=extractGoods(await read(url.href),url.href).products.find(p=>p.name===product.name&&p.releaseDate===product.releaseDate);if(detail)result[start+offset]={...product,...detail};}catch{/* Keep lineup information; missing prices remain editable. */}
   }));

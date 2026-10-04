@@ -11,3 +11,19 @@ test('event periods support AGF omitted month/year and valid full ranges',()=>{
  }
  for(const input of ['11月7日・8日','2026年2月30日','2026年11月8日～7日'])assert.equal(result.eventPeriod(input),undefined);
 });
+test('live performance dates stay paired with each venue and opening/start times',()=>{
+ const shows=result.performanceLines('2027年1月23日(土)　開場15:30／開演17:30\n2027年1月24日(日)　開場13:00／開演15:00','Kアリーナ横浜');
+ assert.equal(shows.length,2);assert.equal(shows[0].date,'2027-01-23');assert.equal(shows[1].doorsOpen,'13:00');assert.equal(shows[1].startTime,'15:00');assert.equal(shows[1].venue,'Kアリーナ横浜');
+ const other=result.performanceLines('2027年1月30日(土) 開場15:30／開演17:30\n2027年1月31日(日) 開場13:00／開演15:00','IGアリーナ');
+ const selected=result.fieldsForPerformances([shows[1],other[0]]);assert.equal(selected.startDate,'2027-01-24');assert.equal(selected.endDate,'2027-01-30');assert.equal(selected.venue,undefined);assert.equal(selected.startTime,undefined);
+ assert.equal(result.fieldsForPerformances([shows[0]]).startTime,'17:30');
+});
+test('performance parsing rejects ticket deadlines, viewing-only times and invalid dates',()=>{
+ for(const text of ['2026年10月21日(水)10:00～2026年11月1日(日)23:59','2027年1月23日(土) 開演17:30','2027年2月30日(火) 開場15:30／開演17:30','2027年1月23日(土) 開場25:30／開演27:30'])assert.equal(result.performanceLines(text,'会場').length,0);
+ assert.equal(result.performanceLines('2027年1月23日(土) 開場15:30／開演17:30','').length,0);
+});
+test('cast extraction retains roles and excludes notices and ticket sections',()=>{
+ assert.equal(result.performersFromText('＜出演者＞\n寺島拓篤（一十木音也 役）\n鈴村健一（聖川真斗 役）\n※出演者は予告なく変更になる場合があります。\n＜チケット情報＞\n20,000円'),'寺島拓篤（一十木音也 役）\n鈴村健一（聖川真斗 役）');
+ assert.equal(result.performersFromText('出演者\n名前（役名）\n＜チケット情報＞\n料金'),'名前（役名）');
+ assert.equal(result.performersFromText('※出演者は変更になる場合があります。'),'');
+});

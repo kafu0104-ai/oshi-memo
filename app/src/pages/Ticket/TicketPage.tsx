@@ -280,7 +280,7 @@ function TicketPage() {
 
           {isAddingReception && (
             <>
-            <ReceptionForm performances={event.performances} key={editingReception?.id ?? "new"}
+            <ReceptionForm sourceUrl={event.officialUrl} performances={event.performances} key={editingReception?.id ?? "new"}
               reception={editingReception}
               onSave={handleSaveReception}
               onCancel={() => { setIsAddingReception(false); setEditingReception(undefined); }}

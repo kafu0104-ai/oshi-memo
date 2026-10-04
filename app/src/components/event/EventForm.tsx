@@ -1,6 +1,5 @@
 import { normalizeSchedule, scheduleTime, setScheduleTime } from "../../services/performanceSchedule";
-import { supportsInlineTicket, type EntryTicketDraft, type EventTicketChanges } from "../../services/eventTicketDraft";
-import { loadTickets } from "../../services/storage";
+import { type EventTicketChanges } from "../../services/eventTicketDraft";
 import AutoTextarea from "../common/AutoTextarea";
 import { OshiIcon } from "../common/OshiIcon";
 import { genreIcons, mainGenre, initialEntryPeriods } from "../../services/eventGenres";
@@ -52,13 +51,7 @@ function EventForm({
   const [attendanceTime, setAttendanceTime] = useState(editingEvent?.attendanceTime ?? "");
   const [details, setDetails] = useState(editingEvent?.genreDetails ?? {});
   const [modules, setModules] = useState(editingEvent?.extraModules ?? {});
-  const [entryPeriods, setEntryPeriods] = useState(() => initialEntryPeriods(editingEvent).map(period=>{
-    const r=loadTickets().find(t=>t.eventId===editingEvent?.id)?.receptions.find(r=>r.sourceEntryPeriodId===period.id);
-    if(!r || r.applications.length!==1 || r.seatTypes.length>1)return period;
-    const a=r.applications[0];
-    return {...period,ticketPrice:r.seatTypes[0]?.price,ticketQuantity:a.quantity,ticketPurchased:a.status==='won',ticketStatus:a.status,ticketPayerId:a.fulfillment?.payment.payerId||'self'};
-  }));
-  const [ticketDrafts, setTicketDrafts] = useState<Record<string,EntryTicketDraft>>({});
+  const [entryPeriods, setEntryPeriods] = useState(() => initialEntryPeriods(editingEvent));
   const [saveError, setSaveError] = useState("");
   const [title, setTitle] = useState("");
 
@@ -295,19 +288,9 @@ function EventForm({
         );
 
     if (genre !== "movie" && genre!=="live" && startDate && endDate && startDate > endDate) { setSaveError("終了日は開始日以降に設定してください。"); return; }
-    if (selectedTags.some(tag=>["goods-sale","live","stage","talk","exhibition","collaboration-food","movie"].includes(tag)) && entryPeriods.some(period=>!ticketDrafts[period.id] && period.method === "抽選" && period.applicationStart && period.applicationEnd && period.applicationStart > period.applicationEnd)) { setSaveError("抽選申込締切は開始日時以降に設定してください。"); return; }
-    if(entryPeriods.some(p=>(p.ticketPrice!==undefined&&(!Number.isFinite(p.ticketPrice)||p.ticketPrice<0))||(p.ticketQuantity!==undefined&&(!Number.isInteger(p.ticketQuantity)||p.ticketQuantity<1)))){setSaveError("料金は0円以上、枚数は1枚以上の整数で入力してください。");return;}
-    if(entryPeriods.some(p=>!ticketDrafts[p.id]&&p.applicationStart&&p.applicationEnd&&p.applicationStart>p.applicationEnd)){setSaveError("受付締切は開始日時以降にしてください。");return;}
-    const activeDrafts = genre === "goods-sale" ? [] : entryPeriods.filter(p=>supportsInlineTicket(p.method)).flatMap(p=>ticketDrafts[p.id] ? [ticketDrafts[p.id]] : []);
-    const invalidTicket = activeDrafts.find(d=>d.error);
-    if(invalidTicket){setSaveError(invalidTicket.error);return;}
-    const savedPeriods = entryPeriods.map(p=>{
-      const draft = genre!=="goods-sale" && supportsInlineTicket(p.method) ? ticketDrafts[p.id]?.reception : undefined;
-      if(!draft)return p;
-      const dateTime=(date?:string,time?:string)=>date ? date+(time?`T${time}`:"") : undefined;
-      return {...p,resultDate:draft.resultDate??"",resultTime:draft.resultTime??"",applicationStart:dateTime(draft.applicationStartDate,draft.applicationStartTime),applicationEnd:dateTime(draft.applicationDeadlineDate,draft.applicationDeadlineTime),ticketPrice:undefined,ticketQuantity:undefined,ticketPurchased:undefined,ticketStatus:undefined,ticketPayerId:undefined,paymentDeadline:undefined};
-    });
-    const ticketChanges: EventTicketChanges = {receptions:activeDrafts.map(d=>({...d.reception,name:entryPeriods.find(p=>p.id===d.reception.sourceEntryPeriodId)?.name?.trim()||d.reception.name})),companions:[...new Map(activeDrafts.flatMap(d=>d.companions).map(c=>[c.id,c])).values()]};
+    if (genre === "goods-sale" && entryPeriods.some(p=>p.applicationStart && p.applicationEnd && p.applicationStart > p.applicationEnd)) {
+      setSaveError("受付締切は開始日時以降にしてください。"); return;
+    }
     const performanceDates = genre==="live" ? cleanedPerformances.map(p=>p.date).filter(Boolean).sort() : [];
     const savedEvent: Event = {
       ...editingEvent,
@@ -315,7 +298,8 @@ function EventForm({
       liveFormat: genre === "live" ? liveFormat : editingEvent?.liveFormat,
       attendanceDate: attendanceDate || undefined,
       attendanceTime: attendanceTime || undefined,
-      entryPeriods: selectedTags.some(tag=>["goods-sale","live","stage","talk","exhibition","collaboration-food","movie"].includes(tag)) || editingEvent?.entryPeriods ? savedPeriods : undefined,
+      // Legacy ticket links stay unchanged; ticket edits belong to the ticket screen.
+      entryPeriods: genre === "goods-sale" ? entryPeriods : editingEvent?.entryPeriods,
       genreDetails: details,
       extraModules: modules,
       id:
@@ -353,7 +337,7 @@ function EventForm({
         undefined,
     };
 
-    try { onSaveEvent(savedEvent,ticketChanges); } catch { setSaveError("保存できませんでした。入力内容は残っています。もう一度お試しください。"); }
+    try { onSaveEvent(savedEvent); } catch { setSaveError("保存できませんでした。入力内容は残っています。もう一度お試しください。"); }
   };
 
   if (choosingGenre || !genre) return <section className="event-form-section genre-choice">
@@ -361,7 +345,7 @@ function EventForm({
     <div className="genre-grid">{DEFAULT_EVENT_TAGS.map(tag=><button type="button" className="genre-tile" key={tag.id} onClick={()=>{
       setSelectedTagIds(current=>Array.from(new Set([tag.id,...current.filter(id=>id !== genre)])));
       setGenre(tag.id); setChoosingGenre(false);
-      if(tag.id === "live")setPerformances(current=>current.length?current:[{...createPerformance(),date:startDate}]);
+      if(tag.id === "live")setPerformances(current=>current.length?current:[{...createPerformance(),date:startDate,schedule:editingEvent?.schedule ?? []}]);
     }}><OshiIcon name={genreIcons[tag.id]} size={40}/><strong>{tag.name}</strong></button>)}</div>
     <button type="button" className="secondary-button" onClick={onCancel}>キャンセル</button>
   </section>;
@@ -760,8 +744,12 @@ function EventForm({
           setLiveFormat(value);
           if(value==='tour')setPerformances(current=>current.length?current.map(p=>({...p,venue:p.venue||venue})):[{...createPerformance(),date:startDate,venue,schedule:editingEvent?.schedule??[]}]);
         }}>{label}</button>)}</div></div>}
-        <OfficialImport url={officialUrl} onUrlChange={setOfficialUrl} current={{title,startDate,endDate,venue,openingTime:details.openingTime,closingTime:details.closingTime,lastAdmission:details.lastAdmission,doorsOpen:performances.length===1?scheduleTime(performances[0].schedule,"doors-open"):undefined,startTime:performances.length===1?scheduleTime(performances[0].schedule,"performance-start"):undefined}} onApply={(fields,rounds)=>{
-          if(rounds.length){
+        <OfficialImport url={officialUrl} onUrlChange={setOfficialUrl} current={{title,startDate,endDate,venue,performers:details.performers,openingTime:details.openingTime,closingTime:details.closingTime,lastAdmission:details.lastAdmission,doorsOpen:performances.length===1?scheduleTime(performances[0].schedule,"doors-open"):undefined,startTime:performances.length===1?scheduleTime(performances[0].schedule,"performance-start"):undefined}} onApply={(fields,rounds,shows)=>{
+          if(shows?.length){
+            setPerformances(current=>{const next=[...current.filter(p=>p.date||p.venue||p.schedule.length)];for(const show of shows){if(next.some(p=>p.date===show.date&&p.venue===show.venue&&scheduleTime(p.schedule,"performance-start")===show.startTime))continue;next.push({...createPerformance(),date:show.date,venue:show.venue,schedule:[...(show.doorsOpen?[{id:"doors-open",type:"doorsOpen" as const,label:"開場",time:show.doorsOpen}]:[]),...(show.startTime?[{id:"performance-start",type:"start" as const,label:"開演",time:show.startTime}]:[])]});}return next;});
+            if(genre==="live"&&new Set(shows.map(p=>p.venue)).size>1)setLiveFormat("tour");
+          }
+          if(genre === "goods-sale" && rounds.length){
             setSelectedTagIds(current=>current.includes("goods-sale")?current:[...current,"goods-sale"]);
             setEntryPeriods(current=>{const next=[...current];for(const round of rounds){if(!next.some(item=>item.method === "抽選" && item.name === round.name && item.applicationStart === round.applicationStart && item.applicationEnd === round.applicationEnd && item.resultDate === round.resultDate))next.push({...round,id:generateId(),method:"抽選",resultTime:"",entries:[]});}return next.filter(item=>item.method || item.entries.some(entry=>entry.date||entry.time));});
           }
@@ -769,7 +757,7 @@ function EventForm({
           if(fields.startDate)setStartDate(fields.startDate);
           if(fields.endDate)setEndDate(fields.endDate);
           if(fields.venue)setVenue(fields.venue);
-          if(fields.doorsOpen||fields.startTime||(genre==="live"&&liveFormat==="tour"&&(fields.venue||fields.startDate)))setPerformances(current=>{
+          if(!shows?.length && (fields.doorsOpen||fields.startTime||(genre==="live"&&liveFormat==="tour"&&(fields.venue||fields.startDate))))setPerformances(current=>{
             const target=current.length===1?current[0]:createPerformance();
             let schedule=[...target.schedule];
             for(const [type,label,time] of [["doorsOpen","開場",fields.doorsOpen],["start","開演",fields.startTime]] as const){
@@ -779,7 +767,7 @@ function EventForm({
             const updated={...target,date:fields.startDate||target.date||startDate,venue:genre==="live"&&liveFormat==="tour"?(fields.venue||target.venue||venue):target.venue,schedule};
             return current.length===1?[updated]:[...current,updated];
           });
-          setDetails(previous=>({...previous,...(fields.openingTime?{openingTime:fields.openingTime}:{}),...(fields.closingTime?{closingTime:fields.closingTime}:{}),...(fields.lastAdmission?{lastAdmission:fields.lastAdmission}:{})}));
+          setDetails(previous=>({...previous,...(fields.performers?{performers:fields.performers}:{}),...(fields.openingTime?{openingTime:fields.openingTime}:{}),...(fields.closingTime?{closingTime:fields.closingTime}:{}),...(fields.lastAdmission?{lastAdmission:fields.lastAdmission}:{})}));
         }}/>
         <div className="form-field form-field-full">
           <label htmlFor="event-title">
@@ -935,9 +923,9 @@ function EventForm({
           />
         </div>
 
-        {selectedTags.some(tag=>["goods-sale","live","stage","talk","exhibition","collaboration-food","movie"].includes(tag)) && <EntryPeriods performances={performances} eventTitle={title} ticketDrafts={ticketDrafts} onTicketDraftChange={(id,value)=>setTicketDrafts(current=>({...current,[id]:value}))} eventId={editingEvent?.id} ticketMode={genre !== "goods-sale"} value={entryPeriods} onChange={setEntryPeriods}/>}
+        {genre === "goods-sale" && <EntryPeriods ticketMode={false} value={entryPeriods} onChange={setEntryPeriods}/>}
         <ExtraModules hideReservation={genre!=="goods-sale"} tags={selectedTags} value={modules} onChange={setModules} lottery={details.saleType === "抽選"}/>
-        <p className="form-field-full">{selectedTags.some(tag=>["goods-sale","online-sale","collaboration-food"].includes(tag)) ? "保存後に買い物メモを追加できます。" : ""} {selectedTags.some(tag=>["live","stage","movie","talk","exhibition"].includes(tag)) ? "チケット情報・同行者・精算も、イベントと一緒に保存されます。" : ""}</p>
+        <p className="form-field-full">{selectedTags.some(tag=>["goods-sale","online-sale","collaboration-food"].includes(tag)) ? "保存後に買い物メモを追加できます。" : ""} {selectedTags.some(tag=>["live","stage","movie","talk","exhibition"].includes(tag)) ? "チケット情報は、保存後に「チケット」から登録・編集できます。" : ""}</p>
         {saveError && <p className="form-field-full" role="alert">{saveError}</p>}
         <div className="form-actions">
           <button

@@ -2863,3 +2863,66 @@ a.shopping-memo-list-card { align-items:center; padding:18px 20px; gap:12px; }
 .shopping-heading .shopping-memo-title { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px; min-width:0; overflow-wrap:anywhere; }
 .shopping-memo-category,.shopping-memo-separator { font-size:.85em; font-weight:500; color:var(--color-subtext); }
 .shopping-memo-category { white-space:nowrap; }
+
+/* Compact home task summary; full task details remain on the task list. */
+.home-announcement { padding:14px 18px; }
+.home-announcement .ticket-task-list { gap:0; }
+.home-announcement .ticket-task-link { min-height:44px; padding:8px 0; }
+.home-announcement .task-card-main > strong { font-weight:600; line-height:1.5; }
+.home-announcement .task-list-footer .task-navigation-button { margin:8px 0 0; padding:8px 16px; }
+.home-next-event { margin-top:20px; }
+
+/* Keep event fields distinct and date/time pairs compact on phones. */
+.new-ticket-event-fields { display:grid; gap:20px; margin-bottom:20px; }
+.new-ticket-event-fields > p { margin:-8px 0 0; font-size:.875rem; line-height:1.6; color:var(--color-subtext); }
+.ticket-schedule .ticket-form-row { grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:10px; }
+.ticket-schedule .ticket-date + .ticket-date { margin-top:14px; padding-top:14px; }
+.ticket-schedule .ticket-date legend { margin-bottom:6px; }
+.ticket-schedule > p { margin-bottom:12px; }
+.ticket-schedule .ticket-form-row input { padding-inline:8px; }
+
+.event-archive-switch { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 20px; }
+.event-archive-switch button { min-height:44px; padding:10px 16px; }
+.creation-pending-badge { padding:3px 10px; border-radius:999px; background:var(--color-background); color:var(--color-subtext); font-size:.75rem; }
+.creation-placeholder { padding:24px; border-radius:20px; background:#fffdfb; text-align:center; }
+
+.ticket-issuance-entry + .ticket-issuance-entry { margin-top:12px; }
+.ticket-issuance-entry > summary { cursor:pointer; padding:12px 0; min-height:44px; box-sizing:border-box; }
+.ticket-issuance-entry .ticket-check { margin-top:16px; }
+
+.schedule-page > .page-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.schedule-settings { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; background:#fffdfb; border:1px solid #8f7969; border-radius:50%; }
+.schedule-page .home-calendar { margin-top:0; }
+.schedule-page .calendar-day { min-height:clamp(48px,8vw,84px); }
+.schedule-page .calendar-heading button { min-width:44px; min-height:44px; }
+.schedule-page .calendar-day[aria-pressed=true] { border-color:#8f7969; }
+
+.quick-event-form > p { margin-top: 0; }
+.quick-event-form form { display: grid; gap: 24px; }
+.quick-event-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.quick-event-form input:not([type="checkbox"]):not([type="radio"]) { min-width: 0; width: 100%; box-sizing: border-box; }
+.quick-event-hint { margin: -12px 0 0; color: var(--text-muted, #796e64); }
+.quick-event-form details .form-field { margin-top: 16px; }
+.event-complete-page { max-width: 680px; margin-inline: auto; }
+.event-complete-card { background: #fffdfa; border: 1px solid #ded5ce; border-radius: 24px; padding: clamp(24px, 5vw, 48px); text-align: center; }
+.event-complete-card h1 { font-size: clamp(22px, 4vw, 28px); }
+.event-complete-summary { border: 1px solid #ded5ce; border-radius: 16px; padding: 20px; margin-block: 28px; overflow-wrap: anywhere; }
+.event-complete-summary h2 { font-size: 21px; margin-top: 0; }
+.event-complete-actions { display: grid; gap: 16px; margin-top: 24px; }
+.event-complete-actions a { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 54px; margin: 0; }
+@media (max-width: 380px) { .quick-event-dates { grid-template-columns: 1fr; } }
+.event-complete-card > img { display: block; margin-inline: auto; }
+.official-performance-options { min-width: 0; border: 1px solid #ded5ce; border-radius: 14px; padding: 16px; margin-block: 20px; }
+.quick-imported-shows { display: grid; gap: 16px; }
+.quick-imported-shows fieldset { min-width: 0; border: 1px solid #ded5ce; border-radius: 14px; padding: 16px; display: grid; gap: 14px; }
+.quick-event-form form { grid-template-columns: minmax(0, 1fr); }
+.ticket-reception-import { padding: 20px; border: 1px solid #d9cdc4; border-radius: 18px; background: #fffaf6; display: grid; gap: 14px; }
+.ticket-reception-import h3, .ticket-reception-import p, .ticket-import-candidate h4 { margin: 0; }
+.ticket-import-candidate { border: 1px solid #d9cdc4; border-radius: 14px; padding: 16px; display: grid; gap: 12px; background: #fff; overflow-wrap: anywhere; }
+.ticket-import-note { white-space: pre-line; }
+
+/* Import choices keep a fixed check column even inside full-width forms. */
+.official-import-item { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: start; }
+.official-import-item > input[type="checkbox"] { width: 22px; min-width: 22px; max-width: 22px; height: 22px; min-height: 22px; margin: 2px 0 0; padding: 0; }
+.official-import-item > span { white-space: pre-line; overflow-wrap: anywhere; }
+.official-import, .official-import-review { min-width: 0; max-width: 100%; box-sizing: border-box; }

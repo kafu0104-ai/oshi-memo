@@ -1,3 +1,6 @@
+import TicketReceptionImport from "./TicketReceptionImport";
+import TicketIssuanceFields from "./TicketIssuanceFields";
+import { issuanceError } from "../../services/ticketIssuance";
 import type { EventPerformance } from "../../types/Event";
 import { withCompanionSettlements } from "../../services/companionSettlements";
 import TicketQuantityInput from "../../components/common/TicketQuantityInput";
@@ -11,6 +14,7 @@ import type { Companion } from "../../types/Companion";
 import type { TicketReception, TicketFeeUnit } from "../../types/Ticket";
 
 interface Props {
+  sourceUrl?: string;
   hideHeading?: boolean;
   performances?: EventPerformance[];
   reception?: TicketReception;
@@ -21,7 +25,7 @@ interface Props {
   onCancel?: () => void;
 }
 
-export default function ReceptionForm({ hideHeading = false, performances = [], reception, onSave, onCancel, onDraftChange, fallbackName = "", initialNewCompanions = [] }: Props) {
+export default function ReceptionForm({ sourceUrl, hideHeading = false, performances = [], reception, onSave, onCancel, onDraftChange, fallbackName = "", initialNewCompanions = [] }: Props) {
   const [draft, setDraft] = useState<TicketReception>(() => reception ? withLotteryEntries({...reception,applications:reception.applications.map(a=>withCompanionSettlements(a,generateId))}, generateId) : {
     id: generateId(), name: "", seatTypes: [], fees: [], applications: [],
   });
@@ -39,6 +43,7 @@ export default function ReceptionForm({ hideHeading = false, performances = [], 
   useEffect(() => { if (!embedded) heading.current?.focus(); }, [embedded]);
 
   function validate(): string {
+      for (const app of draft.applications) { const issue = app.fulfillment?.issuance; if (issue && issuanceError(issue)) return issuanceError(issue); }
       if (!(draft.name.trim() || fallbackName.trim())) { return "チケット情報名を入力してください。"; }
       if (seats.some(s => !(embedded && !s.name.trim() && !s.price.trim()) && ((!admission && !s.name.trim()) || !s.price.trim() || !Number.isSafeInteger(Number(s.price)) || Number(s.price) < 0)) ||
           fees.some(f => !f.name.trim() || !f.amount.trim() || !Number.isSafeInteger(Number(f.amount)) || Number(f.amount) < 0)) {
@@ -87,6 +92,11 @@ export default function ReceptionForm({ hideHeading = false, performances = [], 
         setError("保存できませんでした。入力内容は残しています。ブラウザの保存設定・容量や、チケット情報が削除されていないかを確認してください。");
       }
     }}>
+      {!embedded && <TicketReceptionImport key={sourceUrl || 'manual'} sourceUrl={sourceUrl} onApply={(candidate,source)=>{
+        const {mode,bookingUrl,note,...fields}=candidate;
+        setDraft(previous=>({...previous,...fields,name:mode==='ライブビューイング'?`ライブビューイング：${fields.name}`:fields.name,
+          memo:[previous.memo,`読み取り元：${source}`,bookingUrl?`申込先：${bookingUrl}`:'',note].filter(Boolean).filter((line,index,items)=>items.indexOf(line)===index).join('\n')}));
+      }}/>}
       {!embedded && <><label className="form-field"><span>チケット情報名{fallbackName.trim()?"（任意）":"（必須）"}</span>
         <input required={!fallbackName.trim()} value={draft.name} placeholder="例：FC先行" onChange={e => setDraft({ ...draft, name: e.target.value })} />
       </label>
@@ -142,6 +152,7 @@ export default function ReceptionForm({ hideHeading = false, performances = [], 
       </section>
       <label className="form-field"><span>メモ</span><textarea rows={4} value={draft.memo ?? ""} onChange={e => setDraft({ ...draft, memo: e.target.value })}/></label>
       {<TicketPayments performances={performances} reception={{ ...draft, seatTypes: seats.map(s => ({ ...s, price: s.price === "" ? NaN : Number(s.price) })), fees: fees.map(f => ({ ...f, amount: f.amount === "" ? NaN : Number(f.amount) })) }} companions={companions} onChange={setDraft} onCompanionsChange={setCompanions} />}
+      <TicketIssuanceFields reception={{...draft,seatTypes:seats.map(s=>({...s,price:Number(s.price)}))}} performances={performances} onChange={setDraft}/>
       {error && <p role="alert">{error}</p>}
       {!embedded && <div className="form-actions"><button type="button" className="secondary-button" onClick={onCancel}>キャンセル</button><button type="submit" className="primary-button">{reception ? "変更を保存" : "チケット情報を登録"}</button></div>}
     </Container>

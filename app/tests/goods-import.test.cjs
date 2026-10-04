@@ -23,3 +23,8 @@ test('live park serialized goods are decoded without running scripts',()=>{
 });
 test('発売日はドット区切りと日本語表記を受け付け、不正な日付を取り込まない',()=>{assert.equal(api.parseReleaseDate('2026.12.16[WED]ON SALE'),'2026-12-16');assert.equal(api.parseReleaseDate('2027年1月6日（水）'),'2027-01-06');assert.equal(api.parseReleaseDate('2027.2.30'),undefined);assert.equal(api.parseReleaseDate('発売日未定'),undefined);});
 test('取得できない詳細の価格を捏造せず、一覧の発売日を残す',async()=>{const rows=[{name:'A',price:'',image:'',sourceUrl:'https://sp.utapri.com/shuffle_duet/duet/?u=duet01',releaseDate:'2026-12-16'}];const result=await api.enrichGoodsDetails(rows,async()=>{throw new Error('offline')});assert.equal(result[0].releaseDate,'2026-12-16');assert.equal(result[0].price,'');});
+test('anniversary detail enrichment includes items beyond twelve and retains failed entries',async()=>{
+ const rows=Array.from({length:19},(_,i)=>({name:`商品${i}`,price:'',image:'',sourceUrl:`https://15th.utapri.tv/goods/item${String(i+1).padStart(2,'0')}.html`}));
+ const seen=[];const result=await api.enrichGoodsDetails(rows,async url=>{seen.push(url);throw Error('unavailable');});
+ assert.equal(seen.length,19);assert.equal(result.length,19);assert.equal(result[18].name,'商品18');assert.equal(result[18].price,'');
+});

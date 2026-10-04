@@ -1,3 +1,4 @@
+import { issuanceIsDue } from "./ticketIssuance";
 import { isLottery } from "./ticketReception";
 import { selectedTags } from "./taskTags";
 import { loadTickets, loadEvents, loadCompanions } from "./storage";
@@ -28,6 +29,9 @@ export function loadTicketTasks(): TicketTask[] {
         href: `/events/${event.id}/tickets/${reception.id}/edit#${application.id}`,
         title: awaitingPurchase ? lottery ? "チケットを申し込む" : "チケットを購入する" : "当落結果を確認する",
         person: "自分", completed: false, deadline, dateLabel: "日程", tagIds: selectedTags({}, awaitingPurchase ? lottery ? "application" : "payment" : "result") });
+      if (issuanceIsDue(application)) tasks.push({...common,taskId:"issuance",schedule:true,
+        href:`/events/${event.id}/tickets/${reception.id}/edit#issuance-${application.id}`,
+        title:"チケットを発券する",person:"自分",completed:false,deadline:application.fulfillment?.issuance.deadlineDate,dateLabel:"発券期限",tagIds:selectedTags({},"issuance")});
       if (!payment) return tasks;
 
       if (payment.payerId && (payment.isPaid || (application.status === "won" && payment.method !== "creditCard"))) {

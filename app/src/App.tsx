@@ -1,3 +1,7 @@
+import EventCompletePage from "./pages/Event/EventCompletePage";
+import SchedulePage from "./pages/Home/SchedulePage";
+import CreationPlaceholder from "./pages/Home/CreationPlaceholder";
+import CreatePage from "./pages/Home/CreatePage";
 import NewTicketPage from "./pages/Ticket/NewTicketPage";
 import ShoppingListPage from "./pages/Shopping/ShoppingListPage";
 import NewShoppingMemoPage from "./pages/Shopping/NewShoppingMemoPage";
@@ -35,6 +39,9 @@ function App() {
     <div className="app-shell">
       <RouteScrollReset />
       <Routes>
+        <Route path="/schedule" element={<SchedulePage />} />
+        <Route path="/new" element={<CreatePage />} />
+        <Route path="/new/:kind" element={<CreationPlaceholder />} />
         <Route path="/settings/calendar" element={<CalendarSettingsPage />} />
         <Route path="/settings/sync" element={<PersonalSyncPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
@@ -45,6 +52,7 @@ function App() {
         <Route path="/shopping" element={<ShoppingListPage />} />
         <Route path="/shopping/new" element={<NewShoppingMemoPage />} />
         <Route path="/shopping/:memoId" element={<ShoppingPage />} />
+        <Route path="/events/:eventId/complete" element={<EventCompletePage />} />
         <Route path="/tickets/new" element={<NewTicketPage />} />
         <Route path="/tickets" element={<FeatureEventsPage kind="tickets" />} />
         <Route path="/events/:eventId/shopping" element={<ShoppingPage />} />
@@ -111,7 +119,7 @@ function App() {
         </NavLink>
 
         <NavLink
-          to="/events"
+          to="/new"
           className={({ isActive }) =>
             isActive
               ? "bottom-nav-link is-active"
@@ -119,13 +127,14 @@ function App() {
           }
         >
           <OshiIcon
-            name="event"
+            name="add"
             size={25}
           />
-          <span>イベント</span>
+          <span>新規作成</span>
         </NavLink>
 
-        <NavLink to="/shopping" className={({isActive})=>isActive?"bottom-nav-link is-active":"bottom-nav-link"}><OshiIcon name="online-sale-genre" size={25}/><span>買い物メモ</span></NavLink>
+
+        <NavLink to="/schedule" className={({isActive})=>isActive ? "bottom-nav-link is-active" : "bottom-nav-link"}><OshiIcon name="schedule" size={25}/><span>予定</span></NavLink>
 
         <NavLink
           to="/settings"

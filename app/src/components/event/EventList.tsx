@@ -3,6 +3,8 @@ import type { Event } from "../../types/Event";
 
 interface EventListProps {
   events: Event[];
+  heading?: string;
+  emptyMessage?: string;
   onEditEvent: (event: Event) => void;
   onDeleteEvent: (eventId: string) => void;
 }
@@ -17,19 +19,21 @@ function formatDate(date: string): string {
 
 function EventList({
   events,
+  heading = "イベント一覧",
+  emptyMessage = "登録されているイベントはありません。",
 }: EventListProps) {
   if (events.length === 0) {
     return (
       <section aria-labelledby="event-list-heading">
-        <h2 id="event-list-heading">イベント一覧</h2>
-        <p>登録されているイベントはありません。</p>
+        <h2 id="event-list-heading">{heading}</h2>
+        <p>{emptyMessage}</p>
       </section>
     );
   }
 
   return (
     <section aria-labelledby="event-list-heading">
-      <h2 id="event-list-heading">イベント一覧</h2>
+      <h2 id="event-list-heading">{heading}</h2>
 
       <div>
         {events.map((event) => {

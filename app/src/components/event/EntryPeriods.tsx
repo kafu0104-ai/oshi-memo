@@ -8,14 +8,14 @@ import { generateId } from "../../services/id";
 export default function EntryPeriods({performances=[],value,onChange,ticketMode=false,eventId,eventTitle="",ticketDrafts={},onTicketDraftChange}:{performances?:EventPerformance[];eventTitle?:string;ticketDrafts?:Record<string,EntryTicketDraft>;onTicketDraftChange?:(id:string,value:EntryTicketDraft)=>void;eventId?:string;ticketMode?:boolean;value:EntryPeriod[];onChange:(value:EntryPeriod[])=>void}) {
   const update=(id:string,patch:Partial<EntryPeriod>)=>onChange(value.map(period=>period.id===id?{...period,...patch}:period));
   return <section className="form-field-full genre-modules entry-methods">
-    <h3>入場方法・申込日時</h3>{ticketMode&&<p>わかる項目だけ入力できます。保存するとチケット情報に引き継がれます。料金・購入状況も一緒に保存できます。</p>}
+    <h3>{ticketMode ? "チケット購入方法" : "入場方法・申込日時"}</h3>{ticketMode&&<p>未定なら、あとから設定できます。チケット不要の場合は追加せずに保存してください。入力した内容はチケット情報にも引き継がれます。</p>}
     {value.map((period,index)=>{
       const linked=eventId?loadTickets().find(t=>t.eventId===eventId)?.receptions.find(r=>r.sourceEntryPeriodId===period.id):undefined;
       const inline=ticketMode && supportsInlineTicket(period.method) && !!onTicketDraftChange;
       const detailed=!!linked&&(linked.applications.length!==1||linked.seatTypes.length>1);
       const updateEntry=(id:string,patch:Partial<AttendanceEntry>)=>update(period.id,{entries:period.entries.map(entry=>entry.id===id?{...entry,...patch}:entry)});
       return <section className="entry-round" key={period.id}>
-          <label className="form-field"><span>入場方法</span><select value={period.method} onChange={e=>update(period.id,{method:e.target.value,...(e.target.value === "抽選" && period.method !== "抽選" ? {entries:period.entries.map(entry=>({...entry,result:"結果待ち" as const}))} : {})})}><option value="">まだ不明</option>{[...new Set([...(ticketMode?["抽選","先着（売切れ次第終了）","事前予約・購入","当日購入","フリー入場（予約不要）","その他"]:["自由入場","整理券","予約","抽選"]),...(period.method?[period.method]:[])])].map(method=><option key={method} value={method}>{ticketMode && method === "先着（売切れ次第終了）" ? "先着" : ticketMode && method === "フリー入場（予約不要）" ? "フリー入場" : method}</option>)}</select></label>
+          <label className="form-field"><span>{ticketMode ? "チケット購入方法" : "入場方法"}</span><select value={period.method} onChange={e=>update(period.id,{method:e.target.value,...(e.target.value === "抽選" && period.method !== "抽選" ? {entries:period.entries.map(entry=>({...entry,result:"結果待ち" as const}))} : {})})}><option value="">{ticketMode ? "未定・あとで設定" : "まだ不明"}</option>{[...new Set([...(ticketMode?["抽選","先着（売切れ次第終了）","当日購入"]:["自由入場","整理券","予約","抽選"]),...(period.method?[period.method]:[])])].map(method=><option key={method} value={method}>{ticketMode ? ({"抽選":"抽選に申し込む","先着（売切れ次第終了）":"先着・一般販売で買う","当日購入":"当日、会場で買う"} as Record<string,string>)[method] || method : method}</option>)}</select></label>
         {(period.method === "自由入場" || period.method === "チケット不要" || period.method === "フリー入場（予約不要）") && (period.entries.length ? period.entries : [{id:`${period.id}-visit`,date:"",time:"",result:"結果待ち" as const}]).map(entry=><div className="genre-fields" key={entry.id}>
           <label className="form-field"><span>参加・来場予定日</span><input type="date" value={entry.date} onChange={e=>period.entries.length ? updateEntry(entry.id,{date:e.target.value}) : update(period.id,{entries:[{...entry,date:e.target.value}]})}/></label>
           <label className="form-field"><span>入場予定時刻</span><input type="time" value={entry.time} onChange={e=>period.entries.length ? updateEntry(entry.id,{time:e.target.value}) : update(period.id,{entries:[{...entry,time:e.target.value}]})}/></label>
@@ -76,6 +76,6 @@ export default function EntryPeriods({performances=[],value,onChange,ticketMode=
         </section>}
       </section>;
     })}
-    {(value.length === 0 || value.some(period=>period.method)) && <button type="button" className="secondary-button" onClick={()=>onChange([...value,{id:generateId(),startDate:"",endDate:"",method:"",resultDate:"",resultTime:"",entries:[]}])}>＋ 入場方法・抽選回を追加</button>}
+    {(value.length === 0 || value.some(period=>period.method)) && <button type="button" className="secondary-button" onClick={()=>onChange([...value,{id:generateId(),startDate:"",endDate:"",method:"",resultDate:"",resultTime:"",entries:[]}])}>{ticketMode ? "＋ チケット購入方法を追加" : "＋ 入場方法・抽選回を追加"}</button>}
   </section>;
 }

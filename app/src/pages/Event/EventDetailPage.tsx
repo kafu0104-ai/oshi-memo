@@ -1,6 +1,7 @@
+import { isPastEvent } from "../../services/eventArchive";
+import { useLocalToday } from "../../hooks/useLocalToday";
 import type { EventTicketChanges } from "../../services/eventTicketDraft";
 import GenreSummary from "../../components/event/GenreSummary";
-import { isLottery, receptionDates, receptionStatuses } from "../../services/ticketReception";
 import VenueMapLink from "../../components/common/VenueMapLink";
 import { useEffect, useState } from "react";
 
@@ -53,6 +54,7 @@ function formatDate(date: string): string {
 }
 
 function EventDetailPage() {
+  const today = useLocalToday();
   const { eventId } = useParams();
 
   const navigate = useNavigate();
@@ -67,7 +69,7 @@ function EventDetailPage() {
 
   const [showManagementOptions, setShowManagementOptions] = useState(false);
   const [isEditing, setIsEditing] =
-    useState(false);
+    useState(new URLSearchParams(location.search).get("edit") === "1");
 
   const [
     showAllPerformances,
@@ -303,9 +305,9 @@ function EventDetailPage() {
       <div className="event-detail-back">
         <Link
           className="text-link"
-          to="/events"
+          to={isPastEvent(event,today) ? "/events?view=past" : "/events"}
         >
-          ← イベント一覧
+          {isPastEvent(event,today) ? "← 過去のイベント" : "← イベント一覧"}
         </Link>
       </div>
 
@@ -761,37 +763,13 @@ function EventDetailPage() {
                 </div>
 
                 <div className="event-module-content">
-                  <div className="event-ticket-heading"><h3>チケット情報</h3>
-                    {ticketReceptions.length === 1 && <Link className="event-ticket-edit" to={`/events/${event.id}/tickets/${ticketReceptions[0].id}/edit`} aria-label={`${ticketReceptions[0].name}を編集`} title="編集"><OshiIcon name="edit" size={28} alt="" /></Link>}
-                  </div>
-                  {hasTicketInformation ? (
-                    <div className="event-ticket-list">
-                      {ticketReceptions.map(reception => (
-                        <section className="event-ticket-summary" key={reception.id} aria-labelledby={`ticket-${reception.id}`}>
-                          <div className="event-ticket-heading"><h4 id={`ticket-${reception.id}`}>{reception.name}</h4>
-                            {ticketReceptions.length > 1 && <Link className="event-ticket-edit" to={`/events/${event.id}/tickets/${reception.id}/edit`} aria-label={`${reception.name}を編集`} title="編集"><OshiIcon name="edit" size={28} alt="" /></Link>}
-                          </div>
-                          {reception.applications.map((application, index) => <p className="icon-heading" key={application.id}>
-                            {isLottery(reception) && (application.status === "won" || application.status === "lost") && <OshiIcon name={application.status} size={24} alt="" />}
-                            {reception.seatTypes.find(seat => seat.id === application.seatTypeId)?.name ?? `${isLottery(reception) ? "申込" : "購入"} ${index + 1}`}：{receptionStatuses(reception)[application.status]}
-                          </p>)}
-                          <dl>
-                            {receptionDates(reception).map(([label, dateKey, timeKey]) => [label, reception[dateKey], reception[timeKey]]).map(([label, date, time]) => (date || time) && (
-                              <div key={label}><dt>{label}</dt><dd>{[date ? formatDate(date) : "", time].filter(Boolean).join(" ")}</dd></div>
-                            ))}
-                            {reception.seatTypes?.map(seat => <div key={seat.id}><dt>{seat.name || "チケット"}{seat.hasBenefit ? "（特典あり）" : ""}</dt><dd>{seat.price.toLocaleString("ja-JP")}円／枚</dd></div>)}
-                            {reception.fees?.map(fee => <div key={fee.id}><dt>{fee.name}</dt><dd>{fee.amount.toLocaleString("ja-JP")}円（{fee.unit === "perTicket" ? "1枚ごと" : "1申込ごと"}）</dd></div>)}
-                          </dl>
-                          {reception.memo && <p className="event-ticket-memo">{reception.memo}</p>}
-                        </section>
-                      ))}
-                    </div>
-                  ) : <p>申込・販売日程・券種・料金・手数料を登録できます。</p>}
+                  <h3>チケット情報</h3>
+                  <p>{hasTicketInformation ? `登録済みのチケット情報：${ticketReceptions.length}件` : "申込・当落・支払いなどをまとめて管理できます。"}</p>
                 </div>
-                  <Link className="event-ticket-add" to={`/events/${event.id}/tickets`}>
-                    <span className="event-ticket-add-icon" aria-hidden="true">＋</span>
-                    <span>{hasTicketInformation ? "チケット情報を追加" : "チケット情報を登録"}</span>
-                  </Link>
+                <Link className="event-ticket-add" to={hasTicketInformation ? `/events/${event.id}/tickets` : `/tickets/new?event=${event.id}`}>
+                  {!hasTicketInformation && <span className="event-ticket-add-icon" aria-hidden="true">＋</span>}
+                  <span>{hasTicketInformation ? "チケット情報を見る" : "チケットを追加"}</span>
+                </Link>
               </article>
             )}
 

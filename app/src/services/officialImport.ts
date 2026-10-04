@@ -1,4 +1,4 @@
-export type OfficialFields = Partial<Record<'title'|'startDate'|'endDate'|'venue'|'openingTime'|'closingTime'|'lastAdmission'|'doorsOpen'|'startTime',string>>;
+export type OfficialFields = Partial<Record<'performers'|'title'|'startDate'|'endDate'|'venue'|'openingTime'|'closingTime'|'lastAdmission'|'doorsOpen'|'startTime',string>>;
 export function extractOfficialFields(html:string):OfficialFields {
   const doc=new DOMParser().parseFromString(html,'text/html');
   const fields:OfficialFields={};
@@ -23,6 +23,14 @@ export function extractOfficialFields(html:string):OfficialFields {
   if(!fields.title)fields.title=clean(doc.querySelector('meta[property="og:title"]')?.getAttribute('content')||doc.querySelector('title')?.textContent);
   doc.querySelectorAll('script,style,nav,footer,header,noscript').forEach(node=>node.remove());
   doc.querySelectorAll('br').forEach(br=>br.replaceWith('\n'));
+  const performerBlocks = [...doc.querySelectorAll('p,div,dd,section')].map(node=>performersFromText(node.textContent || '')).filter(Boolean);
+  for(const node of doc.querySelectorAll('dt,th,h2,h3,h4')){
+    if(/^[＜<【\[]?\s*(?:出演者|出演|キャスト|CAST)\s*[＞>】\]]?$/i.test((node.textContent||'').trim()) && node.nextElementSibling){
+      const value=performersFromText('出演者\n'+node.nextElementSibling.textContent);if(value)performerBlocks.push(value);
+    }
+  }
+  const uniquePerformers=[...new Set(performerBlocks)];
+  if(uniquePerformers.length===1)fields.performers=uniquePerformers[0];
   const lines=doc.body.textContent??'';
   const text=lines.replace(/[〖〗【】]/g,' ').replace(/\s+/g,' ');
   // Only labeled event dates; omitted end year/month inherit from the explicit start date.
@@ -58,6 +66,14 @@ export function extractOfficialFields(html:string):OfficialFields {
     const eventHours=[...text.matchAll(/開催時間\s*[:：]?\s*(?:メイン会場\s*[:：]\s*)?([0-2]?\d):([0-5]\d)\s*[〜～~－–—-]\s*([0-2]?\d):([0-5]\d)/g)];
     const hours=eventHours.length?eventHours:[...text.matchAll(/(?:営業時間|開館時間)\s*[:：]?\s*(?:メイン会場\s*[:：]\s*)?([0-2]?\d):([0-5]\d)\s*[〜～~－–—-]\s*([0-2]?\d):([0-5]\d)/g)];
     if(hours.length===1&&Number(hours[0][1])<24&&Number(hours[0][3])<24){fields.openingTime=hours[0][1].padStart(2,'0')+':'+hours[0][2];fields.closingTime=hours[0][3].padStart(2,'0')+':'+hours[0][4];}
+  }
+  const performances = extractOfficialPerformances(html);
+  if (performances.length) {
+    const lead = doc.querySelector('.leadBox')?.textContent?.replace(/開催決定[！!]*\s*$/, '').replace(/\s+/g, ' ').trim();
+    if (lead) fields.title = lead;
+    // Venue/date selection happens per performance, rather than flattening a tour.
+    delete fields.startDate; delete fields.endDate; delete fields.venue;
+    delete fields.doorsOpen; delete fields.startTime;
   }
   return Object.fromEntries(Object.entries(fields).filter(([,value])=>value));
 }
@@ -101,4 +117,61 @@ export function eventPeriod(value:string):{startDate:string;endDate:string}|unde
  const startDate=format(y,m,d),endDate=format(ey,em,ed);
  if(endDate<startDate)return;
  return {startDate,endDate};
+}
+
+export interface ImportedPerformance {
+  date: string;
+  venue: string;
+  doorsOpen?: string;
+  startTime?: string;
+}
+
+/** A performance needs its own dated opening/start times, never a ticket deadline. */
+export function performanceLines(text: string, venue: string): ImportedPerformance[] {
+  if (!venue.trim()) return [];
+  return text.normalize('NFKC').split(/\n/).flatMap(line => {
+    const match = line.trim().match(/^(\d{4}[年/.\-]\s*\d{1,2}[月/.\-]\s*\d{1,2}日?)(?:\s*\([^)]*\))?\s*開場\s*[:：]?\s*(\d{1,2}:\d{2})\s*[／/]\s*開演\s*[:：]?\s*(\d{1,2}:\d{2})/);
+    if (!match) return [];
+    const period = eventPeriod(match[1]);
+    const time = (value: string) => { const [h,m] = value.split(':').map(Number); return h < 24 && m < 60 ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}` : ''; };
+    const doorsOpen=time(match[2]),startTime=time(match[3]);
+    return period && doorsOpen && startTime ? [{ date: period.startDate, venue: venue.trim(), doorsOpen, startTime }] : [];
+  });
+}
+
+export function extractOfficialPerformances(html: string): ImportedPerformance[] {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  // The anniversary site groups each venue's live dates in these cards. Scope to
+  // the cards so the ticket and live-viewing sections cannot contaminate results.
+  const items = [...doc.querySelectorAll('.eventTitleBox .eventWrap')].flatMap(card => {
+    const venue = card.querySelector('.place-txt')?.textContent?.trim() || '';
+    const dates = card.querySelector('.place-date')?.cloneNode(true) as Element | undefined;
+    if (!dates) return [];
+    dates.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    return performanceLines(dates.textContent || '', venue);
+  });
+  return [...new Map(items.map(item => [JSON.stringify(item), item])).values()];
+}
+
+export function fieldsForPerformances(items: ImportedPerformance[]): OfficialFields {
+  if (!items.length) return {};
+  const dates = items.map(p => p.date).sort();
+  const venues = [...new Set(items.map(p => p.venue))];
+  return { startDate: dates[0], endDate: dates.at(-1), ...(venues.length === 1 ? {venue: venues[0]} : {}),
+    ...(items.length === 1 ? {doorsOpen:items[0].doorsOpen,startTime:items[0].startTime} : {}) };
+}
+
+/** Read only an explicitly labelled cast block; stop before notices or another section. */
+export function performersFromText(text:string):string {
+  const match=text.trim().match(/^(?:[＜<【\[]\s*)?(?:出演者|出演|キャスト|CAST)\s*(?:[＞>】\]]|[:：])?\s*\n([\s\S]+)/i);
+  if(!match)return '';
+  const lines:string[]=[];
+  for(const raw of match[1].split(/\n/)){
+    const line=raw.replace(/\s+/g,' ').trim();
+    if(!line)continue;
+    if(/^(?:※|注[：:]|[＜<【■▼]|チケット|お問い合わせ|主催|協力|制作)/.test(line))break;
+    lines.push(line);
+  }
+  const value=lines.join('\n');
+  return value.length<=2000?value:'';
 }
