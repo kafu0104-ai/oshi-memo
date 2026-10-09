@@ -3056,3 +3056,16 @@ a.shopping-memo-list-card { align-items:center; padding:18px 20px; gap:12px; }
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* Keep settlement choices compact in both purchase and companion forms. */
+.settlement-method { min-width: 0; }
+.settlement-method .ticket-check {
+  display: flex; flex-direction: row; justify-content: flex-start;
+  align-items: center; gap: 10px; min-height: 44px;
+  margin: 0; padding: 8px 4px; line-height: 1.5; cursor: pointer;
+}
+.settlement-method .ticket-check input[type="radio"] {
+  flex: 0 0 22px; width: 22px; min-width: 22px; max-width: 22px;
+  height: 22px; min-height: 22px; max-height: 22px;
+  margin: 0; padding: 0; accent-color: #593718;
+}
