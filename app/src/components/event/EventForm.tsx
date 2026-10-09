@@ -1,3 +1,4 @@
+import type { OfficialReport } from '../../services/officialCandidates';
 import { normalizeSchedule, scheduleTime, setScheduleTime } from "../../services/performanceSchedule";
 import { type EventTicketChanges } from "../../services/eventTicketDraft";
 import AutoTextarea from "../common/AutoTextarea";
@@ -24,7 +25,7 @@ import { DEFAULT_EVENT_TAGS } from "../../types/EventTag";
 import TimeSelect from "../common/TimeSelect";
 
 interface EventFormProps {
-  onSaveEvent: (event: Event, tickets?: EventTicketChanges) => void;
+  onSaveEvent: (event: Event, tickets?: EventTicketChanges) => void | Promise<void>;
   onCancel: () => void;
   editingEvent?: Event | null;
 }
@@ -74,6 +75,7 @@ function EventForm({
     setOfficialUrl,
   ] = useState("");
 
+  const [officialImport, setOfficialImport] = useState<OfficialReport | undefined>(editingEvent?.officialImport);
   const [memo, setMemo] =
     useState("");
 
@@ -88,6 +90,7 @@ function EventForm({
   useEffect(() => {
     if (editingEvent) {
       setTitle(editingEvent.title);
+      setOfficialImport(editingEvent.officialImport);
       setLiveFormat(editingEvent.liveFormat ?? "single");
 
       setSelectedTagIds(
@@ -239,7 +242,7 @@ function EventForm({
     return scheduleTime(performance.schedule,scheduleId);
   };
 
-  const handleSubmit = (
+  const handleSubmit = async (
     event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
@@ -294,6 +297,7 @@ function EventForm({
     const performanceDates = genre==="live" ? cleanedPerformances.map(p=>p.date).filter(Boolean).sort() : [];
     const savedEvent: Event = {
       ...editingEvent,
+      officialImport,
       mainGenreId: genre || undefined,
       liveFormat: genre === "live" ? liveFormat : editingEvent?.liveFormat,
       attendanceDate: attendanceDate || undefined,
@@ -337,7 +341,7 @@ function EventForm({
         undefined,
     };
 
-    try { onSaveEvent(savedEvent); } catch { setSaveError("保存できませんでした。入力内容は残っています。もう一度お試しください。"); }
+    try { await onSaveEvent(savedEvent); } catch (error) { setSaveError(error instanceof Error ? error.message : "保存できませんでした。入力内容は残っています。もう一度お試しください。"); }
   };
 
   if (choosingGenre || !genre) return <section className="event-form-section genre-choice">
@@ -744,25 +748,25 @@ function EventForm({
           setLiveFormat(value);
           if(value==='tour')setPerformances(current=>current.length?current.map(p=>({...p,venue:p.venue||venue})):[{...createPerformance(),date:startDate,venue,schedule:editingEvent?.schedule??[]}]);
         }}>{label}</button>)}</div></div>}
-        <OfficialImport url={officialUrl} onUrlChange={setOfficialUrl} current={{title,startDate,endDate,venue,performers:details.performers,openingTime:details.openingTime,closingTime:details.closingTime,lastAdmission:details.lastAdmission,doorsOpen:performances.length===1?scheduleTime(performances[0].schedule,"doors-open"):undefined,startTime:performances.length===1?scheduleTime(performances[0].schedule,"performance-start"):undefined}} onApply={(fields,rounds,shows)=>{
+        <OfficialImport allowLotteries={genre==="goods-sale"} initialReport={officialImport} onReport={setOfficialImport} url={officialUrl} onUrlChange={setOfficialUrl} current={{title,startDate,endDate,venue,endTime:performances.length===1?scheduleTime(performances[0].schedule,"performance-end"):undefined,performers:details.performers,openingTime:details.openingTime,closingTime:details.closingTime,lastAdmission:details.lastAdmission,doorsOpen:performances.length===1?scheduleTime(performances[0].schedule,"doors-open"):undefined,startTime:performances.length===1?scheduleTime(performances[0].schedule,"performance-start"):undefined}} onApply={(fields,rounds,shows)=>{
           if(shows?.length){
-            setPerformances(current=>{const next=[...current.filter(p=>p.date||p.venue||p.schedule.length)];for(const show of shows){if(next.some(p=>p.date===show.date&&p.venue===show.venue&&scheduleTime(p.schedule,"performance-start")===show.startTime))continue;next.push({...createPerformance(),date:show.date,venue:show.venue,schedule:[...(show.doorsOpen?[{id:"doors-open",type:"doorsOpen" as const,label:"開場",time:show.doorsOpen}]:[]),...(show.startTime?[{id:"performance-start",type:"start" as const,label:"開演",time:show.startTime}]:[])]});}return next;});
+            setPerformances(current=>{const next=[...current.filter(p=>p.date||p.venue||p.name||p.memo||p.schedule.length)];for(const show of shows){if(next.some(p=>p.date===show.date&&p.venue===show.venue&&scheduleTime(p.schedule,"performance-start")===show.startTime))continue;next.push({...createPerformance(),date:show.date,venue:show.venue,schedule:[...(show.doorsOpen?[{id:"doors-open",type:"doorsOpen" as const,label:"開場",time:show.doorsOpen}]:[]),...(show.startTime?[{id:"performance-start",type:"start" as const,label:"開演",time:show.startTime}]:[]),...(show.endTime?[{id:"performance-end",type:"expectedEnd" as const,label:"終了",time:show.endTime}]:[])]});}return next;});
             if(genre==="live"&&new Set(shows.map(p=>p.venue)).size>1)setLiveFormat("tour");
           }
           if(genre === "goods-sale" && rounds.length){
             setSelectedTagIds(current=>current.includes("goods-sale")?current:[...current,"goods-sale"]);
-            setEntryPeriods(current=>{const next=[...current];for(const round of rounds){if(!next.some(item=>item.method === "抽選" && item.name === round.name && item.applicationStart === round.applicationStart && item.applicationEnd === round.applicationEnd && item.resultDate === round.resultDate))next.push({...round,id:generateId(),method:"抽選",resultTime:"",entries:[]});}return next.filter(item=>item.method || item.entries.some(entry=>entry.date||entry.time));});
+            setEntryPeriods(current=>{const next=[...current];for(const round of rounds){if(!next.some(item=>item.method === "抽選" && item.name === round.name && item.applicationStart === round.applicationStart && item.applicationEnd === round.applicationEnd && item.resultDate === round.resultDate))next.push({...round,id:generateId(),method:"抽選",resultTime:round.resultTime||"",entries:[]});}return next.filter(item=>item.method || item.entries.some(entry=>entry.date||entry.time));});
           }
           if(fields.title)setTitle(fields.title);
           if(fields.startDate)setStartDate(fields.startDate);
           if(fields.endDate)setEndDate(fields.endDate);
           if(fields.venue)setVenue(fields.venue);
-          if(!shows?.length && (fields.doorsOpen||fields.startTime||(genre==="live"&&liveFormat==="tour"&&(fields.venue||fields.startDate))))setPerformances(current=>{
+          if(!shows?.length && (fields.doorsOpen||fields.startTime||fields.endTime||(genre==="live"&&liveFormat==="tour"&&(fields.venue||fields.startDate))))setPerformances(current=>{
             const target=current.length===1?current[0]:createPerformance();
             let schedule=[...target.schedule];
-            for(const [type,label,time] of [["doorsOpen","開場",fields.doorsOpen],["start","開演",fields.startTime]] as const){
+            for(const [type,label,time] of [["doorsOpen","開場",fields.doorsOpen],["start","開演",fields.startTime],["expectedEnd","終了",fields.endTime]] as const){
               if(!time)continue;
-              schedule=setScheduleTime(schedule,type==="doorsOpen"?"doors-open":"performance-start",type,label,time);
+              schedule=setScheduleTime(schedule,type==="doorsOpen"?"doors-open":type==="expectedEnd"?"performance-end":"performance-start",type,label,time);
             }
             const updated={...target,date:fields.startDate||target.date||startDate,venue:genre==="live"&&liveFormat==="tour"?(fields.venue||target.venue||venue):target.venue,schedule};
             return current.length===1?[updated]:[...current,updated];

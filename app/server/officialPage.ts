@@ -1,3 +1,4 @@
+import { enrichOfficialPage } from './sites-worker.mjs';
 import { lookup } from 'node:dns/promises';
 import { request } from 'node:https';
 import { isIP } from 'node:net';
@@ -14,10 +15,11 @@ export function publicAddress(address: string): boolean {
   }
   return isIP(address) === 6 && /^[23][0-9a-f]{3}:/i.test(address) && !/^200[12]:/i.test(address);
 }
-export async function readOfficialPage(input: string, redirects=0, image=false): Promise<{html:string;url:string}> {
+export async function readOfficialPage(input: string, redirects=0, image=false, scopeOrigin?:string): Promise<{html:string;url:string}> {
   const url=new URL(input);
   if(url.protocol!=='https:' || url.username || url.password || (url.port && url.port!=='443')) throw new Error('公開されているHTTPSのURLを入力してください。');
   url.hash='';
+  if(scopeOrigin && url.origin!==scopeOrigin)throw new Error('別サイトへの転送は探索しません。');
   const host=url.hostname.replace(/^\[|\]$/g,'');
   const addresses=await lookup(host,{all:true});
   if(!addresses.length || addresses.some(item=>!publicAddress(item.address))) throw new Error('このURLは読み込めません。公式サイトの公開URLを入力してください。');
@@ -27,7 +29,7 @@ export async function readOfficialPage(input: string, redirects=0, image=false):
       if([301,302,303,307,308].includes(status) && res.headers.location){
         res.resume();
         if(redirects>=3){reject(new Error('転送が多すぎるため読み込めません。'));return;}
-        readOfficialPage(new URL(res.headers.location,url).href,redirects+1,image).then(resolve,reject);return;
+        readOfficialPage(new URL(res.headers.location,url).href,redirects+1,image,scopeOrigin).then(resolve,reject);return;
       }
       if(status!==200 || !(image ? /^image\/(png|jpeg|webp)(;|$)/i : /text\/html|application\/xhtml\+xml/i).test(res.headers['content-type'] ?? '')){
         res.resume();reject(new Error('ページを読み込めません。公開されているWebページのURLを確認してください。'));return;
@@ -56,7 +58,7 @@ export function officialPagePlugin():Plugin {
     try{sameOrigin=!!req.headers.origin&&new URL(req.headers.origin).host===req.headers.host;}catch{/* invalid origin */}
     if(!sameOrigin){reply(403,{error:'この画面から読み込んでください。'});return;}
     let body='';req.on('data',chunk=>{body+=chunk;if(body.length>4096)req.destroy();});
-    req.on('end',async()=>{try{const {url}=JSON.parse(body);if(typeof url!=='string'||url.length>2048)throw new Error('URLを確認してください。');reply(200,await readOfficialPage(url,0,path==='/api/goods-image'));}catch(error){reply(400,{error:error instanceof Error && /[ぁ-んァ-ン一-龯]/.test(error.message)?error.message:'ページを読み込めませんでした。URLと接続を確認してください。'});}});
+    req.on('end',async()=>{try{const {url,scopeOrigin}=JSON.parse(body);if(typeof url!=='string'||url.length>2048)throw new Error('URLを確認してください。');if(scopeOrigin!==undefined&&(typeof scopeOrigin!=='string'||new URL(scopeOrigin).origin!==scopeOrigin))throw new Error('探索範囲が不正です。');const page=await readOfficialPage(url,0,path==='/api/goods-image',scopeOrigin);reply(200,path==='/api/goods-image'?page:await enrichOfficialPage(page));}catch(error){reply(400,{error:error instanceof Error && /[ぁ-んァ-ン一-龯]/.test(error.message)?error.message:'ページを読み込めませんでした。URLと接続を確認してください。'});}});
   };
   return {name:'official-page-import',configureServer(server){server.middlewares.use(middleware);},configurePreviewServer(server){server.middlewares.use(middleware);}};
 }

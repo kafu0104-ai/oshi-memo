@@ -81,7 +81,7 @@ function TicketPage() {
       currentEvent.id === eventId,
   );
 
-  const handleSaveReception = (reception: TicketReception, newCompanions: Companion[]) => {
+  const handleSaveReception = async (reception: TicketReception, newCompanions: Companion[]) => {
     if (!eventId) return;
     const current = loadTicketByEventId(eventId) ?? ticket;
     const existing = current?.receptions.find(item => item.id === reception.id);
@@ -90,7 +90,7 @@ function TicketPage() {
     const next: Ticket = current
       ? { ...current, receptions: existing ? current.receptions.map(item => item.id === updated.id ? updated : item) : [...current.receptions, updated] }
       : { id: createId(), eventId, receptions: [updated] };
-    saveTicketWithCompanions(next, newCompanions);
+    await saveTicketWithCompanions(next, newCompanions);
     setTicket(next);
     setMessage(editingReception ? "チケット情報を更新しました。" : "チケット情報を登録しました。");
     setEditingReception(undefined);

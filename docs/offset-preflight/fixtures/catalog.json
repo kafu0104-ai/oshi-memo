@@ -1,0 +1,59 @@
+{
+  "purpose": "架空の相殺受入データ。既存データがある端末には復元しない。実クラウドへ送らない。",
+  "cases": [
+    {
+      "file": "01-primary-before.snapshot.json",
+      "expectation": "MAPPA役2275円受取、文スト役4045円支払。相殺後1770円支払。両購入は支払済み。",
+      "events": 2,
+      "tickets": 2
+    },
+    {
+      "file": "02-receive-balance.snapshot.json",
+      "expectation": "MAPPA役2275円支払、文スト役4045円受取。相殺後1770円受取。",
+      "events": 2,
+      "tickets": 2
+    },
+    {
+      "file": "03-zero-balance.snapshot.json",
+      "expectation": "2275円対2275円。相殺確定で完了、支払日入力不要。",
+      "events": 2,
+      "tickets": 2
+    },
+    {
+      "file": "04-candidate-boundaries.snapshot.json",
+      "expectation": "MAPPA役から文スト役4045円+追加役1000円だけを選ぶと2770円支払。同イベント内の別精算800円は未精算のまま。同方向・別人・精算済みは候補外。",
+      "events": 6,
+      "tickets": 6
+    },
+    {
+      "file": "05-direction-review.snapshot.json",
+      "expectation": "MAPPA役の支払者は自分、方向のみpay。確認案内を出し、自動訂正しない。維持/確認訂正をそれぞれ別環境で確認。",
+      "events": 2,
+      "tickets": 2
+    },
+    {
+      "file": "06-pending.snapshot.json",
+      "expectation": "相殺中・1770円支払の差額タスク1件。",
+      "events": 2,
+      "tickets": 2
+    },
+    {
+      "file": "07-completed.snapshot.json",
+      "expectation": "相殺済み・アーカイブ、1770円支払済み。取消不可。",
+      "events": 2,
+      "tickets": 2
+    },
+    {
+      "file": "08-cancelled.snapshot.json",
+      "expectation": "取消履歴を保持、元の2275円受取と4045円支払を復元。",
+      "events": 2,
+      "tickets": 2
+    },
+    {
+      "file": "09-legacy-v108.snapshot.json",
+      "expectation": "配信108形式の旧履歴。残額1770円を新グループで管理。",
+      "events": 2,
+      "tickets": 2
+    }
+  ]
+}

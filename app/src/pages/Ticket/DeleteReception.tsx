@@ -6,16 +6,16 @@ export default function DeleteReception({ eventId, receptionId, name, onDeleted 
 }) {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
-  function remove() {
+  async function remove() {
     try {
       const ticket = loadTicketByEventId(eventId);
       if (!ticket || !ticket.receptions.some(item => item.id === receptionId)) {
         setError("チケット情報が見つかりません。ページを再読み込みしてください。"); return;
       }
-      saveTicket({ ...ticket, receptions: ticket.receptions.filter(item => item.id !== receptionId) });
+      await saveTicket({ ...ticket, receptions: ticket.receptions.filter(item => item.id !== receptionId) });
       onDeleted();
-    } catch {
-      setError("削除できませんでした。ブラウザの保存設定を確認して、もう一度お試しください。");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "削除できませんでした。ブラウザの保存設定を確認して、もう一度お試しください。");
     }
   }
   return <section className="ticket-delete-section">

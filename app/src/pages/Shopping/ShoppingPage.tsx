@@ -1,3 +1,4 @@
+import { addShoppingPerson } from "../../services/shoppingPeople";
 import { memoInfo, shoppingForEvent, listShoppingMemos } from "../../services/shoppingMemos";
 import { OshiIcon } from "../../components/common/OshiIcon";
 import BonusPanel from "./BonusPanel";
@@ -34,6 +35,7 @@ function Shopping({eventId}:{eventId:string}) {
   const cycle=useRef(initial.memo.purchaseCycle||generateId());
   const [message,setMessage]=useState("");
   const [buyerEditor,setBuyerEditor]=useState<"add"|"edit"|null>(null);
+  const [addingPerson,setAddingPerson]=useState(false);
   const [buyer,setBuyer]=useState("self");
   const [search,setSearch]=useState("");
   const searchComposing=useRef(false);
@@ -95,7 +97,15 @@ function Shopping({eventId}:{eventId:string}) {
     {all&&<p className="shopping-buyer-note">全員分を合算しています。数量の変更は各購入者タブで行えます。</p>}
     {buyerEditor&&<section className="shopping-panel" aria-label="購入者の追加・編集"><div className="shopping-actions"><strong>{buyerEditor==="add"?"購入者を追加":"購入者を編集"}</strong><button type="button" onClick={()=>setBuyerEditor(null)}>閉じる</button></div>
       {buyerEditor==="add"&&<><p>誰の分を買うかを登録します。</p>
-      <form className="shopping-inline-form" onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);const name=String(f.get("name")).trim();if(!name)return;if(memo.buyers.some(b=>b.name===name)){setMessage("同じ名前の購入者がいます。");return;}if(persist({...memo,buyers:[...memo.buyers,{id:generateId(),name}]}))e.currentTarget.reset();}}><input name="name" aria-label="購入者名" required placeholder="購入者名"/><button>追加</button></form>
+      <p>登録済みの人は下の候補から選べます。新しい人を追加すると、チケットの同行者としても選べます。同じ名前の人がいる場合は、新規追加せずお知らせします。</p>
+      <form className="shopping-inline-form" onSubmit={async e=>{
+        e.preventDefault();if(addingPerson)return;const form=e.currentTarget;
+        const name=String(new FormData(form).get("name")??"").trim();if(!name)return;
+        setAddingPerson(true);
+        try{const next=await addShoppingPerson(eventId,memo,name);setMemo(next);form.reset();setMessage(`${name}さんを共通の人物一覧に登録しました。`);}
+        catch(error){const message=error instanceof Error?error.message:"保存できませんでした。入力内容は残しています。";setMessage(message);if(message.includes("すでに登録されています"))window.alert(message);}
+        finally{setAddingPerson(false);}
+      }}><input name="name" aria-label="購入者名" required maxLength={50} disabled={addingPerson} placeholder="名前・ニックネーム"/><button disabled={addingPerson}>{addingPerson?"保存中…":"新しい人を追加"}</button></form>
       <div className="shopping-actions">{loadCompanions().filter(c=>!c.deleted&&!memo.buyers.some(b=>b.id===c.id)).map(c=><button key={c.id} type="button" onClick={()=>persist({...memo,buyers:[...memo.buyers,{id:c.id,name:c.name}]})}>＋ {c.name}</button>)}</div>
       </>}
       {buyerEditor==="edit"&&memo.buyers.map(b=><form key={b.id} className="shopping-inline-form" onSubmit={e=>{e.preventDefault();const name=String(new FormData(e.currentTarget).get("name")).trim();if(name)persist({...memo,buyers:memo.buyers.map(x=>x.id===b.id?{...x,name}:x)});}}><input name="name" defaultValue={b.name} aria-label={`${b.name}の名前`} required/><button>名前を保存</button>{b.id!=="self"&&<button type="button" onClick={()=>{if(!window.confirm(`${b.name}さんの数量・購入状況・特典も削除しますか？`))return;const orders={...memo.orders},bonuses={...memo.bonuses};delete orders[b.id];delete bonuses[b.id];if(persist({...memo,buyers:memo.buyers.filter(x=>x.id!==b.id),orders,bonuses})&&buyer===b.id)setBuyer("self");}}>削除</button>}</form>)}

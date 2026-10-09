@@ -1,3 +1,4 @@
+import { withPersonalDataLock } from "../../services/personalDataLock";
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { Link } from 'react-router';
@@ -55,7 +56,7 @@ function SyncControls({session}:{session:Session}){
     if(!active.current)return;
     if(!latest||latest.revision!==remote.revision)throw new Error('SYNC_CONFLICT');
     if(!sameSnapshot(local,captureSnapshot()))throw new Error('LOCAL_CHANGED');
-    restoreSnapshot(latest.payload);localStorage.setItem(baselineKey,String(latest.revision));
+    await withPersonalDataLock(() => { if(!sameSnapshot(local,captureSnapshot()))throw new Error("LOCAL_CHANGED"); restoreSnapshot(latest.payload); });localStorage.setItem(baselineKey,String(latest.revision));
     applyTheme(loadTheme());setLocal(captureSnapshot());
     setMessage('この端末に読み込みました。置き換え前のデータはこのブラウザにバックアップしています。');
    }
@@ -72,7 +73,7 @@ function SyncControls({session}:{session:Session}){
   {ready&&remote&&!canUpload&&<p>クラウドとこの端末に異なるデータがあります。誤って上書きしないよう、保存を止めています。この端末のバックアップをダウンロードしてからクラウドを読み込んでください。自動での結合は行いません。</p>}
   {confirm&&<section className="sync-confirm" role="alert"><p>{confirm==='upload'?`${account} の個人用クラウドデータを、この端末の内容で保存します。友人には共有されません。`:'この端末の個人データをクラウドの内容に置き換えます。必要なデータは先にバックアップをダウンロードしてください。'}</p><button disabled={busy} onClick={()=>void perform()}>{confirm==='upload'?'保存する':'置き換えて読み込む'}</button>{' '}<button disabled={busy} onClick={()=>setConfirm(null)}>キャンセル</button></section>}
   <p className="sync-status" role="status">{busy?'処理中…':message}</p>
-  <details><summary>バックアップから戻す</summary><p>選んだファイルの内容で、この端末の個人データを置き換えます。クラウドには送信しません。</p><input aria-label="バックアップファイル" type="file" accept=".json,application/json" disabled={busy} onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{const snapshot=validateSnapshot(JSON.parse(await file.text()));if(!window.confirm(`${snapshotSummary(snapshot)} をこの端末に復元しますか？`))return;restoreSnapshot(snapshot);applyTheme(loadTheme());setLocal(captureSnapshot());setMessage('バックアップを復元しました。');}catch{setMessage('復元できませんでした。バックアップ形式と保存容量を確認してください。');}finally{e.target.value='';}}}/></details>
+  <details><summary>バックアップから戻す</summary><p>選んだファイルの内容で、この端末の個人データを置き換えます。クラウドには送信しません。</p><input aria-label="バックアップファイル" type="file" accept=".json,application/json" disabled={busy} onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{const snapshot=validateSnapshot(JSON.parse(await file.text()));if(!window.confirm(`${snapshotSummary(snapshot)} をこの端末に復元しますか？`))return;await withPersonalDataLock(()=>restoreSnapshot(snapshot));applyTheme(loadTheme());setLocal(captureSnapshot());setMessage('バックアップを復元しました。');}catch{setMessage('復元できませんでした。バックアップ形式と保存容量を確認してください。');}finally{e.target.value='';}}}/></details>
  </section>;
 }
 export default function PersonalSyncPage(){return <main className="personal-sync-page"><Link to="/settings">← 設定へ</Link><header className="page-header"><h1>自分の端末と同期</h1><p>PCとスマホで同じLINEアカウントを使ってください。個人用データは本人だけがアクセスできます。</p></header><CloudGate purpose="personal">{session=><SyncControls key={session.user.id} session={session}/>}</CloudGate></main>;}

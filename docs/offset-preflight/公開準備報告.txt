@@ -1,0 +1,128 @@
+OshiMemo 相殺機能 v1.0 ステージング公開準備報告
+確認日：2026-10-08
+結論：相殺機能だけを分離したローカル公開候補の事前確認は完了。公開は未実施。
+
+1. 配信ソース
+対象：https://oshi-memo-test.yuu0629.chatgpt.site/
+project_id：appgprj_6ab9eb5e23e481919ff36104c0eaff91
+バージョン：108
+ソースID：005e8bda406e620f13b56f99b403cd696e6cab55
+version_id：appgprj_6ab9eb5e23e481919ff36104c0eaff91~appgver_12c315b67f7881918d792b168d9b8737
+deployment_id：appgdep_6ac74113add081919cec7bf30b04f201
+状態：succeeded。環境変数revision：0。
+Sites get_site/list_site_versions/get_site_version/get_deployment_statusで確認。
+Sitesの更新時刻は前回108公開時の2026-10-08T07:07:53Zと一致。108以降の保存版は見つからなかった。
+ローカルの配信ソース控え .sites-deploy のHEADと一致し、作業ツリーも変更なし。
+認証設定・環境変数の取得や変更、ソースのpush、バージョン保存、公開APIは実行していない。
+
+2. 公開対象の分離
+Gitの通常の差分には既に公開済みの作業も混在するため、配信108のソースを比較基準にした。
+対象18実装ファイル＋相殺検証用4ファイルをoverlay/へ固定し、manifest.jsonにSHA-256を保存した。
+release.patchは108からのこの22ファイルだけの差分。
+公開候補は108をローカルへ展開してoverlayだけを重ねたもの。配信ソース控えや作業中のappは変更していない。
+
+実装18ファイル（配信ソース内の相対パス）
+src/App.tsx：相殺グループ詳細のルート
+src/components/common/OffsetLinks.tsx：関連グループ・状態へのリンク
+src/pages/Event/EventDetailPage.tsx：イベントから相殺を確認
+src/pages/Home/OffsetGroupPage.tsx：差額精算・取消・グループ履歴
+src/pages/Home/PaymentOffsetEntry.tsx：購入支払いから同行者精算への導線
+src/pages/Home/SettlementTaskForm.tsx：候補表示・確認・グループへの導線
+src/pages/Home/TicketTaskPage.tsx：完了アーカイブのグループ表示
+src/pages/Home/TicketTodos.tsx：ホームの差額タスク集約
+src/pages/Ticket/TicketPayments.tsx：精算方向の確認・訂正
+src/services/companionSettlements.ts：逆方向精算への重複追加防止
+src/services/offsetGroups.ts：履歴の関連付け・完了・取消
+src/services/offsetTaskDisplay.ts：元タスクを保持した表示集約
+src/services/paymentSettlementEntry.ts：逆方向の未精算がある場合の確認
+src/services/settlementConsistency.ts：方向の整合性と確認記録
+src/services/settlementOffsets.ts：取消復元用情報・再検証・履歴更新
+src/services/ticketTasks.ts：グループ表示用の任意フィールド
+src/types/SettlementOffset.ts：旧履歴に互換な任意項目・取消状態
+src/types/Ticket.ts：精算方向の確認履歴
+
+相殺検証用4ファイル
+ tests/settlement-offsets.test.cjs
+ tests/ticket-reception.test.cjs
+ tests/offset-groups.html
+ tests/offset-groups.browser.tsx
+これらの検証ページやfixtures/は通常の配信アセットに含まれない。
+
+以前からの未公開変更として除外した実装
+・src/index.css：購入枚数欄の幅、券種追加／閉じるボタンのはみ出し修正
+・src/components/event/GenreSummary.tsx：予約等で「抽選回」と表示しない修正
+・src/components/event/EntryPeriods.tsx：入場方法追加ボタンの文言修正
+今回は相殺機能の依存ではないため含めない。作業中の変更自体は保持している。
+SettlementTaskFormの「同方向で候補がない理由」表示は以前の修正だが、今回の相殺候補UIにも必要なため含めた。
+
+以前の公式情報・同期・表示検証用テスト11ファイルも実装とは別に分類。
+検証時だけその修正版を利用し、公開差分の22ファイルとは分けた。
+manifest.jsonのexcluded/verification_only_filesに全件の分類とハッシュを記録した。
+
+3. 依存関係と互換性
+依存関係の全一覧：dependencies.json。
+導線：App→支払い詳細／相殺グループ詳細→候補・計算→既存storageの一括保存。
+一覧：TicketTodos／CompletedTasksPage→offsetTaskDisplay→既存ticketTasks＋offsetGroups。
+イベント・チケット：OffsetLinks→既存履歴内の精算ID→同一グループ。
+整合性：TicketPayments→settlementConsistency、companionSettlements。
+保存は既存ticketsキーと既存PersonalSnapshot version 1を継続し、新しい保存領域やクラウドテーブルを作らない。
+
+配信108とバイト単位で同一と確認した主な処理
+・公式情報取得、候補・選択・探索、通常／簡易イベント登録、出典表示
+・server/sites-worker.mjs、server/officialPage.ts（MAPPAのWorkers互換修正を保持）
+・storage.ts、personalSnapshot.ts、personalDataLock.ts、PersonalSyncPage.tsx
+・ticketAmounts.ts、package.json、package-lock.json、vite.config.ts
+一覧18件はmanifest.jsonのverified_unchangedに記録。
+既存の公式情報・チケット管理・同期に必要なこれらのコードを差し替えない。
+EventDetailPageは公式情報部分を保持し、関連相殺リンクだけを追加する。
+旧履歴の読取、通常支払い、同じイベントの無関係な精算の保持を検証。
+
+4. 事前確認結果
+・分離した候補：自動テスト205件成功、失敗0。
+・追加preflight：8件成功、失敗0。
+  架空の5基本データ、候補の境界、108の旧履歴、既存SQL RPC往復、公開範囲を検証。
+・ブラウザ：相殺7件成功、公式フォーム6件成功（計13件）。
+・型チェック・アプリビルド・Workerビルド成功。Worker配信用80アセット。
+・実データを使わず、ブラウザ検証はメモリ内の専用記録で実施。
+・実クラウドへ送信せず、PGlite内に既存migration/RPCを再現して相殺中・完了・取消を保存・復元。
+・復元後も同じID・残額・履歴で差額完了／取消でき、古いrevisionの書込は拒否される。
+・候補選択、複数公演追加、既存イベント編集・保存、出典の保存・再編集・復元の回帰確認成功。
+・実際のMAPPA等の上流サイト応答は今回再取得していない。公開後の実機確認項目に含めた。
+・既存の大きなバンドル警告は残る。ビルドは成功。
+
+検証中の失敗と扱い
+配信108の古いentry-summary.test.cjsはジャンル未指定のfixtureで、物販用の入場情報表示を期待しており3件失敗した。
+以前に修正済みのfixture（mainGenreId:goods-sale）と追加回帰2件を検証側だけに反映すると全件成功。
+GenreSummaryの予約ラベル修正を入れなくても通るため、相殺の回帰ではない。
+追加SQLテストの最初の比較は、JSON化で省略されるundefinedプロパティまで比較して失敗した。
+保存形式に合わせたJSON値比較と、復元後の実際の完了・取消操作で再確認して成功。実装コードの修正は不要だった。
+
+5. ステージング用データ
+fixtures/に9種類のPersonalSnapshotファイルを準備。catalog.jsonに期待結果を記載。
+全イベント名・同行者名は「【相殺検証専用】」、全IDはoffset-qa-v1-から始まる架空記録。
+MAPPA役・文スト役は実データのコピーではない。
+相殺前、差額受取、ゼロ、候補境界、方向不一致、相殺中、完了、取消、108形式旧履歴を用意した。
+今回、これらをステージング・実端末・クラウドへ復元していない。
+snapshot復元は端末内データを置き換える機能なので、専用の空の隔離ブラウザ以外では使わない。
+詳しい使用順・期待値・中止条件は「実機確認手順.txt」を参照。
+
+6. 公開承認後の手順
+・Sitesの現在の配信ソース／版／更新時刻を再確認する。108から変わっていた場合は反映を中断して差分を報告。
+・manifest.jsonとoverlayのハッシュを照合し、この固定済み内容だけを使う。
+・今回含めなかったCSS・予約ラベル修正を混ぜる場合は、公開対象の変更として承認と再検証が必要。
+・prepare.pyを再実行すると作業中appから準備し直すため、承認済み内容を上書きする用途で使わない。
+・正式なSites source helperで配信ソースを開き、固定した差分だけを適用して正式ビルド・登録・公開する。
+・Worker専用の既存scripts/build-sites.mjsを使う。認証・環境・同期設定は変更しない。
+・実機確認手順に従い、専用の空環境にのみ検証データを復元する。
+・重大な不具合があれば配信を旧版に戻す判断を行うが、新しい取消履歴を旧版で編集・同期しない。
+  ソースの切り戻しと利用者データの巻き戻しは別であり、データは初期化しない。
+
+7. 残るリスク
+・相殺はユーザー確認後に保存するが、金額自動計算は既存の1人1枚分。複数枚の個別負担は手動確認が必要。
+・旧版108は新しい取消状態を理解しない。新旧版のタブ・端末を混在させた編集や同期は避ける。
+・実端末間のクラウド同期は未確認。専用テストアカウントが用意できた場合に別途許可を得て確認する。
+・未公開CSS修正を除外しているため、従来の購入枚数欄・ボタンの表示問題はこの候補には残る。
+・安全に復元できない金銭授受後・料金変更後の相殺は取消を拒否する。
+・完了後の返金等を扱う専用訂正フローは今回含まない。
+
+ステージング／本番への公開、既存イベント・チケット・精算・相殺履歴・クラウドデータの変更は一切行っていない。

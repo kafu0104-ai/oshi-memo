@@ -12,12 +12,12 @@ export default function TicketEditPage() {
   const reception = eventId ? loadTicketByEventId(eventId)?.receptions.find(item => item.id === receptionId) : undefined;
   const returnTo = event ? `/events/${event.id}` : "/events";
 
-  function save(updated: TicketReception, newCompanions: Companion[]) {
+  async function save(updated: TicketReception, newCompanions: Companion[]) {
     if (!eventId) return;
     const ticket = loadTicketByEventId(eventId);
     const current = ticket?.receptions.find(item => item.id === receptionId);
     if (!ticket || !current) throw new Error("チケット情報が見つかりません。");
-    saveTicketWithCompanions({ ...ticket, receptions: ticket.receptions.map(item => item.id === receptionId
+    await saveTicketWithCompanions({ ...ticket, receptions: ticket.receptions.map(item => item.id === receptionId
       ? { ...current, ...updated, id: current.id }
       : item) }, newCompanions);
     navigate(returnTo);

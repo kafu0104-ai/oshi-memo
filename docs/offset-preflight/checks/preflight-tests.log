@@ -1,0 +1,16 @@
+✔ 01-primary-before prepared fixture has correct balance (3.069417ms)
+✔ 02-receive-balance prepared fixture has correct balance (0.976041ms)
+✔ 03-zero-balance prepared fixture has correct balance (0.712042ms)
+✔ candidate boundaries and same-event unrelated settlement are isolated (10.325208ms)
+✔ direction mismatch fixture warns without changing data (0.7355ms)
+✔ v108 legacy pending and completed histories remain readable (20.32675ms)
+✔ existing SQL RPC round-trip preserves pending, completed and cancelled offset histories (958.718875ms)
+✔ release overlay excludes unrelated UI fixes and does not change integration code (11.696ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1331.552709

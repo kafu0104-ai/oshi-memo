@@ -19,7 +19,7 @@ export default function CompanionSettingsPage() {
       e.preventDefault(); const trimmed = name.trim();
       if (!trimmed) { setMessage("名前を入力してください。"); return; }
       const current = loadCompanions();
-      if (current.some(c => !c.deleted && c.id !== editing && c.name === trimmed)) { setMessage("同じ名前の同行者が登録されています。"); return; }
+      if (current.some(c => c.id !== editing && c.name.trim() === trimmed)) { setMessage("同じ名前の人がすでに登録されています。"); window.alert("同じ名前の人がすでに登録されています。"); return; }
       const existing = current.find(c => c.id === editing);
       if (editing && (!existing || existing.deleted)) { setMessage("編集対象が見つかりません。再読み込みしてください。"); return; }
       try {

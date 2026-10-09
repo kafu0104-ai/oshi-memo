@@ -2539,7 +2539,7 @@ form.goods-import-form { display:flex; flex-direction:column; gap:16px; min-widt
 
 .ticket-seat-row { display:grid; grid-template-columns:minmax(0,1fr); align-items:stretch; }
 .ticket-seat-row .ticket-seat-remove { grid-column:1; justify-self:end; margin:0; padding:8px 14px; min-height:44px; }
-.ticket-price-quantity { display:grid; grid-template-columns:minmax(0, 3fr) minmax(0, 2fr); gap:12px; align-items:start; }
+.ticket-price-quantity { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr)); gap:12px; align-items:start; }
 .ticket-price-quantity .form-field, .ticket-price-quantity input { min-width:0; width:100%; box-sizing:border-box; }
 .ticket-seat-add { width:100%; }
 
@@ -2926,3 +2926,133 @@ a.shopping-memo-list-card { align-items:center; padding:18px 20px; gap:12px; }
 .official-import-item > input[type="checkbox"] { width: 22px; min-width: 22px; max-width: 22px; height: 22px; min-height: 22px; margin: 2px 0 0; padding: 0; }
 .official-import-item > span { white-space: pre-line; overflow-wrap: anywhere; }
 .official-import, .official-import-review { min-width: 0; max-width: 100%; box-sizing: border-box; }
+
+.ticket-collapsible > summary,.ticket-application-collapse > summary { cursor:pointer; font-weight:600; padding:8px 0; line-height:1.6; overflow-wrap:anywhere; }
+.ticket-payments details.ticket-application-collapse { display:block; }
+.ticket-application-body { display:grid; gap:12px; padding-top:16px; }
+.ticket-application-performance { display:block; font-size:.875rem; font-weight:400; color:var(--color-subtext); }
+.ticket-collapsible[open] > summary { margin-bottom:16px; }
+
+/* Distinguish expandable application cards from the surrounding payment panel. */
+.ticket-payments details.ticket-application-collapse,
+.ticket-editor details.ticket-collapsible {
+  background: #fff;
+  border: 1px solid #a99486;
+  padding: 0;
+  overflow: hidden;
+}
+.ticket-application-collapse > summary,
+.ticket-editor .ticket-collapsible > summary {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 16px 52px 16px 18px;
+  min-height: 52px;
+  box-sizing: border-box;
+  color: #544c40;
+  font-weight: 600;
+}
+.ticket-application-collapse > summary::-webkit-details-marker,
+.ticket-collapsible > summary::-webkit-details-marker { display: none; }
+.ticket-application-collapse > summary::after,
+.ticket-collapsible > summary::after {
+  content: '▼';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f6e8e1;
+  color: #544c40;
+  font-size: 14px;
+  font-weight: 400;
+}
+.ticket-application-collapse[open] > summary::after,
+.ticket-collapsible[open] > summary::after { content: '▲'; }
+.ticket-application-collapse[open] > summary,
+.ticket-editor .ticket-collapsible[open] > summary { border-bottom: 1px solid #ded8d2; margin-bottom: 0; }
+.ticket-application-collapse > summary:focus-visible,
+.ticket-collapsible > summary:focus-visible { outline: 2px solid #795b4b; outline-offset: -4px; border-radius: 14px; }
+.ticket-application-collapse > .ticket-application-body { padding: 16px; }
+.ticket-editor .ticket-collapsible > :not(summary) { margin-left: 16px; margin-right: 16px; }
+.ticket-editor .ticket-collapsible > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(100% - 32px);
+  max-width: calc(100% - 32px);
+  min-width: 0;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ticket-editor .ticket-collapsible > :last-child { margin-bottom: 16px; }
+.ticket-application-performance { margin-top: 4px; color: #685f54; }
+
+/* Companion netting extends the existing task sheet. */
+.settlement-task { min-width: 0; color: #544c40; }
+.settlement-task h2 { font-size: 1.12rem; margin: 24px 0 12px; }
+.settlement-method { border: 1px solid #d9cfc6; border-radius: 16px; padding: 12px; margin: 0 0 16px; }
+.settlement-task .ticket-check { min-height: 48px; align-items: center; padding: 10px 4px; cursor: pointer; }
+.settlement-task input[type="checkbox"], .settlement-task input[type="radio"] { flex: 0 0 22px; width: 22px; height: 22px; accent-color: #9b6957; }
+.settlement-event { background: #fffdfb; border: 1px solid #d9cfc6; border-radius: 16px; padding: 14px; margin-bottom: 12px; overflow-wrap: anywhere; }
+.settlement-event small { display: block; margin-top: 6px; }
+.settlement-event summary { min-height: 44px; cursor: pointer; padding: 10px 0; }
+.settlement-item-label { margin: 0 0 8px 32px; font-size: .9rem; }
+.settlement-calculation, .settlement-confirm, .settlement-notice { background: #f4e8e2; border: 1px solid #e4c1b5; border-radius: 16px; padding: 16px; margin: 12px 0; }
+.settlement-calculation .task-facts dd { margin-bottom: 8px; }
+.settlement-confirm ul { padding-left: 22px; }
+.settlement-confirm li { margin-bottom: 8px; }
+.settlement-history-item { border-top: 1px solid #eae6e1; padding: 14px 0; }
+.settlement-history-item p { margin: 8px 0; }
+.settlement-balance { padding: 16px; background: #fffdfb; border-radius: 16px; }
+.settlement-task button { min-height: 48px; }
+.payment-offset-entry { border:1px solid #d9cfc6; border-radius:16px; padding:16px; margin:16px 0 24px; background:#fffdfb; }
+.payment-offset-entry > h2 { font-size:1.1rem; margin:0 0 12px; }
+.payment-offset-entry > button { width:100%; min-height:48px; }
+.payment-offset-entry select { width:100%; min-width:0; min-height:48px; }
+.payment-offset-entry .settlement-task { margin-top:20px; }
+
+.official-status-list > div { display:grid;grid-template-columns:minmax(100px,1fr) 2fr;gap:12px;padding:10px 0;border-bottom:1px solid #eae6e1; }
+.official-status-list dd { margin:0; } .official-status-list small { display:block;margin-top:4px; }
+.official-candidate { margin:20px 0;padding:16px;border:1px solid #e4c1b5;border-radius:12px;background:#fffdfb; }
+.official-candidate h4 { margin:0 0 12px; } .official-field-candidate { padding:10px 0;border-top:1px solid #eae6e1;overflow-wrap:anywhere; }
+.official-candidate input[type=checkbox] { min-width:22px;min-height:22px; }
+.official-confirmation { color:#544c40;background:#eae6e1;padding:10px;border-radius:8px; }
+.official-source-summary { margin:16px 0;overflow-wrap:anywhere; } .official-source-summary summary { min-height:44px;cursor:pointer; }
+.official-source-summary > div { padding:10px 0;border-bottom:1px solid #eae6e1; }
+
+/* Preserve a usable number field even inside a narrow ticket card. */
+.ticket-editor .ticket-price-quantity {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+.ticket-editor .ticket-quantity-control {
+  display: grid;
+  grid-template-columns: 44px minmax(64px, 1fr) 44px;
+  width: 100%;
+  gap: 6px;
+}
+.ticket-editor .ticket-quantity-control input {
+  width: 100%;
+  min-width: 64px;
+  padding: 8px 4px;
+  text-align: center;
+}
+.ticket-editor .ticket-quantity-control button { width: 44px; padding: 0; }
+.ticket-editor .ticket-collapsible > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: calc(100% - 32px);
+  max-width: calc(100% - 32px);
+  min-width: 0;
+  margin: 12px 16px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

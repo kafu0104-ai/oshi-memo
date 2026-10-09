@@ -1,0 +1,198 @@
+[
+  {
+    "url": "https://expo.mappa.co.jp/",
+    "at": "2026-10-08T04:05:45.976Z",
+    "elapsedMs": 1237,
+    "before": {
+      "fields": {
+        "title": "MAPPA EXPO 15th Anniversary",
+        "startDate": "2026-09-16",
+        "endDate": "2026-12-07",
+        "venue": "YURAKUCHO MUSEUM［東京・有楽町］ 〒100-0005 東京都千代田区丸の内3丁目5番1号 東京国際フォーラム地下1階",
+        "openingTime": "10:00",
+        "closingTime": "18:00"
+      },
+      "performances": []
+    },
+    "after": [
+      {
+        "source": "https://expo.mappa.co.jp/",
+        "fields": {
+          "title": "MAPPA EXPO 15th Anniversary",
+          "startDate": "2026-09-16",
+          "endDate": "2026-12-07",
+          "venue": "YURAKUCHO MUSEUM［東京・有楽町］ 〒100-0005 東京都千代田区丸の内3丁目5番1号 東京国際フォーラム地下1階",
+          "openingTime": "10:00",
+          "closingTime": "18:00"
+        }
+      }
+    ],
+    "visited": [
+      "https://expo.mappa.co.jp/"
+    ],
+    "issues": []
+  },
+  {
+    "url": "https://15th.utapri.tv/event/",
+    "at": "2026-10-08T04:05:46.097Z",
+    "elapsedMs": 119,
+    "before": {
+      "fields": {
+        "title": "うたの☆プリンスさまっ♪ 15th Anniversary LIVE WE LOVE ST☆RISH",
+        "performers": "寺島拓篤（一十木音也 役）\n鈴村健一（聖川真斗 役）\n谷山紀章（四ノ宮那月 役）\n宮野真守（一ノ瀬トキヤ 役）\n諏訪部順一（神宮寺レン 役）\n下野 紘（来栖 翔 役）\n鳥海浩輔（愛島セシル 役）"
+      },
+      "performances": [
+        {
+          "date": "2027-01-23",
+          "venue": "Kアリーナ横浜",
+          "doorsOpen": "15:30",
+          "startTime": "17:30"
+        },
+        {
+          "date": "2027-01-24",
+          "venue": "Kアリーナ横浜",
+          "doorsOpen": "13:00",
+          "startTime": "15:00"
+        },
+        {
+          "date": "2027-01-30",
+          "venue": "IGアリーナ",
+          "doorsOpen": "15:30",
+          "startTime": "17:30"
+        },
+        {
+          "date": "2027-01-31",
+          "venue": "IGアリーナ",
+          "doorsOpen": "13:00",
+          "startTime": "15:00"
+        }
+      ]
+    },
+    "after": [
+      {
+        "source": "https://15th.utapri.tv/event/",
+        "fields": {
+          "startDate": "2027-01-23",
+          "endDate": "2027-01-23",
+          "venue": "Kアリーナ横浜",
+          "doorsOpen": "15:30",
+          "startTime": "17:30"
+        },
+        "performance": {
+          "date": "2027-01-23",
+          "venue": "Kアリーナ横浜",
+          "doorsOpen": "15:30",
+          "startTime": "17:30",
+          "genre": "live"
+        }
+      },
+      {
+        "source": "https://15th.utapri.tv/event/",
+        "fields": {
+          "startDate": "2027-01-24",
+          "endDate": "2027-01-24",
+          "venue": "Kアリーナ横浜",
+          "doorsOpen": "13:00",
+          "startTime": "15:00"
+        },
+        "performance": {
+          "date": "2027-01-24",
+          "venue": "Kアリーナ横浜",
+          "doorsOpen": "13:00",
+          "startTime": "15:00",
+          "genre": "live"
+        }
+      },
+      {
+        "source": "https://15th.utapri.tv/event/",
+        "fields": {
+          "startDate": "2027-01-30",
+          "endDate": "2027-01-30",
+          "venue": "IGアリーナ",
+          "doorsOpen": "15:30",
+          "startTime": "17:30"
+        },
+        "performance": {
+          "date": "2027-01-30",
+          "venue": "IGアリーナ",
+          "doorsOpen": "15:30",
+          "startTime": "17:30",
+          "genre": "live"
+        }
+      },
+      {
+        "source": "https://15th.utapri.tv/event/",
+        "fields": {
+          "startDate": "2027-01-31",
+          "endDate": "2027-01-31",
+          "venue": "IGアリーナ",
+          "doorsOpen": "13:00",
+          "startTime": "15:00"
+        },
+        "performance": {
+          "date": "2027-01-31",
+          "venue": "IGアリーナ",
+          "doorsOpen": "13:00",
+          "startTime": "15:00",
+          "genre": "live"
+        }
+      },
+      {
+        "source": "https://15th.utapri.tv/event/",
+        "fields": {
+          "title": "うたの☆プリンスさまっ♪ 15th Anniversary LIVE WE LOVE ST☆RISH",
+          "performers": "寺島拓篤（一十木音也 役）\n鈴村健一（聖川真斗 役）\n谷山紀章（四ノ宮那月 役）\n宮野真守（一ノ瀬トキヤ 役）\n諏訪部順一（神宮寺レン 役）\n下野 紘（来栖 翔 役）\n鳥海浩輔（愛島セシル 役）"
+        }
+      }
+    ],
+    "visited": [
+      "https://15th.utapri.tv/event/"
+    ],
+    "issues": []
+  },
+  {
+    "url": "https://agf-ikebukuro.jp/s/agf2026/",
+    "at": "2026-10-08T04:05:46.603Z",
+    "elapsedMs": 502,
+    "before": {
+      "fields": {
+        "title": "アニメイトガールズフェスティバル2026(AGF2026)"
+      },
+      "performances": []
+    },
+    "after": [
+      {
+        "source": "https://agf-ikebukuro.jp/s/agf2026/",
+        "fields": {
+          "title": "アニメイトガールズフェスティバル2026(AGF2026)"
+        }
+      },
+      {
+        "source": "https://agf-ikebukuro.jp/s/agf2026/page/access?ima=0546",
+        "fields": {
+          "title": "アニメイトガールズフェスティバル2026(AGF2026)"
+        },
+        "confirmation": "関連ページの情報です。公演・会場・年度を確認してください。"
+      },
+      {
+        "source": "https://agf-ikebukuro.jp/s/agf2026/page/about?ima=0546",
+        "fields": {
+          "title": "アニメイトガールズフェスティバル2026(AGF2026)",
+          "startDate": "2026-11-07",
+          "endDate": "2026-11-08",
+          "venue": "池袋・サンシャインシティ 他",
+          "lastAdmission": "16:50",
+          "openingTime": "09:00",
+          "closingTime": "17:00"
+        },
+        "confirmation": "関連ページの情報です。公演・会場・年度を確認してください。"
+      }
+    ],
+    "visited": [
+      "https://agf-ikebukuro.jp/s/agf2026/",
+      "https://agf-ikebukuro.jp/s/agf2026/page/about?ima=0546",
+      "https://agf-ikebukuro.jp/s/agf2026/page/access?ima=0546"
+    ],
+    "issues": []
+  }
+]

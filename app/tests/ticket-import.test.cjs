@@ -15,3 +15,11 @@ test('ambiguous windows and invalid or missing dates are not guessed',()=>{
  assert.equal(result.receptionFromText('▼一般販売（先着順）\n【神奈川公演】\n2027年1月16日（土）18:00～2027年1月22日（金）12:00\n【愛知公演】\n2027年1月16日（土）18:00～2027年1月29日（金）12:00','ライブビューイング'),undefined);
  assert.equal(result.receptionFromText('▼プレミア先行抽選\n発売日2026年10月21日\n申込日未定','現地公演'),undefined);
 });
+test('seat prices stay scoped to venue and live viewing, unrelated amounts excluded',()=>{
+ const groups=result.seatGroupsFromText('＜チケット情報＞\n【神奈川公演】\n・アリーナ席：18,000円\n・ミドルスタンド席：12,000円\n【愛知公演】\n・アリーナ席：18,000円\n・4Fスタンド席：10,000円\n▼一般販売\nグッズ指定：3,000円\nライブ・ビューイング情報\n■チケット情報\n5,500円 （税込／全席指定）');
+ assert.equal(groups.length,3);assert.equal(groups[0].label,'神奈川公演');assert.equal(groups[0].seats[1].price,12000);assert.equal(groups[1].seats[1].name,'4Fスタンド席');assert.equal(groups[2].mode,'ライブビューイング');assert.equal(groups[2].seats[0].price,5500);
+});
+test('seat importer does not infer unlabelled prices or duplicate repeated seats',()=>{
+ assert.equal(result.seatGroupsFromText('アリーナ席：18,000円').length,0);
+ const groups=result.seatGroupsFromText('＜チケット情報＞\n・アリーナ席：18,000円\n・アリーナ席：18,000円');assert.equal(groups[0].seats.length,1);
+});

@@ -1,0 +1,494 @@
+{
+  "src/App.tsx": [
+    {
+      "file": "src/pages/Home/OffsetGroupPage.tsx",
+      "source": "overlay"
+    },
+    {
+      "file": "src/pages/Event/EventCompletePage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Home/SchedulePage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Home/CreationPlaceholder.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Home/CreatePage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Ticket/NewTicketPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Shopping/ShoppingListPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Shopping/NewShoppingMemoPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Home/ReceiptTasksPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Settings/CalendarSettingsPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Shared/AuthCallbackPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Settings/PersonalSyncPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Shared/SharedShoppingPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Shared/JoinRequests.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/common/BackToTop.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/common/RouteScrollReset.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/common/OshiIcon.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Event/EventPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Event/EventDetailPage.tsx",
+      "source": "overlay"
+    },
+    {
+      "file": "src/pages/Home/HomePage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Settings/CompanionSettingsPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Settings/TagSettingsPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Settings/SettingsPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Ticket/TicketEditPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Home/TicketTodos.tsx",
+      "source": "overlay"
+    },
+    {
+      "file": "src/pages/Home/TicketTaskPage.tsx",
+      "source": "overlay"
+    },
+    {
+      "file": "src/pages/Ticket/TicketPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Settings/ThemeSettingsPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Shopping/ShoppingPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Home/FeatureEventsPage.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Exchange/ExchangePage.tsx",
+      "source": "v108"
+    }
+  ],
+  "src/types/Ticket.ts": [
+    {
+      "file": "src/types/SettlementOffset.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/types/SettlementOffset.ts": [
+    {
+      "file": "src/types/Ticket.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/services/companionSettlements.ts": [
+    {
+      "file": "src/types/Ticket.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/services/settlementConsistency.ts": [
+    {
+      "file": "src/types/Ticket.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/services/settlementOffsets.ts": [
+    {
+      "file": "src/services/settlementConsistency.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/types/Ticket.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/types/SettlementOffset.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/types/Event.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/ticketAmounts.ts",
+      "source": "v108"
+    }
+  ],
+  "src/services/offsetGroups.ts": [
+    {
+      "file": "src/types/Ticket.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/types/Event.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/types/SettlementOffset.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/settlementOffsets.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/services/offsetTaskDisplay.ts": [
+    {
+      "file": "src/services/storage.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/offsetGroups.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/settlementOffsets.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/ticketTasks.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/services/paymentSettlementEntry.ts": [
+    {
+      "file": "src/types/Ticket.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/ticketAmounts.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/settlementOffsets.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/services/ticketTasks.ts": [
+    {
+      "file": "src/services/settlementOffsets.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/ticketIssuance.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/ticketReception.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/taskTags.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/storage.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/ticketAmounts.ts",
+      "source": "v108"
+    }
+  ],
+  "src/components/common/OffsetLinks.tsx": [
+    {
+      "file": "src/services/storage.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/offsetGroups.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/settlementOffsets.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/types/SettlementOffset.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/pages/Ticket/TicketPayments.tsx": [
+    {
+      "file": "src/components/common/OffsetLinks.tsx",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/settlementConsistency.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/storage.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/settlementOffsets.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/types/Event.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/companionSettlements.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/ticketReception.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/id.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/common/TaskTags.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/taskTags.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/ticketAmounts.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/common/OshiIcon.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/types/Companion.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/types/Ticket.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/pages/Home/SettlementTaskForm.tsx": [
+    {
+      "file": "src/components/common/OffsetLinks.tsx",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/offsetGroups.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/storage.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/settlementOffsets.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/id.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/ticketTasks.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/types/SettlementOffset.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/pages/Home/PaymentOffsetEntry.tsx": [
+    {
+      "file": "src/services/storage.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/ticketTasks.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/paymentSettlementEntry.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/id.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/pages/Home/SettlementTaskForm.tsx",
+      "source": "overlay"
+    }
+  ],
+  "src/pages/Home/TicketTodos.tsx": [
+    {
+      "file": "src/services/offsetTaskDisplay.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/exchangeTasks.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/common/TaskTags.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/ticketTasks.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/pages/Home/TicketTaskPage.tsx": [
+    {
+      "file": "src/services/offsetTaskDisplay.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/pages/Home/PaymentOffsetEntry.tsx",
+      "source": "overlay"
+    },
+    {
+      "file": "src/pages/Home/SettlementTaskForm.tsx",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/exchangeTasks.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/common/TaskTags.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/ticketTasks.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/storage.ts",
+      "source": "v108"
+    }
+  ],
+  "src/pages/Home/OffsetGroupPage.tsx": [
+    {
+      "file": "src/services/storage.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/offsetGroups.ts",
+      "source": "overlay"
+    },
+    {
+      "file": "src/services/settlementOffsets.ts",
+      "source": "overlay"
+    }
+  ],
+  "src/pages/Event/EventDetailPage.tsx": [
+    {
+      "file": "src/components/common/OffsetLinks.tsx",
+      "source": "overlay"
+    },
+    {
+      "file": "src/components/event/OfficialSourceSummary.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/eventArchive.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/hooks/useLocalToday.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/eventTicketDraft.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/event/GenreSummary.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/common/VenueMapLink.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/common/OshiIcon.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/components/event/EventForm.tsx",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/shoppingMemos.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/services/storage.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/types/Event.ts",
+      "source": "v108"
+    },
+    {
+      "file": "src/types/EventTag.ts",
+      "source": "v108"
+    }
+  ]
+}

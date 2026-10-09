@@ -32,10 +32,10 @@ function EventPage() {
   }, []);
 
 
-  const handleSaveEvent = (event: Event, tickets?: EventTicketChanges) => {
+  const handleSaveEvent = async (event: Event, tickets?: EventTicketChanges) => {
     const nextEvents = [...loadEvents(), event];
 
-    saveEvents(nextEvents,tickets?{...tickets,eventId:event.id}:undefined);
+    await saveEvents(nextEvents,tickets?{...tickets,eventId:event.id}:undefined);
     setEvents(nextEvents);
 
     setIsFormOpen(false);

@@ -1,3 +1,4 @@
+import type { OfficialReport } from '../services/officialCandidates';
 /**
  * イベント共通の時間情報
  *
@@ -118,6 +119,7 @@ export interface EntryPeriod {
 }
 
 export interface Event {
+  officialImport?: OfficialReport;
   liveFormat?: "single" | "tour";
   entryPeriods?: EntryPeriod[];
   attendanceEntries?: AttendanceEntry[];

@@ -1,0 +1,369 @@
+{
+  "status": "LOCAL_PREPARATION_ONLY_NOT_PUBLISHED",
+  "baseline_source": "005e8bda406e620f13b56f99b403cd696e6cab55",
+  "version": 108,
+  "project_id": "appgprj_6ab9eb5e23e481919ff36104c0eaff91",
+  "version_id": "appgprj_6ab9eb5e23e481919ff36104c0eaff91~appgver_12c315b67f7881918d792b168d9b8737",
+  "deployment_id": "appgdep_6ac74113add081919cec7bf30b04f201",
+  "changes": [
+    {
+      "file": "src/App.tsx",
+      "category": "runtime",
+      "sha256": "7de859c85ad88884029d3bb1eca8dd17c23f2b25b7726a946b55f899186ca2b6",
+      "baseline_sha256": "a7a2d4e23081b7ee9d1b7da632f8f764605de13172d4e8908a1e24822dc59417"
+    },
+    {
+      "file": "src/types/Ticket.ts",
+      "category": "runtime",
+      "sha256": "2403afc8b05ad1c22b6ba6145d5a540e3698771b55580e45fc8705b061398367",
+      "baseline_sha256": "c93e4df807710c3ef7ce0c29db4e986d7f2cc0ded39ccde50657ff5be67d154c"
+    },
+    {
+      "file": "src/types/SettlementOffset.ts",
+      "category": "runtime",
+      "sha256": "728b7c06fd03028276e58c6fd88a38e0666a5c037afae0bb5a8bfefb3cc38965",
+      "baseline_sha256": "2a39659310e54836c4f108857a937e50ff6717bda4290a70cf1680f7dfb14c11"
+    },
+    {
+      "file": "src/services/companionSettlements.ts",
+      "category": "runtime",
+      "sha256": "748af56b775d44de2a26862ea84c909c5463b6e1520695b5b812a5cd71466d04",
+      "baseline_sha256": "0d427d9510131ff1d458361087b58f0949c98592bad0414ddcb68b76f70ea581"
+    },
+    {
+      "file": "src/services/settlementConsistency.ts",
+      "category": "runtime",
+      "sha256": "91b7bf565873f82173204aab7ba63610dd824c6b19750c1d0c40a42964d6422d",
+      "baseline_sha256": null
+    },
+    {
+      "file": "src/services/settlementOffsets.ts",
+      "category": "runtime",
+      "sha256": "a4360653a39ba1b0a0c452cad73008a7c1ac742dd40d201efa1d2fb2e8c98286",
+      "baseline_sha256": "2f167c9637359e340e31de183f1bf583218b3a914b63e916ce0f95cd80e92727"
+    },
+    {
+      "file": "src/services/offsetGroups.ts",
+      "category": "runtime",
+      "sha256": "4e35ecb4aaa05ff0baa714c1624e1f816672a73141df087cfa1a6edc770fee4e",
+      "baseline_sha256": null
+    },
+    {
+      "file": "src/services/offsetTaskDisplay.ts",
+      "category": "runtime",
+      "sha256": "398d514177e58d322805c7676ab9f896bb10e5b9e50e5fb8de292a8c57887ef2",
+      "baseline_sha256": null
+    },
+    {
+      "file": "src/services/paymentSettlementEntry.ts",
+      "category": "runtime",
+      "sha256": "34930430bd10122c9114f1fbd69815f600767e171cf92fd450e1b84c5f53816d",
+      "baseline_sha256": "6b5ebd0179c2da946456fcb9e75f91057191fcb6378e4f7631bbd85a6e44b419"
+    },
+    {
+      "file": "src/services/ticketTasks.ts",
+      "category": "runtime",
+      "sha256": "94c6a57a448a60c0d05b6cf9ed71f3f507dd951d484642d866d2ea5d1352a19b",
+      "baseline_sha256": "f528b08333469a371b4b256fab25caff5e6e02a04145791ce297700c41b32eaa"
+    },
+    {
+      "file": "src/components/common/OffsetLinks.tsx",
+      "category": "runtime",
+      "sha256": "2ef026f99abf2401891b772af81e8ea5b43aca7229cd446c199310a7bfa33c5e",
+      "baseline_sha256": null
+    },
+    {
+      "file": "src/pages/Ticket/TicketPayments.tsx",
+      "category": "runtime",
+      "sha256": "76a813a062487210d66030822a5b659e42ef3e0bef6cfbd33769a753a70b9dd9",
+      "baseline_sha256": "94e8061a842ccfc6a0a37010368a314ce4fb3ea06c1a37f9825822ef8e1cebba"
+    },
+    {
+      "file": "src/pages/Home/SettlementTaskForm.tsx",
+      "category": "runtime",
+      "sha256": "ca10da234eb30c56cdf9d111038b9cf25d7eff66a9c03e789f40b25d68f8f229",
+      "baseline_sha256": "b381fb1096d36120200db30980e8b12074ee1ddd9b030591712fa285897d12c0"
+    },
+    {
+      "file": "src/pages/Home/PaymentOffsetEntry.tsx",
+      "category": "runtime",
+      "sha256": "c18e851dbb824881672cd6294e66e8ef7671b8d1e0d981cabaa0b53d0b8127f6",
+      "baseline_sha256": "ddfb2155b2fa39db004910689adc2af9442bf5f8d5dfef6b72c6d65d9a247408"
+    },
+    {
+      "file": "src/pages/Home/TicketTodos.tsx",
+      "category": "runtime",
+      "sha256": "903bf40decf90b0cf2018170c1e452a3b6308c7524d334a6c50fd824b32f06ab",
+      "baseline_sha256": "28d2a8a523d875dd25564de39b5d0f12a82bb50e0540d51b3d100330695ba6ec"
+    },
+    {
+      "file": "src/pages/Home/TicketTaskPage.tsx",
+      "category": "runtime",
+      "sha256": "813a7a8afe721aed39dcc0e1549d258352088d12f40af36e0a810faddb050d09",
+      "baseline_sha256": "33d493d3973d40dab8419f0bc03e70fbd3fe9fb45336ed7a77b0068f46debe87"
+    },
+    {
+      "file": "src/pages/Home/OffsetGroupPage.tsx",
+      "category": "runtime",
+      "sha256": "7328b9ff9c53a69c9d9da32da66f1de2be78664ffd9fba7ac993327438e0dcc6",
+      "baseline_sha256": null
+    },
+    {
+      "file": "src/pages/Event/EventDetailPage.tsx",
+      "category": "runtime",
+      "sha256": "84af4f5a8bd6558ba8bb1870f4d051d250bc81dd350668d46e81a1fcbdc13611",
+      "baseline_sha256": "2d01a153c6ec92a6157d931d88b0c825cee792fbde2669821994a8745f1f0dc2"
+    },
+    {
+      "file": "tests/settlement-offsets.test.cjs",
+      "category": "verification",
+      "sha256": "6bb0e72022d6a58ca50f9b3d331c7a5db6d50643a78ed6f93ee52fda4d3963f5",
+      "baseline_sha256": "6fad3896005bae761aaa7e4ff6cba972af21a0c22da82d4732b1f9627961f284"
+    },
+    {
+      "file": "tests/ticket-reception.test.cjs",
+      "category": "verification",
+      "sha256": "2f36421d3e189c94a255b39877e2ab77b2e11ff0f133ab3121fb9e9a7929c4fb",
+      "baseline_sha256": "2f365371ba448d7fc2a445f672f20eaaefd0798c1e30c9ef07c9ff918a17e336"
+    },
+    {
+      "file": "tests/offset-groups.html",
+      "category": "verification",
+      "sha256": "d45a8e4b3f0db5d65051e6515994995621fadae514c2b2d3ca4d2b9c1a5ad7f1",
+      "baseline_sha256": null
+    },
+    {
+      "file": "tests/offset-groups.browser.tsx",
+      "category": "verification",
+      "sha256": "5e695f222870f58411faddab7bc1f4ab7dc39d1d7373719ab3c0d34ae4ab95c4",
+      "baseline_sha256": null
+    }
+  ],
+  "excluded": [
+    {
+      "file": "src/components/event/EntryPeriods.tsx",
+      "sha256": "d750766ce92a08df17ab8e0873eef34449571a742fa95f0cdf84f84668569e9f",
+      "reason": "以前からの表示修正"
+    },
+    {
+      "file": "src/components/event/GenreSummary.tsx",
+      "sha256": "06123cdde09e4e1b8fe1787d3d009400712ae8f5a1bfb22fb56ec9915558e340",
+      "reason": "以前からの表示修正"
+    },
+    {
+      "file": "src/index.css",
+      "sha256": "f09d351af6455af473d9f185c00035f7447f63047278870155f97656a5324738",
+      "reason": "以前からの表示修正"
+    },
+    {
+      "file": "tests/entry-summary.test.cjs",
+      "sha256": "8c49bf0c0fa8d9a15d94a3cd16753785d4dc60234a8ae535aeb7703e82702f90",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/fixtures/official-import-before-v1.ts",
+      "sha256": "251b45b10486baad71917fb4cc01c78f2565917c0ced44a211686af54cf0e1fa",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/official-candidates.test.cjs",
+      "sha256": "4921e5870a1e9e70511406ed15e8f43a448462154a61bd4abc4af14e61064bdf",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/official-discovery.browser.ts",
+      "sha256": "ec7b65c15919d03fb8a089e01154352056fb282ab160de5136b8751ace30a42d",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/official-discovery.html",
+      "sha256": "52273c35617328fd7c4f48e259ff478e6903c7c5ac3fea975acafcb555726c2b",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/official-forms.browser.tsx",
+      "sha256": "3aca38a2c88a43785c76d59766b6ec45f505f1b84f1600bb8d9de270f7d4d582",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/official-forms.html",
+      "sha256": "20fb15339348f27b9d7aab7098f96a54a6629ba5ae1144988f555de1e176fe3c",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/official-page.test.cjs",
+      "sha256": "86f7986d2df8ce4ca1715131f42bcdfc9c8f6669b94814e0830d8563c180228c",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/official-real-sites.browser.ts",
+      "sha256": "cd572c32527404041c255abc184b24bf63c9ec18ed467cc68b0287d97863ca73",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/official-real-sites.html",
+      "sha256": "23205a6a8eed3babb48b3f136c1e645653ca97fbfe2a0cd9f45ba6c1ddd506e9",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    },
+    {
+      "file": "tests/personal-sync-access.test.mjs",
+      "sha256": "0d4d24e14af24af36142ac32473adc18587c7124709dc1ba2f278756198d5fc3",
+      "reason": "以前の公式情報・同期検証用テスト（配信対象外）"
+    }
+  ],
+  "verified_unchanged": [
+    "server/sites-worker.mjs",
+    "server/officialPage.ts",
+    "src/services/officialImport.ts",
+    "src/services/officialCandidates.ts",
+    "src/services/officialDiscovery.ts",
+    "src/services/officialSelection.ts",
+    "src/components/event/OfficialImport.tsx",
+    "src/components/event/OfficialSourceSummary.tsx",
+    "src/components/event/EventForm.tsx",
+    "src/components/event/QuickEventForm.tsx",
+    "src/services/storage.ts",
+    "src/services/personalSnapshot.ts",
+    "src/services/personalDataLock.ts",
+    "src/pages/Settings/PersonalSyncPage.tsx",
+    "src/services/ticketAmounts.ts",
+    "package.json",
+    "package-lock.json",
+    "vite.config.ts"
+  ],
+  "candidate_path": "/var/folders/3m/k4mwmz4d24q8zhhczfrbpfn40000gn/T/oshi-offset-preflight-9oaigkj_/app",
+  "additional_validation_only": [
+    "tests/personal-sync-access.test.mjs",
+    "tests/official-discovery.html",
+    "tests/official-candidates.test.cjs",
+    "tests/official-forms.browser.tsx",
+    "tests/official-page.test.cjs",
+    "tests/official-discovery.browser.ts",
+    "tests/official-lottery.test.cjs",
+    "tests/official-real-sites.browser.ts",
+    "tests/official-real-sites.html",
+    "tests/official-forms.html",
+    "tests/fixtures/official-import-before-v1.ts",
+    "tests/entry-summary.test.cjs"
+  ],
+  "release_patch_sha256": "ebd1335794e124925e549aff2586019eb721854e6ebb62ba768e51ee35a44e7e",
+  "fixtures": [
+    {
+      "file": "fixtures/01-primary-before.snapshot.json",
+      "sha256": "0f080c70c2ed6af3b4768b4d2aa7caa8392714514877441fe03d89fe341ee959"
+    },
+    {
+      "file": "fixtures/02-receive-balance.snapshot.json",
+      "sha256": "f9734d9388c6d79285bc0b7691ad44ec978e198bee369062344be5b65c31f488"
+    },
+    {
+      "file": "fixtures/03-zero-balance.snapshot.json",
+      "sha256": "77cd7bfca3ee6616e3f27b394566ec5340b521aacf8b573ac78e566851106551"
+    },
+    {
+      "file": "fixtures/04-candidate-boundaries.snapshot.json",
+      "sha256": "76122fe4df15d965d91722c071d09e82a2d75915d4d05ecd11c410a66a62643f"
+    },
+    {
+      "file": "fixtures/05-direction-review.snapshot.json",
+      "sha256": "48e679aecb51d55c5f6086e5038bb0d85ac0dd44b0b621eb7b0b637588b8db45"
+    },
+    {
+      "file": "fixtures/06-pending.snapshot.json",
+      "sha256": "4b6aea07e827a25ec469ecd8568d85b8304a3a868eb94c4b329aa31e5587e7fe"
+    },
+    {
+      "file": "fixtures/07-completed.snapshot.json",
+      "sha256": "64387cdf836feb51b37d249476edde36fbcb28c8a69ede77151f74127c0a3dc4"
+    },
+    {
+      "file": "fixtures/08-cancelled.snapshot.json",
+      "sha256": "007b0616d73c2ef847ed651626253d5cb7a8e0e2555c9bb5388724655e275b35"
+    },
+    {
+      "file": "fixtures/09-legacy-v108.snapshot.json",
+      "sha256": "003633e0e470f1ecdd21fb236fb7ccde2e2bf8c88af1fe82c056f7cd861fa338"
+    }
+  ],
+  "verification": {
+    "candidate_tests": {
+      "passed": 205,
+      "failed": 0
+    },
+    "preflight_tests": {
+      "passed": 8,
+      "failed": 0
+    },
+    "offset_browser": {
+      "passed": 7,
+      "failed": 0
+    },
+    "official_forms_browser": {
+      "passed": 6,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "application_build": "passed",
+    "worker_build": "passed",
+    "worker_assets": 80,
+    "worker_sha256": "14c48caa7f275341d8f210346e315e39419b1be1e2f350ccfa9838821069b62d",
+    "cloud": "local PGlite using unchanged SQL RPC only; no remote account access",
+    "tested_at": "2026-10-08"
+  },
+  "baseline_observation": {
+    "site_updated_at": "2026-10-08T07:07:53.387541+00:00",
+    "deployment_status": "succeeded",
+    "environment_revision": 0,
+    "no_new_version_observed": true
+  },
+  "verification_only_files": [
+    {
+      "file": "tests/entry-summary.test.cjs",
+      "sha256": "8c49bf0c0fa8d9a15d94a3cd16753785d4dc60234a8ae535aeb7703e82702f90"
+    },
+    {
+      "file": "tests/fixtures/official-import-before-v1.ts",
+      "sha256": "251b45b10486baad71917fb4cc01c78f2565917c0ced44a211686af54cf0e1fa"
+    },
+    {
+      "file": "tests/official-candidates.test.cjs",
+      "sha256": "4921e5870a1e9e70511406ed15e8f43a448462154a61bd4abc4af14e61064bdf"
+    },
+    {
+      "file": "tests/official-discovery.browser.ts",
+      "sha256": "ec7b65c15919d03fb8a089e01154352056fb282ab160de5136b8751ace30a42d"
+    },
+    {
+      "file": "tests/official-discovery.html",
+      "sha256": "52273c35617328fd7c4f48e259ff478e6903c7c5ac3fea975acafcb555726c2b"
+    },
+    {
+      "file": "tests/official-forms.browser.tsx",
+      "sha256": "3aca38a2c88a43785c76d59766b6ec45f505f1b84f1600bb8d9de270f7d4d582"
+    },
+    {
+      "file": "tests/official-forms.html",
+      "sha256": "20fb15339348f27b9d7aab7098f96a54a6629ba5ae1144988f555de1e176fe3c"
+    },
+    {
+      "file": "tests/official-lottery.test.cjs",
+      "sha256": "3d698f34557715ab6314b852c353b09339310a03275b3ef9d93a53e5f3b5ca05"
+    },
+    {
+      "file": "tests/official-page.test.cjs",
+      "sha256": "86f7986d2df8ce4ca1715131f42bcdfc9c8f6669b94814e0830d8563c180228c"
+    },
+    {
+      "file": "tests/official-real-sites.browser.ts",
+      "sha256": "cd572c32527404041c255abc184b24bf63c9ec18ed467cc68b0287d97863ca73"
+    },
+    {
+      "file": "tests/official-real-sites.html",
+      "sha256": "23205a6a8eed3babb48b3f136c1e645653ca97fbfe2a0cd9f45ba6c1ddd506e9"
+    },
+    {
+      "file": "tests/personal-sync-access.test.mjs",
+      "sha256": "0d4d24e14af24af36142ac32473adc18587c7124709dc1ba2f278756198d5fc3"
+    }
+  ]
+}

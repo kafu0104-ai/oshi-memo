@@ -28,7 +28,7 @@ export function receptionFromText(text:string,mode:ReceptionCandidate['mode']):R
   if((lottery&&application.length!==2)||(!lottery&&(application.length<1||application.length>2)))return;
   const [start,end]=application;
   if(end && `${end.date}T${end.time||'23:59'}`<`${start.date}T${start.time||'00:00'}`)return;
-  const resultBlock=labelBlock('(?:抽選結果発表|当落発表|結果発表)');
+  const resultBlock=labelBlock('(?:抽選結果発表|当落発表|当選発表|当選のご連絡|結果発表)');
   const results=dateTimes(resultBlock);
   if(lottery&&results.length!==1)return;
   const result=results[0];
@@ -53,4 +53,37 @@ export function extractTicketReceptions(html:string):ReceptionCandidate[] {
     candidates.push(candidate);
   }
   return [...new Map(candidates.map(c=>[JSON.stringify(c),c])).values()];
+}
+
+export type SeatCandidate = {name:string;price:number};
+export type SeatGroup = {label:string;mode:ReceptionCandidate['mode'];seats:SeatCandidate[]};
+/** Keep venue groups separate and accept only explicit seat-price pairs. */
+export function seatGroupsFromText(text:string):SeatGroup[] {
+  const groups:SeatGroup[]=[];
+  let mode:ReceptionCandidate['mode']='現地公演', label='', ticketSection=false;
+  for(const raw of text.normalize('NFKC').split('\n')){
+    const line=raw.trim();
+    if(/^ライブ[・\s]?ビューイング(?:情報)?$/.test(line)){mode='ライブビューイング';label='';ticketSection=false;continue;}
+    if(/^[＜<■].*チケット情報/.test(line)){ticketSection=true;label='';continue;}
+    if(/^▼|^■(?!チケット情報)|^[＜<](?!チケット情報)/.test(line)){ticketSection=false;continue;}
+    if(!ticketSection)continue;
+    const venue=line.match(/^[【〖\[]([^】〗\]]+公演)[】〗\]]$/);
+    if(venue){label=venue[1];continue;}
+    const pair=line.match(/^[・●]?\s*([^：:]+(?:席|指定))\s*[:：]\s*([\d,]+)円/);
+    const viewing=mode==='ライブビューイング'&&line.match(/^([\d,]+)円.*全席指定/);
+    const seat=pair?{name:pair[1].trim(),price:Number(pair[2].replaceAll(',',''))}:viewing?{name:'全席指定',price:Number(viewing[1].replaceAll(',',''))}:undefined;
+    if(!seat||!Number.isSafeInteger(seat.price)||seat.price<0)continue;
+    const groupLabel=label||(mode==='ライブビューイング'?'ライブビューイング':'現地公演');
+    let group=groups.find(g=>g.label===groupLabel&&g.mode===mode);
+    if(!group){group={label:groupLabel,mode,seats:[]};groups.push(group);}
+    if(!group.seats.some(s=>s.name===seat.name&&s.price===seat.price))group.seats.push(seat);
+  }
+  return groups;
+}
+export function extractTicketSeats(html:string):SeatGroup[] {
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  doc.querySelectorAll('script,style,nav,footer,header,noscript').forEach(n=>n.remove());
+  doc.querySelectorAll('br').forEach(n=>n.replaceWith('\n'));
+  doc.querySelectorAll('p,h1,h2,h3,h4,li').forEach(n=>n.append('\n'));
+  return seatGroupsFromText(doc.body.textContent||'');
 }

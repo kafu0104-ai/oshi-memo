@@ -1,0 +1,787 @@
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -1,3 +1,4 @@
++import OffsetGroupPage from './pages/Home/OffsetGroupPage';
+ import EventCompletePage from "./pages/Event/EventCompletePage";
+ import SchedulePage from "./pages/Home/SchedulePage";
+ import CreationPlaceholder from "./pages/Home/CreationPlaceholder";
+@@ -61,6 +62,7 @@
+         <Route path="/settings/tags" element={<TagSettingsPage />} />
+         <Route path="/tasks" element={<AllTasksPage />} />
+         <Route path="/tasks/receipts/:eventId" element={<ReceiptTasksPage />} />
++        <Route path="/tasks/offsets/:groupId" element={<OffsetGroupPage />} />
+         <Route path="/tasks/completed" element={<CompletedTasksPage />} />
+         <Route path="/tasks/:ticketId/:receptionId/:applicationId/:taskId" element={<TicketTaskPage />} />
+         <Route path="/events/:eventId/tickets/:receptionId/edit" element={<TicketEditPage />} />
+--- a/src/types/Ticket.ts
++++ b/src/types/Ticket.ts
+@@ -107,6 +107,8 @@
+  * 同行者との精算情報
+  */
+ export interface TicketSettlement {
++  directionReviewedContext?: string;
++  directionReviews?: { at: string; before: TicketSettlementDirection; after: TicketSettlementDirection; payerId?: string }[];
+   /** Recorded separately: netting never implies a cash transfer. */
+   offsetAmount?: number;
+   cashAmount?: number;
+--- a/src/types/SettlementOffset.ts
++++ b/src/types/SettlementOffset.ts
+@@ -1,4 +1,4 @@
+-import type { TicketSettlementDirection } from './Ticket';
++import type { TicketSettlement, TicketSettlementDirection } from './Ticket';
+ 
+ export interface SettlementRef {
+   ticketId: string;
+@@ -7,6 +7,8 @@
+   settlementId: string;
+ }
+ export interface OffsetAllocation extends SettlementRef {
++  beforeSettlement?: TicketSettlement;
++  afterSettlement?: TicketSettlement;
+   eventId: string;
+   eventName: string;
+   label: string;
+@@ -27,7 +29,9 @@
+   remainingAmount: number;
+   remainingDirection?: TicketSettlementDirection;
+   cashDate?: string;
+-  status: 'offset' | 'pending' | 'settled';
++  status: 'offset' | 'pending' | 'settled' | 'cancelled';
++  cancelledAt?: string;
++  completedDate?: string;
+   createdAt: string;
+   allocations: OffsetAllocation[];
+ }
+--- a/src/services/companionSettlements.ts
++++ b/src/services/companionSettlements.ts
+@@ -2,6 +2,6 @@
+ export function withCompanionSettlements(app:TicketApplication,id:()=>string):TicketApplication{
+  const f=app.fulfillment;if(f?.payment.payerId!=='self')return app;
+  const settlements=[...f.payment.settlements];
+- for(const companionId of app.companionIds)if(!settlements.some(s=>s.direction==='receive'&&s.companionId===companionId))settlements.push({id:id(),companionId,direction:'receive',amount:0,amountMode:'auto',isSettled:false,tagIds:['settlement']});
++ for(const companionId of app.companionIds)if(!settlements.some(s=>s.companionId===companionId))settlements.push({id:id(),companionId,direction:'receive',amount:0,amountMode:'auto',isSettled:false,tagIds:['settlement']});
+  return {...app,fulfillment:{...f,payment:{...f.payment,settlementRequired:true,settlements}}};
+ }
+--- /dev/null
++++ b/src/services/settlementConsistency.ts
+@@ -0,0 +1,29 @@
++import type { TicketApplication, TicketSettlement } from '../types/Ticket';
++const hasOffset = (s: TicketSettlement) => s.offsetAmount !== undefined;
++export function directionContext(app: TicketApplication, settlement: TicketSettlement) {
++  return JSON.stringify([app.fulfillment?.payment.payerId, [...app.companionIds].sort(), settlement.companionId, settlement.direction]);
++}
++export function expectedDirection(app: TicketApplication, settlement: TicketSettlement) {
++  const payer = app.fulfillment?.payment.payerId;
++  if (payer === 'self' && app.companionIds.includes(settlement.companionId)) return 'receive' as const;
++  if (payer && payer !== 'self' && payer === settlement.companionId) return 'pay' as const;
++  return undefined;
++}
++export function needsDirectionReview(app: TicketApplication, s: TicketSettlement) {
++  const expected = expectedDirection(app, s);
++  return (!expected || expected !== s.direction) && s.directionReviewedContext !== directionContext(app, s);
++}
++/** Explicit user choice only; preserve amounts, identities and completed history. */
++export function reviewSettlementDirection(app: TicketApplication, id: string, choice: 'keep' | 'correct', at: string): TicketApplication {
++  const payment = app.fulfillment?.payment;
++  const s = payment?.settlements.find(s => s.id === id);
++  if (!payment || !s || !app.fulfillment) throw new Error('精算が見つかりません。');
++  if (s.isSettled || hasOffset(s)) throw new Error('精算済み・相殺済みの記録は変更できません。');
++  const expected = expectedDirection(app, s);
++  if (choice === 'correct' && !expected) throw new Error('精算方向を判断できません。支払者と同行者を確認してください。');
++  if (choice === 'correct' && payment.settlements.some(other => other.id !== id && other.companionId === s.companionId && other.direction === expected && !other.isSettled)) throw new Error('同じ相手・方向の未精算が既にあります。重複する記録を確認してください。');
++  const next = {...s, direction: choice === 'correct' ? expected! : s.direction};
++  next.directionReviewedContext = directionContext(app, next);
++  next.directionReviews = [...(s.directionReviews ?? []), {at, before: s.direction, after: next.direction, payerId: payment.payerId}];
++  return {...app, fulfillment: {...app.fulfillment, payment: {...payment, settlements: payment.settlements.map(s => s.id === id ? next : s)}}};
++}
+--- a/src/services/settlementOffsets.ts
++++ b/src/services/settlementOffsets.ts
+@@ -1,3 +1,4 @@
++import { needsDirectionReview } from './settlementConsistency';
+ import type { Ticket, TicketSettlement } from '../types/Ticket';
+ import type { SettlementRef, SettlementOffset, OffsetAllocation } from '../types/SettlementOffset';
+ import type { Event } from '../types/Event';
+@@ -20,7 +21,7 @@
+   eventId: string; eventName: string; label: string;
+   companionId: string; direction: 'pay' | 'receive';
+   total?: number; remaining?: number; fingerprint: string;
+-  settlement: TicketSettlement; eligible: boolean; deadline?: string;
++  directionWarning?: boolean; settlement: TicketSettlement; eligible: boolean; deadline?: string;
+ }
+ export function settlementItems(tickets: Ticket[], events: Event[]): SettlementItem[] {
+   return tickets.flatMap(ticket => ticket.receptions.flatMap(reception => reception.applications.flatMap((application, index) => {
+@@ -33,10 +34,10 @@
+       return { ticketId: ticket.id, receptionId: reception.id, applicationId: application.id, settlementId: settlement.id,
+         eventId: ticket.eventId, eventName: event?.title ?? '削除済みイベント',
+         label: `${reception.name}／${reception.seatTypes.find(s => s.id === application.seatTypeId)?.name || `申込 ${index + 1}`} (${settlement.direction === 'pay' ? '支払' : '受取'})`,
+-        companionId: settlement.companionId, direction: settlement.direction, total, remaining, settlement,
++        companionId: settlement.companionId, direction: settlement.direction, total, remaining, settlement, directionWarning: needsDirectionReview(application,settlement),
+         deadline: payment.deadlineDate,
+         eligible: !!event && !!settlement.companionId && settlement.companionId !== 'self' && !settlement.isSettled && application.status === 'won' && payment.settlementRequired !== false && Number.isSafeInteger(remaining) && remaining! > 0,
+-        fingerprint: JSON.stringify([settlement, total, application.status, payment.settlementRequired, payment.deadlineDate, event?.id]),
++        fingerprint: JSON.stringify([settlement, total, payment.payerId, application.companionIds, application.fulfillment?.seatAssignments, application.status, payment.settlementRequired, payment.deadlineDate, event?.id]),
+       };
+     });
+   })));
+@@ -65,7 +66,7 @@
+   if (matches.length !== 1 || matches[0].fingerprint !== expected.fingerprint) throw new Error('精算状態が変更されています。最新の内容を読み直してから、もう一度確認してください。');
+   return matches[0];
+ }
+-function replaceSettlement(tickets: Ticket[], ref: SettlementRef, next: TicketSettlement): Ticket[] {
++export function replaceSettlement(tickets: Ticket[], ref: SettlementRef, next: TicketSettlement): Ticket[] {
+   return tickets.map(t => t.id !== ref.ticketId ? t : { ...t, receptions: t.receptions.map(r => r.id !== ref.receptionId ? r : { ...r,
+     applications: r.applications.map(a => a.id !== ref.applicationId || !a.fulfillment ? a : { ...a, fulfillment: { ...a.fulfillment,
+       payment: { ...a.fulfillment.payment, settlements: a.fulfillment.payment.settlements.map(s => s.id === ref.settlementId ? next : s) } } }) }) });
+@@ -91,17 +92,21 @@
+   let next = tickets;
+   for (const allocation of allocations) {
+     const item = [source, ...targets].find(i => settlementKey(i) === settlementKey(allocation))!;
+-    next = replaceSettlement(next, item, { ...item.settlement, amount: yen(item.total), amountMode: 'manual',
++    allocation.beforeSettlement = structuredClone(item.settlement);
++    const updated: TicketSettlement = { ...item.settlement, amount: yen(item.total), amountMode: 'manual',
+       offsetAmount: yen(item.settlement.offsetAmount ?? 0) + allocation.offset,
+       cashAmount: yen(item.settlement.cashAmount ?? 0) + allocation.cash,
+       isSettled: allocation.remaining === 0,
+       settledDate: allocation.cash > 0 ? request.cashDate : item.settlement.settledDate,
+       offsetCompletedDate: allocation.remaining === 0 && allocation.cash === 0 ? request.offsetDate : undefined,
+-    });
++    };
++    allocation.afterSettlement = structuredClone(updated);
++    next = replaceSettlement(next, item, updated);
+   }
+   const history: SettlementOffset = { id, offsetDate: request.offsetDate, companionId: source.companionId,
+     source: { ticketId: source.ticketId, receptionId: source.receptionId, applicationId: source.applicationId, settlementId: source.settlementId },
+     ...calculation, cashDate: request.settleRemainder && calculation.remainingAmount > 0 ? request.cashDate : undefined,
++    completedDate: calculation.remainingAmount === 0 ? request.offsetDate : request.settleRemainder ? request.cashDate : undefined,
+     status: calculation.remainingAmount === 0 ? 'offset' : request.settleRemainder ? 'settled' : 'pending', createdAt, allocations };
+   next = next.map(t => t.id === source.ticketId ? { ...t, offsetHistory: [...(t.offsetHistory ?? []), history] } : t);
+   return { tickets: refreshOffsetHistory(next, events), history };
+@@ -117,14 +122,15 @@
+   return refreshOffsetHistory(replaceSettlement(tickets, item, { ...item.settlement, cashAmount: yen(item.settlement.cashAmount ?? 0) + yen(item.remaining), isSettled: true, settledDate: cashDate, offsetCompletedDate: undefined }), events);
+ }
+ /** Keep each historical remainder's settlement status/date up to date, without rewriting its allocations. */
+-function refreshOffsetHistory(tickets: Ticket[], events: Event[]): Ticket[] {
++export function refreshOffsetHistory(tickets: Ticket[], events: Event[]): Ticket[] {
+   const items = settlementItems(tickets, events);
+   return tickets.map(ticket => !ticket.offsetHistory ? ticket : { ...ticket, offsetHistory: ticket.offsetHistory.map(history => {
++    if (history.status === 'cancelled') return history;
+     const outstanding = history.allocations.filter(a => a.remaining > 0).map(a => items.find(i => settlementKey(i) === settlementKey(a)));
+     if (!outstanding.length) return history;
+     const complete = outstanding.every(i => i?.settlement.isSettled);
+     const cashDate = outstanding.filter(i => i && (i.settlement.cashAmount ?? 0) > 0).map(i => i!.settlement.settledDate ?? '').sort().at(-1) || history.cashDate;
+-    return { ...history, cashDate, status: complete ? cashDate ? 'settled' as const : 'offset' as const : 'pending' as const };
++    return { ...history, cashDate, completedDate: complete ? cashDate ?? history.completedDate ?? history.offsetDate : undefined, status: complete ? cashDate ? 'settled' as const : 'offset' as const : 'pending' as const };
+   }) });
+ }
+ /** Other editors may change tags, but must never erase or rewrite recorded netting. */
+--- /dev/null
++++ b/src/services/offsetGroups.ts
+@@ -0,0 +1,81 @@
++import type { Ticket } from '../types/Ticket';
++import type { Event } from '../types/Event';
++import type { SettlementOffset } from '../types/SettlementOffset';
++import { applySettlementCash, refreshOffsetHistory, replaceSettlement, settlementItems, settlementKey, yen, type SettlementItem } from './settlementOffsets';
++
++export interface OffsetGroup {
++  id: string; historyIds: string[]; histories: SettlementOffset[]; items: SettlementItem[];
++  companionId: string; eventNames: string[]; eventIds: string[]; remaining: number;
++  direction?: 'pay' | 'receive'; completed: boolean; cancelled: boolean; completedDate?: string;
++  fingerprint: string; error?: string;
++}
++/** Histories already own stable IDs and precise settlement references. Overlapping
++ * histories form one connected balance; old history URLs remain valid aliases. */
++export function offsetGroups(tickets: Ticket[], events: Event[]): OffsetGroup[] {
++  const histories = tickets.flatMap(t => t.offsetHistory ?? []);
++  const items = settlementItems(tickets, events);
++  const components: SettlementOffset[][] = [];
++  for (const h of histories.filter(h => h.status !== 'cancelled').sort((a,b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))) {
++    const keys = new Set(h.allocations.map(settlementKey));
++    const matches = components.filter(c => c.some(p => p.allocations.some(a => keys.has(settlementKey(a)))));
++    const joined = [...matches.flat(),h].sort((a,b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
++    for (const match of matches) components.splice(components.indexOf(match),1);
++    components.push(joined);
++  }
++  components.push(...histories.filter(h => h.status === 'cancelled').map(h => [h]));
++  return components.map(hs => {
++    const refs = [...new Set(hs.flatMap(h => h.allocations.map(settlementKey)))];
++    const members = items.filter(i => refs.includes(settlementKey(i)));
++    const cancelled = hs.every(h => h.status === 'cancelled');
++    const pending = members.filter(i => (i.remaining ?? 0) > 0);
++    const directions = new Set(pending.map(i => i.direction));
++    const error = refs.length !== members.length || members.some(i=>i.remaining===undefined) || new Set(hs.map(h=>h.companionId)).size !== 1 || members.some(i=>i.companionId!==hs[0].companionId) || directions.size > 1 ? '関連する精算に不整合があります。記録を確認してください。' : undefined;
++    const remaining = cancelled ? 0 : pending.reduce((n,i)=>yen(n+yen(i.remaining)),0);
++    return {id:hs[0].id,historyIds:hs.map(h=>h.id),histories:hs,items:members,companionId:hs[0].companionId,
++      eventNames:[...new Set(hs.flatMap(h=>h.allocations.map(a=>a.eventName)))],eventIds:[...new Set(hs.flatMap(h=>h.allocations.map(a=>a.eventId)))],
++      remaining,direction:pending[0]?.direction,completed:!cancelled&&!error&&remaining===0,cancelled,error,
++      completedDate:remaining===0 ? [...hs.map(h=>h.completedDate??h.cashDate??h.offsetDate),...members.map(i=>i.settlement.settledDate??i.settlement.offsetCompletedDate??'')].sort().at(-1) : undefined,
++      fingerprint:JSON.stringify([hs,members.map(i=>i.fingerprint)])};
++  });
++}
++export function findOffsetGroup(tickets:Ticket[],events:Event[],id:string) {
++  return offsetGroups(tickets,events).find(g=>g.historyIds.includes(id));
++}
++function freshGroup(tickets:Ticket[],events:Event[],expected:OffsetGroup) {
++  const group=findOffsetGroup(tickets,events,expected.id);
++  if(!group||group.fingerprint!==expected.fingerprint)throw new Error('精算状態が変更されています。最新の内容を読み直してください。');
++  if(group.error)throw new Error(group.error);
++  if(group.cancelled||group.completed)throw new Error('この相殺は既に完了または取り消されています。');
++  return group;
++}
++export function completeOffsetGroup(tickets:Ticket[],events:Event[],expected:OffsetGroup,date:string) {
++  const group=freshGroup(tickets,events,expected);
++  let next=tickets;
++  for(const original of group.items.filter(i=>(i.remaining??0)>0)) {
++    const item=settlementItems(next,events).find(i=>settlementKey(i)===settlementKey(original))!;
++    next=applySettlementCash(next,events,item,date);
++  }
++  return refreshOffsetHistory(next,events);
++}
++export function cancelOffsetGroup(tickets:Ticket[],events:Event[],expected:OffsetGroup,at:string) {
++  const group=freshGroup(tickets,events,expected);
++  if(group.histories.some(h=>h.cashDate||h.allocations.some(a=>a.cash>0)))throw new Error('金銭授受がある相殺は取り消せません。');
++  let next=tickets;
++  // Reverse the exact ledger order. Snapshots allow lossless undo of new histories;
++  // legacy histories release only their recorded offsets, retaining known totals.
++  for(const h of [...group.histories].reverse()) {
++    for(const a of h.allocations) {
++      const item=settlementItems(next,events).find(i=>settlementKey(i)===settlementKey(a));
++      if(!item)throw new Error('対象の精算が見つかりません。');
++      const s=item.settlement;
++      if(a.afterSettlement && JSON.stringify(s)!==JSON.stringify(a.afterSettlement))throw new Error('相殺後に精算内容が変更されています。取り消せません。');
++      if(!a.afterSettlement && ((s.cashAmount??0)>0 || (s.offsetAmount??0)<a.offset || (s.isSettled&&item.remaining!==0)))throw new Error('相殺後の金銭授受・変更があるため取り消せません。');
++      const restored=a.beforeSettlement ?? {...s,offsetAmount:yen((s.offsetAmount??0)-a.offset),isSettled:false,offsetCompletedDate:undefined};
++      next=replaceSettlement(next,a,structuredClone(restored));
++      if(settlementItems(next,events).find(i=>settlementKey(i)===settlementKey(a))?.total!==item.total)throw new Error('相殺後にチケット料金が変更されています。取り消せません。');
++    }
++    next=next.map(t=>!t.offsetHistory?t:{...t,offsetHistory:t.offsetHistory.map(p=>p.id===h.id?{...p,status:'cancelled',cancelledAt:at}:p)});
++  }
++  return refreshOffsetHistory(next,events);
++}
++export const offsetGroupUrl=(id:string)=>`/tasks/offsets/${encodeURIComponent(id)}`;
+--- /dev/null
++++ b/src/services/offsetTaskDisplay.ts
+@@ -0,0 +1,27 @@
++import { loadTickets, loadEvents, loadCompanions } from './storage';
++import { offsetGroups, offsetGroupUrl } from './offsetGroups';
++import { settlementKey } from './settlementOffsets';
++import type { TicketTask } from './ticketTasks';
++/** Presentation only: the original tasks and all their IDs stay intact. */
++export function groupOffsetTasks(tasks:TicketTask[]):TicketTask[] {
++  const groups=offsetGroups(loadTickets(),loadEvents()).filter(g=>!g.cancelled);
++  const companions=loadCompanions();
++  const covered=new Set(groups.flatMap(g=>g.histories.flatMap(h=>h.allocations.map(settlementKey))));
++  const result=tasks.filter(t=>!t.settlementId||!covered.has(settlementKey({...t,settlementId:t.settlementId})));
++  for(const g of groups) {
++    const refs=new Set(g.histories.flatMap(h=>h.allocations.map(settlementKey)));
++    const members=tasks.filter(t=>t.settlementId&&refs.has(settlementKey({...t,settlementId:t.settlementId})));
++    const first=members[0];if(!first)continue;
++    const allocations=[...new Map(g.histories.flatMap(h=>h.allocations).reverse().map(a=>[settlementKey(a),a])).values()];
++    const receive=allocations.filter(a=>a.direction==='receive').reduce((n,a)=>n+a.before,0), pay=allocations.filter(a=>a.direction==='pay').reduce((n,a)=>n+a.before,0);
++    const amount=Math.abs(receive-pay);
++    const resultText=amount===0?'差額なし':`${amount.toLocaleString('ja-JP')}円${receive>pay?'受取':'支払'}${g.completed?(g.histories.some(h=>h.cashDate)?'済み':'・後続の相殺で完了'):'予定'}`;
++    result.push({...first,settlementId:undefined,taskId:`offset:${g.id}`,offsetGroupId:g.id,offsetStatus:g.completed?'相殺済み':'相殺中',href:offsetGroupUrl(g.id),members,
++      offsetSummary:`受取 ${receive.toLocaleString('ja-JP')}円 ／ 支払 ${pay.toLocaleString('ja-JP')}円 ／ ${resultText}`,
++      eventName:g.eventNames.join(' ⇄ '),receptionName:'相殺した精算',person:companions.find(c=>c.id===g.companionId)?.name??'未登録の同行者',
++      title:g.error?'相殺内容の確認が必要です':g.completed?'相殺した精算の履歴':`差額 ${g.remaining.toLocaleString('ja-JP')}円を${g.direction==='receive'?'受け取る':'支払う'}`,
++      receive:false,amount:g.error?undefined:g.remaining,completed:g.completed,date:g.completedDate,dateLabel:'精算完了日',
++      deadline:members.map(t=>t.deadline).filter((d):d is string=>!!d).sort()[0],important:members.some(t=>t.important),tagIds:[...new Set(members.flatMap(t=>t.tagIds))],offsetAmount:g.histories.reduce((n,h)=>n+h.offsetAmount,0)});
++  }
++  return result;
++}
+--- a/src/services/paymentSettlementEntry.ts
++++ b/src/services/paymentSettlementEntry.ts
+@@ -24,6 +24,7 @@
+   if (!entry.companionIds.includes(companionId)) throw new Error('支払者・同行者が変更されています。画面を読み直してください。');
+   const existing = entry.payment.settlements.filter(s => s.companionId === companionId && s.direction === entry.direction);
+   // A second click or another tab must never create a second debt.
++  if (!existing.length && entry.payment.settlements.some(s=>s.companionId===companionId&&!s.isSettled)) throw new Error('同じ相手の別方向の精算があります。チケット情報で精算方向を確認してください。');
+   if (existing.length) return { tickets, settlementId: existing[0].id };
+   if (entry.fingerprint !== fingerprint) throw new Error('金額や申込内容が変更されています。画面を読み直して確認してください。');
+   if (entry.application.status !== 'won') throw new Error('購入・当選状況をチケット情報で確認してください。');
+--- a/src/services/ticketTasks.ts
++++ b/src/services/ticketTasks.ts
+@@ -5,6 +5,7 @@
+ import { loadTickets, loadEvents, loadCompanions } from "./storage";
+ import { settlementAmount } from "./ticketAmounts";
+ export interface TicketTask {
++  offsetGroupId?: string; offsetStatus?: string; offsetSummary?: string;
+   offsetAmount?: number; cashAmount?: number; originalAmount?: number;
+   href?: string; schedule?: boolean; receive?: boolean; companionId?: string; members?: TicketTask[];
+   ticketId: string; receptionId: string; applicationId: string; taskId: string;
+--- /dev/null
++++ b/src/components/common/OffsetLinks.tsx
+@@ -0,0 +1,10 @@
++import { Link } from 'react-router';
++import { loadEvents, loadTickets } from '../../services/storage';
++import { offsetGroups, offsetGroupUrl } from '../../services/offsetGroups';
++import { settlementKey } from '../../services/settlementOffsets';
++import type { SettlementRef } from '../../types/SettlementOffset';
++export default function OffsetLinks({eventId,settlement}:{eventId?:string;settlement?:SettlementRef}) {
++ const groups=offsetGroups(loadTickets(),loadEvents()).filter(g=>settlement?g.histories.some(h=>h.allocations.some(a=>settlementKey(a)===settlementKey(settlement))):g.eventIds.includes(eventId??''));
++ if(!groups.length)return null;
++ return <section aria-label="関連する相殺"><h3>関連する相殺</h3>{groups.map(g=><p key={g.id}><span className="task-tag">{g.cancelled?'相殺取消':g.completed?'相殺済み':'相殺中'}</span> <Link to={offsetGroupUrl(g.id)}>{g.eventNames.join(' ⇄ ')}</Link>{!g.completed&&!g.cancelled&&` ／ 残額 ${g.remaining.toLocaleString('ja-JP')}円`}</p>)}</section>;
++}
+--- a/src/pages/Ticket/TicketPayments.tsx
++++ b/src/pages/Ticket/TicketPayments.tsx
+@@ -1,3 +1,5 @@
++import OffsetLinks from '../../components/common/OffsetLinks';
++import { expectedDirection, needsDirectionReview, reviewSettlementDirection } from '../../services/settlementConsistency';
+ import { Link } from "react-router";
+ import { loadTickets } from "../../services/storage";
+ import { hasOffset, remainingAmount } from "../../services/settlementOffsets";
+@@ -34,8 +36,7 @@
+     const previous=reception.applications.find(a=>a.id===app.id);
+     if(app.fulfillment?.payment.payerId==='self'&&(previous?.fulfillment?.payment.payerId!=='self'||JSON.stringify(previous?.companionIds)!==JSON.stringify(app.companionIds))){
+       app=withCompanionSettlements(app,generateId);
+-      const f=app.fulfillment!;
+-      app={...app,fulfillment:{...f,payment:{...f.payment,settlements:f.payment.settlements.filter(s=>s.direction!=='receive'||s.isSettled||hasOffset(s)||app.companionIds.includes(s.companionId))}}};
++
+     }
+     onChange({ ...reception, applications: reception.applications.some(a => a.id === app.id)
+       ? reception.applications.map(a => a.id === app.id ? app : a) : [...reception.applications, app] });
+@@ -103,8 +104,17 @@
+       const change = (next: typeof payment) => update({ ...app, fulfillment: { ...fulfillment, payment: next } });
+       return <section key={app.id}>
+         {payment.payerId && (payment.payerId !== "self" || payment.settlements.length>0) && <>
+-        <h4>{payment.payerId === "self" ? "同行者との精算" : "支払者との精算"}</h4><p>支払者を変更しても登録済みの精算は残ります。不要になった精算は削除してください。</p><p>支払いとは別に記録します。チケット代と手数料から1人1枚分を自動計算します。必要なら手入力に変更できます。</p>
++        <h4>{payment.payerId === "self" ? "同行者との精算" : "支払者との精算"}</h4><p>支払者を変更した場合は、登録済みの精算方向を確認してください。個別の負担条件がある場合は現在の内容を維持できます。</p><p>支払いとは別に記録します。チケット代と手数料から1人1枚分を自動計算します。必要なら手入力に変更できます。</p>
+         {payment.settlements.map(settlement => <div className="ticket-options" key={settlement.id}>
++          <OffsetLinks settlement={{ticketId:loadTickets().find(t=>t.receptions.some(r=>r.id===reception.id))?.id??'',receptionId:reception.id,applicationId:app.id,settlementId:settlement.id}}/>
++          {needsDirectionReview(app, settlement) && <section className="settlement-notice" aria-label="精算方向の確認"><p>支払者・同行者の設定と精算方向が異なります。誤りとは限りません。実際の立替・負担条件を確認してください。</p>
++            {settlement.isSettled || hasOffset(settlement) ? <p>精算済み・相殺済みのため、ここでは変更できません。履歴を確認してください。</p> : <>{(['keep','correct'] as const).filter(choice=>choice==='keep'||expectedDirection(app,settlement)).map(choice => <button key={choice} type="button" className="secondary-button" onClick={() => {
++              const label = expectedDirection(app, settlement) === 'receive' ? '相手から受け取る' : '相手へ支払う';
++              if (!window.confirm(choice === 'keep' ? '個別の負担条件として、現在の精算方向を維持しますか？' : `精算方向を「${label}」に訂正しますか？金額は変更しません。最後にチケットを保存すると確定します。`)) return;
++              try { update(reviewSettlementDirection(app, settlement.id, choice, new Date().toISOString())); setError(''); } catch(e) { setError(e instanceof Error ? e.message : '確認できませんでした。'); }
++            }}>{choice === 'keep' ? '現在の精算方向で確認済みにする' : `「${expectedDirection(app, settlement) === 'receive' ? '受け取る' : '支払う'}」に訂正する`}</button>)}</>}
++          </section>}
++
+           {hasOffset(settlement) && <p>相殺済み {(settlement.offsetAmount ?? 0).toLocaleString('ja-JP')}円 ／ 未精算残額 {(remainingAmount(settlementAmount(reception,app,settlement),settlement) ?? 0).toLocaleString('ja-JP')}円<br/><Link to={`/tasks/${loadTickets().find(t=>t.receptions.some(r=>r.id===reception.id))?.id}/${reception.id}/${app.id}/${settlement.id}`}>残額の支払い・相殺履歴を確認</Link></p>}
+           <p>{companions.find(c => c.id === settlement.companionId)?.name ?? "未登録の同行者"} {settlement.direction === "receive" ? "から受け取る" : "へ支払う"}</p>
+           <label className="ticket-check"><input type="checkbox" checked={settlement.amountMode === "auto" || (settlement.amountMode === undefined && settlement.amount === 0)} disabled={settlement.isSettled || hasOffset(settlement)} onChange={e => change({ ...payment, settlements: payment.settlements.map(s => s.id === settlement.id ? { ...s, amountMode: e.target.checked ? "auto" : "manual", amount: settlementAmount(reception, app, s) ?? s.amount } : s) })}/>チケット代・手数料から自動計算</label>
+--- a/src/pages/Home/SettlementTaskForm.tsx
++++ b/src/pages/Home/SettlementTaskForm.tsx
+@@ -1,3 +1,5 @@
++import OffsetLinks from '../../components/common/OffsetLinks';
++import { offsetGroups, offsetGroupUrl } from '../../services/offsetGroups';
+ import { useState } from 'react';
+ import { Link } from 'react-router';
+ import { loadEvents, loadTickets, transactTicketSettlements } from '../../services/storage';
+@@ -25,11 +27,13 @@
+   const source = items.find(i => settlementKey(i) === settlementKey({ ...task, settlementId: task.settlementId! }));
+   if (!source) return <p role="alert">精算情報が見つかりません。</p>;
+   const candidates = offsetCandidates(source, items);
++  const sameDirection = items.filter(i => i.eligible && i.companionId === source.companionId && i.direction === source.direction && settlementKey(i) !== settlementKey(source));
+   const targets = candidates.filter(i => selected.includes(settlementKey(i)));
+   const groups = [...new Set(candidates.map(i => i.eventId))].map(id => ({ id, items: candidates.filter(i => i.eventId === id) }));
+   let calculation: ReturnType<typeof calculateOffset> | undefined;
+   try { if (targets.length) calculation = calculateOffset(source, targets); } catch { /* Shown on submit; never permit invalid saving. */ }
+   const histories = snapshot.tickets.flatMap(t => t.offsetHistory ?? []).filter(h => h.allocations.some(a => settlementKey(a) === settlementKey(source)));
++  const activeGroup = offsetGroups(snapshot.tickets,snapshot.events).find(g => !g.cancelled && g.histories.some(h=>h.allocations.some(a=>settlementKey(a)===settlementKey(source))));
+   const completedByOffset = source.settlement.isSettled && hasOffset(source.settlement);
+   const edit = () => { setReview(false); setError(''); setSuccess(''); };
+   const toggle = (group: SettlementItem[], checked: boolean) => {
+@@ -48,6 +52,7 @@
+       }
+       setBusy(true);
+       if (mode === 'normal') {
++        if (activeGroup) throw new Error('相殺グループから差額を精算してください。');
+         await transactTicketSettlements((tickets, events) => ({ tickets: applySettlementCash(tickets, events, source!, cashDate), result: undefined }), hasOffset(source!.settlement));
+         setSuccess('支払い・受け取りを記録しました。関連するToDoを更新しました。');
+       } else {
+@@ -55,37 +60,46 @@
+           const result = applyOffset(tickets, events, { source: source!, targets, offsetDate, cashDate, settleRemainder: mode === 'combined' }, generateId(), new Date().toISOString());
+           return { tickets: result.tickets, result: result.history };
+         }, true);
+-        setSuccess(history.status === 'pending' ? `相殺を記録しました。残額 ${money(history.remainingAmount)} は元のToDoで引き続き管理します。` : '精算を完了しました。双方のToDoを更新しました。');
++        setSuccess(history.status === 'pending' ? `相殺を記録しました。差額 ${money(history.remainingAmount)} を1件の相殺タスクで管理します。` : '精算を完了しました。双方のToDoを更新しました。');
+       }
+       setSnapshot(read()); setSelected([]); setReview(false); setMode('normal'); onSaved();
+     } catch (e) { setError(e instanceof Error ? e.message : '保存できませんでした。保存容量と設定を確認してください。'); setReview(false); }
+     finally { setBusy(false); }
+   }
+   return <section className="settlement-task">
++    <OffsetLinks settlement={source}/>
++    {source.directionWarning && <p role="status">支払者・同行者の設定と精算方向が異なります。個別の負担条件もあるため、実際の内容を確認してから相殺してください。<Link to={`/events/${source.eventId}/tickets/${source.receptionId}/edit#${source.applicationId}`}>精算方向を確認・訂正する</Link></p>}
++    {activeGroup && <p><Link className="task-navigation-button" to={offsetGroupUrl(activeGroup.id)}>相殺グループの差額精算・履歴・取り消し</Link></p>}
+     {hasOffset(source.settlement) && <dl className="task-facts settlement-balance"><dt>元の金額</dt><dd>{money(source.total!)}</dd><dt>相殺済み</dt><dd>{money(source.settlement.offsetAmount ?? 0)}</dd><dt>実際に授受した金額</dt><dd>{money(source.settlement.cashAmount ?? 0)}{source.settlement.settledDate && `（${source.settlement.settledDate}）`}</dd><dt>未精算残額</dt><dd>{money(source.remaining ?? 0)}</dd></dl>}
+     {success && <p className="settlement-notice" role="status">{success}</p>}
+     {!completedByOffset && <form className="task-completion-form" onSubmit={e => { e.preventDefault(); void submit(); }}>
+       <fieldset disabled={busy} className="settlement-method"><legend>精算方法</legend>
+-        {([['normal', '通常支払い'], ['offset', '相殺のみ'], ['combined', '相殺＋差額精算']] as const).map(([value, label]) => <label className="ticket-check" key={value}><input type="radio" name="settlementMethod" value={value} checked={mode === value} disabled={value !== 'normal' && !source.eligible} onChange={() => { edit(); setMode(value); }}/>{label}</label>)}
++        {([['normal', '通常支払い'], ['offset', '他のイベントと相殺']] as const).map(([value, label]) => <label className="ticket-check" key={value}><input type="radio" name="settlementMethod" value={value} checked={value === 'normal' ? mode === 'normal' : mode !== 'normal'} disabled={(value !== 'normal' && !source.eligible) || (value === 'normal' && !!activeGroup)} onChange={() => { edit(); setMode(value); }}/>{label}</label>)}
+       </fieldset>
+       {mode !== 'normal' && <>
+-        <h2>相殺するイベントを選択</h2>
++        <label className="ticket-check"><input type="checkbox" disabled={busy} checked={mode === 'combined'} onChange={e=>{edit();setMode(e.target.checked?'combined':'offset');}}/>相殺＋差額精算（差額の支払い・受け取りも済んでいる）</label><p>チェックしない場合は相殺のみ記録し、差額を未精算のまま管理します。</p>
++        <h2>相殺するイベントを選択</h2>{targets.length > 0 && <p><span className="task-tag">相殺予定</span> 未確定・保存されていません</p>}
+         <p>{task.person}さんとの、{source.direction === 'receive' ? '相手が立て替えた支払い' : '自分が立て替えた受け取り'}を表示しています。複数選択できます。</p>
+-        {groups.length === 0 && <p role="status">相殺できる未精算項目はありません。通常支払いに切り替えて記録できます。</p>}
++        {groups.length === 0 && <>
++          <p role="status">相殺できる未精算項目はありません。同じ同行者との「支払い」と「受け取り」を相殺できます。</p>
++          {sameDirection.length > 0 && <section className="ticket-options"><h3>同じ方向のため相殺できない精算</h3><p>以下はどちらも{source.direction === 'pay' ? '自分から支払う' : '自分が受け取る'}精算です。実際の立替と登録内容が合っているか確認してください。</p>{sameDirection.map(item => <p key={settlementKey(item)}>{item.eventName}：{direction(item.direction, task.person)} — {money(item.remaining!)}<br/><Link to={`/events/${item.eventId}/tickets/${item.receptionId}/edit#${item.applicationId}`}>このチケットの支払者・精算を確認</Link></p>)}</section>}
++          <p><Link to={`/events/${source.eventId}/tickets/${source.receptionId}/edit#${source.applicationId}`}>相殺元の支払者・精算を確認</Link> ／ 通常支払いに切り替えて記録することもできます。</p>
++        </>}
+         {groups.map(group => {
+           const count = group.items.filter(i => selected.includes(settlementKey(i))).length;
+           return <section className="settlement-event" key={group.id}>
+             <label className="ticket-check"><input type="checkbox" disabled={busy} checked={count === group.items.length} ref={el => { if (el) el.indeterminate = count > 0 && count < group.items.length; }} onChange={e => toggle(group.items, e.target.checked)}/><span><strong>{group.items[0].eventName}</strong><small>{source.direction === 'receive' ? '相手が立替' : '自分が立替'}：{money(group.items.reduce((sum, i) => sum + i.remaining!, 0))}</small></span></label>
+-            {group.items.length === 1 ? <p className="settlement-item-label">{group.items[0].label}</p> : <details><summary>個別に選ぶ（{count}／{group.items.length}件）</summary>{group.items.map(item => <label className="ticket-check" key={settlementKey(item)}><input type="checkbox" disabled={busy} checked={selected.includes(settlementKey(item))} onChange={e => toggle([item], e.target.checked)}/><span>{item.label}<small>{money(item.remaining!)}{item.deadline ? ` ／ 期限 ${item.deadline}` : ''}</small></span></label>)}</details>}
++            {group.items.length === 1 ? <p className="settlement-item-label">{group.items.some(i=>i.directionWarning) && "【精算方向の確認が必要】"}{group.items[0].label} ／ {task.person}さん ／ {direction(group.items[0].direction,task.person)} ／ 未精算・相殺に利用可能：{money(group.items[0].remaining!)}</p> : <details><summary>個別に選ぶ（{count}／{group.items.length}件）</summary>{group.items.map(item => <label className="ticket-check" key={settlementKey(item)}><input type="checkbox" disabled={busy} checked={selected.includes(settlementKey(item))} onChange={e => toggle([item], e.target.checked)}/><span>{item.directionWarning && "【精算方向の確認が必要】"}{item.label}<small>{task.person}さん ／ {direction(item.direction,task.person)} ／ 未精算・相殺に利用可能：{money(item.remaining!)}{item.deadline ? ` ／ 期限 ${item.deadline}` : ''}</small></span></label>)}</details>}
+           </section>;
+         })}
+         <label className="form-field">相殺日<input type="date" required disabled={busy} value={offsetDate} onChange={e => { edit(); setOffsetDate(e.target.value); }}/></label>
+         {calculation && <section className="settlement-calculation" aria-live="polite"><h3>相殺後の金額</h3><dl className="task-facts"><dt>相殺元の金額（{direction(source.direction, task.person)}）</dt><dd>{money(calculation.sourceAmount)}</dd><dt>相殺対象の合計</dt><dd>{money(calculation.targetAmount)}</dd><dt>実際に相殺される金額</dt><dd>{money(calculation.offsetAmount)}</dd><dt>相殺後の残額</dt><dd><strong>{money(calculation.remainingAmount)}</strong></dd><dt>残額の支払者 → 受取者</dt><dd><strong>{direction(calculation.remainingDirection, task.person)}</strong></dd></dl><p>{mode === 'offset' ? '相殺だけを記録します。差額があれば未精算のまま残ります。' : calculation.remainingAmount ? '差額の実際の授受まで記録します。' : '差額がないため、支払日・受取日の入力は不要です。'}</p></section>}
+       </>}
+       {(mode === 'normal' || (mode === 'combined' && !!calculation?.remainingAmount)) && <label className="form-field">{mode === 'normal' ? source.direction === 'pay' ? '支払日' : '受領日' : calculation?.remainingDirection === 'pay' ? '差額の支払日' : '差額の受取日'}<input type="date" required disabled={busy} value={cashDate} onChange={e => { edit(); setCashDate(e.target.value); }}/></label>}
++      {mode === 'normal' && activeGroup && <p>差額の精算は上の相殺グループから記録してください。</p>}
+       {mode === 'normal' && <p>{source.settlement.isSettled ? '日付を変更して保存できます。' : '実際に支払った日・受け取った日を入力してください。未精算残額をすべて精算済みにします。'}</p>}
+       {review && calculation && <section className="settlement-confirm" role="region" aria-label="確定前の内容確認"><h3>この内容で記録します</h3><p>相手：{task.person}さん ／ 相殺日：{offsetDate}</p><ul>{[source, ...targets].map(i => <li key={settlementKey(i)}>{i.eventName} — {i.label}：{money(i.remaining!)}</li>)}</ul><p>相殺 {money(calculation.offsetAmount)} ／ 差額 {money(calculation.remainingAmount)}（{direction(calculation.remainingDirection, task.person)}）</p><p>{mode === 'combined' && calculation.remainingAmount ? `差額精算日：${cashDate}` : '実際の金銭授受は記録しません。'}</p><button type="button" className="secondary-button" disabled={busy} onClick={() => setReview(false)}>選択内容に戻る</button></section>}
+-      <button type="submit" disabled={busy || source.total === undefined || (mode !== 'normal' && !calculation)}>{busy ? '保存中…' : mode === 'normal' ? source.settlement.isSettled ? '日付を保存' : '保存して完了' : review ? 'この内容で確定' : '内容を確認する'}</button>
++      <button type="submit" disabled={(mode === 'normal' && !!activeGroup) || busy || source.total === undefined || (mode !== 'normal' && !calculation)}>{busy ? '保存中…' : mode === 'normal' ? source.settlement.isSettled ? '日付を保存' : '保存して完了' : review ? 'この内容で確定' : '内容を確認する'}</button>
+     </form>}
+     {error && <div role="alert"><p>{error}</p><button type="button" className="secondary-button" onClick={() => { setSnapshot(read()); setReview(false); setError(''); onSaved(); }}>最新の内容を読み直す</button></div>}
+     {histories.length > 0 && <section className="settlement-history"><h2>相殺履歴</h2>{histories.map(history => <History key={history.id} history={history} items={items} person={task.person}/>)}</section>}
+@@ -94,10 +108,10 @@
+ function History({ history, items, person }: { history: SettlementOffset; items: SettlementItem[]; person: string }) {
+   const current = history.allocations.map(a => items.find(i => settlementKey(i) === settlementKey(a)));
+   const pending = current.some(i => !i || !i.settlement.isSettled);
+-  return <details className="settlement-event"><summary>{history.offsetDate} ／ 相殺 {money(history.offsetAmount)}<small>{pending ? '残額の精算待ち' : '関連する精算は完了'}</small></summary>
++  return <details className="settlement-event"><summary>{history.offsetDate} ／ 相殺 {money(history.offsetAmount)}<small>{history.status === 'cancelled' ? '相殺取消' : pending ? '残額の精算待ち' : '関連する精算は完了'}</small></summary>
+     <p>相殺元 {money(history.sourceAmount)} ／ 相殺対象 {money(history.targetAmount)}</p><p>相殺時の差額：{money(history.remainingAmount)}（{direction(history.remainingDirection, person)}）</p>
+     <p>{history.cashDate ? `差額精算日：${history.cashDate}` : '差額の金銭授受は記録されていません。'}</p>
+-    {history.allocations.map((a, index) => <div className="settlement-history-item" key={settlementKey(a)}><Link to={url(a)}>{a.eventName} — {a.label}</Link><p>相殺 {money(a.offset)} ／ 実際の授受 {money(a.cash)} ／ 処理後の残額 {money(a.remaining)}</p><p>現在の未精算残額：{current[index]?.remaining === undefined ? '確認できません' : money(current[index]!.remaining!)}{current[index]?.settlement.settledDate ? ` ／ 支払・受取日 ${current[index]!.settlement.settledDate}` : ''}{current[index]?.settlement.offsetCompletedDate ? ` ／ 相殺完了日 ${current[index]!.settlement.offsetCompletedDate}` : ''}</p></div>)}
++    {history.allocations.map((a, index) => <div className="settlement-history-item" key={settlementKey(a)}><Link to={url(a)}>{a.eventName} — {a.label}</Link><p>相殺 {money(a.offset)} ／ 相殺確定時の金銭授受 {money(a.cash)} ／ 処理後の残額 {money(a.remaining)}</p><p>現在の未精算残額：{current[index]?.remaining === undefined ? '確認できません' : money(current[index]!.remaining!)}{current[index]?.settlement.settledDate ? ` ／ 支払・受取日 ${current[index]!.settlement.settledDate}` : ''}{current[index]?.settlement.offsetCompletedDate ? ` ／ 相殺完了日 ${current[index]!.settlement.offsetCompletedDate}` : ''}</p></div>)}
+     <small>相殺ID：{history.id}<br/>作成日時：{history.createdAt}</small>
+   </details>;
+ }
+--- a/src/pages/Home/PaymentOffsetEntry.tsx
++++ b/src/pages/Home/PaymentOffsetEntry.tsx
+@@ -19,7 +19,7 @@
+   const related = loadTicketTasks().filter(t => t.settlementId && t.ticketId === task.ticketId && t.receptionId === task.receptionId && t.applicationId === task.applicationId);
+   const pending = related.filter(t => !t.completed);
+   const selected = related.find(t => t.settlementId === selectedId) ?? (pending.length === 1 ? pending[0] : undefined);
+-  const missing = entry?.companionIds.filter(id => !entry.payment.settlements.some(s => s.companionId === id && s.direction === entry.direction)) ?? [];
++  const missing = entry?.companionIds.filter(id => !entry.payment.settlements.some(s => s.companionId === id)) ?? [];
+   const recipient = missing.includes(companionId) ? companionId : missing.length === 1 ? missing[0] : '';
+   const canRegister = !!entry && entry.application.status === 'won' && Number.isSafeInteger(entry.amount) && entry.amount! > 0;
+   const editUrl = `/events/${task.eventId}/tickets/${task.receptionId}/edit#${task.applicationId}`;
+@@ -36,9 +36,9 @@
+     finally { setBusy(false); }
+   }
+   return <section className="payment-offset-entry">
+-    <h2>イベント間で相殺する</h2>
++    <h2>精算方法</h2>
+     <p>同行者との支払い・受け取りを、別のイベントと相殺できます。</p>
+-    <button type="button" className="secondary-button" aria-expanded={open} onClick={() => onOpenChange(!open)}>{open ? 'チケット購入の通常支払いに戻る' : '相殺するイベントを選ぶ'}</button>
++    <fieldset className="settlement-method"><legend>支払いの記録方法</legend><label className="ticket-check"><input type="radio" name="purchaseMethod" checked={!open} onChange={()=>onOpenChange(false)}/>通常の支払い</label><label className="ticket-check"><input type="radio" name="purchaseMethod" checked={open} onChange={()=>onOpenChange(true)}/>他のイベントと相殺</label></fieldset>
+     {open && <>
+       <p>このチケットの同行者精算を使います。相殺しても、チケット購入自体の支払い状況は変更しません。</p>
+       {related.length > 0 && <label className="form-field">相殺元の支払い・受け取り<select value={selected?.settlementId ?? ''} onChange={e => { setSelectedId(e.target.value); setError(''); }}>
+--- a/src/pages/Home/TicketTodos.tsx
++++ b/src/pages/Home/TicketTodos.tsx
+@@ -1,3 +1,4 @@
++import { groupOffsetTasks } from '../../services/offsetTaskDisplay';
+ import { useEffect, useState } from "react";
+ import { loadExchangeTasks } from "../../services/exchangeTasks";
+ import { TaskTags } from "../../components/common/TaskTags";
+@@ -6,11 +7,11 @@
+ export default function TicketTodos({ all = false }: { all?: boolean }) {
+   const [, refresh] = useState(0);
+   useEffect(()=>{const update=()=>refresh(n=>n+1);const timer=setInterval(update,30000);window.addEventListener("focus",update);return ()=>{clearInterval(timer);window.removeEventListener("focus",update);};},[]);
+-  const tasks = sortTasks([...groupReceiptTasks(loadTicketTasks()), ...loadExchangeTasks()].filter(task => !task.completed));
++  const tasks = sortTasks([...groupReceiptTasks(groupOffsetTasks(loadTicketTasks())), ...loadExchangeTasks()].filter(task => !task.completed));
+   return <div className="ticket-task-list">
+     {all && <p className="task-count">未完了 {tasks.length}件</p>}
+     {tasks.length === 0 ? <div className="empty-card"><p>現在、対応が必要な項目はありません。</p></div> : (all ? tasks : tasks.slice(0,3)).map(task => <Link className="ticket-task-link" key={taskUrl(task)} to={taskUrl(task)}>
+-      <div className="task-card-main"><strong><TaskTags ids={task.tagIds} />{task.title}</strong>{(all || task.offsetAmount !== undefined) && <><span className="task-event-name">{task.eventName}</span><div className="task-card-meta">{!task.schedule && <b>{task.amount === undefined ? "金額未設定" : `${task.offsetAmount !== undefined ? "残額 " : ""}${task.amount.toLocaleString("ja-JP")}円`}</b>}{task.deadline && <span className={task.deadline < localToday() ? "task-overdue" : ""}>{task.deadline < localToday() ? "期限切れ · " : "期限 "}{task.deadline.replaceAll("-","/")}</span>}</div></>}</div><span className="task-chevron" aria-hidden="true">›</span>
++      <div className="task-card-main"><strong>{task.offsetStatus && <span className="task-tag">{task.offsetStatus}</span>}<TaskTags ids={task.tagIds} />{task.title}</strong>{(all || task.offsetAmount !== undefined) && <><span className="task-event-name">{task.eventName}</span>{task.offsetGroupId&&<span>精算相手：{task.person}さん</span>}<div className="task-card-meta">{!task.schedule && <b>{task.amount === undefined ? "金額未設定" : `${task.offsetAmount !== undefined ? "残額 " : ""}${task.amount.toLocaleString("ja-JP")}円`}</b>}{task.deadline && <span className={task.deadline < localToday() ? "task-overdue" : ""}>{task.deadline < localToday() ? "期限切れ · " : "期限 "}{task.deadline.replaceAll("-","/")}</span>}</div></>}</div><span className="task-chevron" aria-hidden="true">›</span>
+     </Link>)}
+     {!all && tasks.length > 3 && <div className="task-list-footer"><Link className="task-navigation-button" to="/tasks">すべてのやることを見る</Link></div>}
+   </div>;
+--- a/src/pages/Home/TicketTaskPage.tsx
++++ b/src/pages/Home/TicketTaskPage.tsx
+@@ -1,3 +1,4 @@
++import { groupOffsetTasks } from '../../services/offsetTaskDisplay';
+ import PaymentOffsetEntry from "./PaymentOffsetEntry";
+ import SettlementTaskForm from "./SettlementTaskForm";
+ import { loadExchangeTasks } from "../../services/exchangeTasks";
+@@ -8,10 +9,10 @@
+ import { loadTickets, saveTicket } from "../../services/storage";
+ 
+ export function CompletedTasksPage() {
+-  const tasks = [...groupReceiptTasks(loadTicketTasks()), ...loadExchangeTasks()].filter(task => task.completed);
++  const tasks = [...groupReceiptTasks(groupOffsetTasks(loadTicketTasks())), ...loadExchangeTasks()].filter(task => task.completed);
+   return <main><Link className="task-navigation-button" to="/settings">← 設定・管理へ戻る</Link><h1>完了済みタスク</h1><div className="ticket-task-list">
+     {tasks.length === 0 && <p>完了済みのタスクはありません。</p>}
+-    {tasks.map(task => <Link className="ticket-task-link" key={taskUrl(task)} to={taskUrl(task)}><strong><TaskTags ids={task.tagIds} />{task.title}</strong><span>{task.eventName}</span>{!task.href?.startsWith("/exchange") && <span>{task.dateLabel}：{task.date ?? "未登録"}</span>}</Link>)}
++    {tasks.map(task => <Link className="ticket-task-link" key={taskUrl(task)} to={taskUrl(task)}><strong>{task.offsetStatus && <span className="task-tag">{task.offsetStatus}</span>}<TaskTags ids={task.tagIds} />{task.title}</strong><span>{task.eventName}</span>{task.offsetSummary&&<><span>精算相手：{task.person}さん</span><span>{task.offsetSummary}</span></>}{!task.href?.startsWith("/exchange") && <span>{task.dateLabel}：{task.date ?? "未登録"}</span>}</Link>)}
+   </div></main>;
+ }
+ export default function TicketTaskPage() {
+@@ -32,7 +33,7 @@
+     <article className="event-detail-sheet"><p className={`task-status-badge ${task.completed ? "is-completed" : "is-pending"}`}>{task.completed ? "完了済み" : "未完了"}</p><h1>{task.title}</h1>
+       <dl className="task-facts"><dt>イベント名</dt><dd>{task.eventName}</dd>{task.receptionName.trim() !== task.eventName.trim() && <><dt>チケット情報</dt><dd>{task.receptionName}</dd></>}<dt>{task.settlementId ? (task.receive ? "受領する相手" : "支払先") : "支払者"}</dt><dd>{task.person}</dd><dt>{task.offsetAmount !== undefined && !task.completed ? "未精算残額" : "チケット代（手数料込み）"}</dt><dd>{task.amount === undefined ? "金額未設定" : `${task.amount.toLocaleString("ja-JP")}円`}</dd></dl>
+       <div className="task-detail-tags">
+-        <TaskTags ids={task.tagIds} />
++        {task.offsetStatus && <span className="task-tag">{task.offsetStatus}</span>}<TaskTags ids={task.tagIds} />
+       </div>
+       {!task.settlementId && <PaymentOffsetEntry task={task} open={offsetOpen} onOpenChange={setOffsetOpen} onSaved={()=>refresh(n=>n+1)}/>}
+       {task.settlementId ? <SettlementTaskForm task={task} onSaved={() => refresh(n=>n+1)}/> : !offsetOpen && <form className="task-completion-form" onSubmit={async e => {
+--- /dev/null
++++ b/src/pages/Home/OffsetGroupPage.tsx
+@@ -0,0 +1,38 @@
++import { useState } from 'react';
++import { Link, useParams } from 'react-router';
++import { loadTickets, loadEvents, loadCompanions, transactTicketSettlements } from '../../services/storage';
++import { cancelOffsetGroup, completeOffsetGroup, findOffsetGroup } from '../../services/offsetGroups';
++import { settlementKey } from '../../services/settlementOffsets';
++const money=(n:number)=>`${n.toLocaleString('ja-JP')}円`;
++export default function OffsetGroupPage() {
++ const {groupId}=useParams();return <GroupDetails key={groupId} id={groupId??''}/>;
++}
++export function GroupDetails({id}:{id:string}) {
++ const read=()=>findOffsetGroup(loadTickets(),loadEvents(),id);
++ const [group,setGroup]=useState(read),[date,setDate]=useState(''),[review,setReview]=useState<'cash'|'cancel'|undefined>(),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
++ if(!group)return <main><h1>相殺履歴が見つかりません</h1><Link to="/">ホームへ戻る</Link></main>;
++ const person=loadCompanions().find(c=>c.id===group.companionId)?.name??'未登録の同行者';
++ const allocations=[...new Map(group.histories.flatMap(h=>h.allocations).reverse().map(a=>[settlementKey(a),a])).values()];
++ const receive=allocations.filter(a=>a.direction==='receive').reduce((n,a)=>n+a.before,0),pay=allocations.filter(a=>a.direction==='pay').reduce((n,a)=>n+a.before,0);
++ async function save() {
++   if(!review||busy)return;setBusy(true);setError('');
++   try {await transactTicketSettlements((tickets,events)=>({tickets:review==='cash'?completeOffsetGroup(tickets,events,group!,date):cancelOffsetGroup(tickets,events,group!,new Date().toISOString()),result:undefined}),true);
++    setGroup(read());setMessage(review==='cash'?'差額の精算を記録しました。関連するタスクは完了済みアーカイブに移動しました。':'相殺を取り消しました。元の未精算タスクを復元しました。');setReview(undefined);
++   }catch(e){setError(e instanceof Error?e.message:'保存できませんでした。');setReview(undefined);}finally{setBusy(false);}
++ }
++ return <main className="event-detail-page"><Link to={group.completed?'/tasks/completed':'/'}>{group.completed?'完了済みタスクへ':'ホームへ'}</Link><article className="event-detail-sheet">
++  <span className="task-tag">{group.cancelled?'相殺取消':group.completed?'相殺済み':'相殺中'}</span><h1>{group.eventNames.join(' ⇄ ')}</h1><p>精算相手：{person}さん</p>
++  <dl className="task-facts"><dt>受取</dt><dd>{money(receive)}</dd><dt>支払</dt><dd>{money(pay)}</dd><dt>相殺に充当</dt><dd>{money(group.histories.reduce((n,h)=>n+h.offsetAmount,0))}</dd><dt>相殺後の差額</dt><dd>{money(Math.abs(receive-pay))}（{receive===pay?'金銭授受なし':receive>pay?`${person}さん → 自分`:`自分 → ${person}さん`}）</dd><dt>現在の未精算残額</dt><dd>{group.cancelled?'取り消し済み・元の精算で管理':money(group.remaining)}</dd><dt>設定日</dt><dd>{group.histories[0].offsetDate}</dd>{group.completed&&<><dt>完了日</dt><dd>{group.completedDate}</dd><dt>精算結果</dt><dd>{group.histories.some(h=>h.cashDate)?`${money(Math.abs(receive-pay))}${receive>pay?'受取':'支払'}済み`:'金銭授受なしで相殺完了'}</dd></>}</dl>
++  {group.error&&<p role="alert">{group.error}</p>}{message&&<p role="status">{message}</p>}
++  <h2>関連する精算</h2>{allocations.map(a=><section className="ticket-options" key={settlementKey(a)}><Link to={`/events/${a.eventId}`}>{a.eventName}</Link><p>{a.label} ／ {person}さん ／ {a.direction==='pay'?'支払':'受取'} {money(a.before)}</p><Link to={`/tasks/${a.ticketId}/${a.receptionId}/${a.applicationId}/${a.settlementId}`}>元の精算を確認</Link></section>)}
++  {!group.completed&&!group.cancelled&&!group.error&&<section><h2>差額の精算</h2><p>{group.direction==='pay'?`自分 → ${person}さん`:`${person}さん → 自分`}：{money(group.remaining)}</p>
++   <label className="form-field">{group.direction==='pay'?'差額の支払日':'差額の受取日'}<input type="date" value={date} disabled={busy} onChange={e=>{setDate(e.target.value);setReview(undefined);}}/></label>
++   <button type="button" disabled={busy||!date} onClick={()=>setReview('cash')}>{group.direction==='pay'?'支払い':'受け取り'}を記録</button>
++   <button type="button" className="secondary-button" disabled={busy} onClick={()=>setReview('cancel')}>相殺を取り消す</button>
++   {review&&<section className="settlement-confirm" aria-label="確定前の内容確認"><h3>内容を確認してください</h3><p>{review==='cash'?`${date}に差額 ${money(group.remaining)} の${group.direction==='pay'?'支払い':'受け取り'}を記録し、関連する精算を完了します。`:'このグループの相殺を取り消し、充当金額を解放します。履歴は残ります。金銭授受や変更があった場合は取り消せません。'}</p><button type="button" disabled={busy} onClick={()=>void save()}>この内容で確定</button><button type="button" disabled={busy} onClick={()=>setReview(undefined)}>戻る</button></section>}
++  </section>}
++  {error&&<div role="alert"><p>{error}</p><button type="button" onClick={()=>{setGroup(read());setError('');setReview(undefined);}}>最新の内容を読み直す</button></div>}
++  <h2>相殺履歴</h2>{group.histories.map(h=><details key={h.id}><summary>{h.offsetDate} ／ 相殺 {money(h.offsetAmount)}{h.status==='cancelled'?'（取消）':''}</summary><p>相殺ID：{h.id}</p><p>差額 {money(h.remainingAmount)} ／ {h.remainingDirection==='pay'?'自分から支払う':h.remainingDirection==='receive'?'自分が受け取る':'差額なし'}</p><p>{h.cashDate?`差額精算日：${h.cashDate}`:'金銭授受の記録なし'}{h.cancelledAt&&` ／ 取消日時：${h.cancelledAt}`}</p>{h.allocations.map(a=><p key={settlementKey(a)}>{a.eventName} ／ {a.label}：相殺前 {money(a.before)} ／ 充当 {money(a.offset)} ／ 相殺確定時の金銭授受 {money(a.cash)}<br/>精算ID：{a.settlementId}</p>)}</details>)}
++  <small>相殺グループID：{group.id}</small>
++ </article></main>;
++}
+--- a/src/pages/Event/EventDetailPage.tsx
++++ b/src/pages/Event/EventDetailPage.tsx
+@@ -1,3 +1,4 @@
++import OffsetLinks from '../../components/common/OffsetLinks';
+ import OfficialSourceSummary from '../../components/event/OfficialSourceSummary';
+ import { isPastEvent } from "../../services/eventArchive";
+ import { useLocalToday } from "../../hooks/useLocalToday";
+@@ -733,7 +734,7 @@
+           </div>
+         </section>
+ 
+-        <GenreSummary event={event} receptions={ticketReceptions}/>
++        <GenreSummary event={event} receptions={ticketReceptions}/><OffsetLinks eventId={event.id}/>
+         <section
+           className="event-memo-section"
+           aria-labelledby="event-memo-heading"
+--- a/tests/settlement-offsets.test.cjs
++++ b/tests/settlement-offsets.test.cjs
+@@ -57,7 +57,7 @@
+ test('通常編集や古い画面からの保存で相殺・履歴を破壊できない',async()=>{const f=fixture();await save(request(f));await assert.rejects(()=>storage.saveTicket(f.tickets[0]),/相殺/);const next=storage.loadTickets();next[1].receptions[0].applications[0].fulfillment.payment.settlements=[];await assert.rejects(()=>storage.saveTickets(next),/相殺/);const tags=storage.loadTickets();tags[0].receptions[0].applications[0].fulfillment.payment.settlements[0].tagIds=['important'];await storage.saveTickets(tags);});
+ test('相殺履歴を消すイベント削除を防止',async()=>{const f=fixture();await save(request(f));await assert.rejects(()=>storage.saveEvents([f.events[1]]),/相殺履歴/);assert.equal(storage.loadEvents().length,2);});
+ test('ロック非対応時に相殺を不安全な方法へフォールバックしない',async()=>{const f=fixture();Object.defineProperty(global,'navigator',{configurable:true,value:{}});await assert.rejects(()=>save(request(f)),/ブラウザ/);assert.equal(writes,0);await storage.saveTicket(f.tickets[0]);});
+-test('既存のタスク詳細に通常支払いと3つの方法、履歴が表示される',async()=>{const f=fixture();const render=()=>renderToStaticMarkup(React.createElement(MemoryRouter,null,React.createElement(Form,{task:loadTicketTasks().find(t=>t.settlementId==='s0'),onSaved:()=>{}})));let html=render();assert.match(html,/通常支払い/);assert.match(html,/相殺のみ/);assert.match(html,/相殺＋差額精算/);assert.match(html,/checked="" value="normal"/);await save(request(f));html=render();assert.match(html,/相殺履歴/);assert.match(html,/8,500円/);assert.match(html,/3,500円/);assert.match(html,/イベント1/);});
++test('既存のタスク詳細に通常支払い・相殺の選択と履歴が表示される',async()=>{const f=fixture();const render=()=>renderToStaticMarkup(React.createElement(MemoryRouter,null,React.createElement(Form,{task:loadTicketTasks().find(t=>t.settlementId==='s0'),onSaved:()=>{}})));let html=render();assert.match(html,/通常支払い/);assert.match(html,/他のイベントと相殺/);assert.match(html,/checked="" value="normal"/);await save(request(f));html=render();assert.match(html,/相殺履歴/);assert.match(html,/8,500円/);assert.match(html,/3,500円/);assert.match(html,/イベント1/);});
+ test('後日の残額支払いで履歴の精算状態・差額精算日も更新',async()=>{const f=fixture();await save(request(f));const expected=items({...f,tickets:storage.loadTickets()})[0];await storage.transactTicketSettlements((tickets,events)=>({tickets:api.applySettlementCash(tickets,events,expected,'2026-10-15'),result:null}),true);const h=storage.loadTickets()[0].offsetHistory[0];assert.equal(h.status,'settled');assert.equal(h.cashDate,'2026-10-15');assert.equal(h.allocations[0].remaining,3500);assert.equal(h.allocations[0].cash,0);});
+ test('別の相殺で残額を完了した場合は金銭授受日に偽装しない',()=>{const f=fixture([12000,8500,3500]);const first=api.applyOffset(f.tickets,f.events,request(f,{targets:[items(f)[1]]}),'one','now');const i=items({...f,tickets:first.tickets});const second=api.applyOffset(first.tickets,f.events,{source:i[0],targets:[i[2]],offsetDate:'2026-10-10',settleRemainder:false},'two','later');assert.equal(second.tickets[0].offsetHistory[0].status,'offset');assert.equal(second.tickets[0].offsetHistory[0].cashDate,undefined);});
+ const entryApi=require('../src/services/paymentSettlementEntry.ts');
+@@ -65,7 +65,7 @@
+ const purchaseRef={ticketId:'t0',receptionId:'r0',applicationId:'a0',eventId:'e0'};
+ test('購入の支払い画面からイベント選択へ進み、相手側イベントを表示',()=>{
+  fixture();const render=open=>renderToStaticMarkup(React.createElement(MemoryRouter,null,React.createElement(Entry,{task:purchaseRef,open,onOpenChange:()=>{},onSaved:()=>{}})));
+- assert.match(render(false),/相殺するイベントを選ぶ/);const html=render(true);assert.match(html,/イベント1/);assert.match(html,/checked="" value="offset"/);assert.match(html,/8,500/);assert.equal(writes,0);
++ assert.match(render(false),/他のイベントと相殺/);const html=render(true);assert.match(html,/イベント1/);assert.match(html,/checked="" value="offset"/);assert.match(html,/8,500/);assert.equal(writes,0);
+ });
+ test('未登録の同行者精算は登録案内を表示し、購入の支払いを変えない',()=>{
+  const f=fixture();const p=f.tickets[0].receptions[0].applications[0].fulfillment.payment;p.payerId='friend';p.isPaid=false;p.settlements=[];
+@@ -81,3 +81,100 @@
+  assert.throws(()=>entryApi.registerPaymentSettlement(f.tickets,purchaseRef,'other',entry.fingerprint,'new'),/同行者/);
+  f.tickets[0].receptions[0].seatTypes[0].price=20000;assert.throws(()=>entryApi.registerPaymentSettlement(f.tickets,purchaseRef,'friend',entry.fingerprint,'new'),/変更/);
+ });
++test('同じ方向の精算には除外理由と確認先を表示し、相殺候補にしない',()=>{
++ fixture([2000,8500],['pay','pay']);
++ const html=renderToStaticMarkup(React.createElement(MemoryRouter,null,React.createElement(Form,{task:loadTicketTasks().find(t=>t.settlementId==='s0'),onSaved:()=>{},initialMode:'offset'})));
++ assert.match(html,/同じ方向のため相殺できない精算/);
++ assert.match(html,/イベント1/);
++ assert.match(html,/どちらも自分から支払う/);
++ assert.match(html,/\/events\/e1\/tickets\/r1\/edit#a1/);
++ assert.doesNotMatch(html,/class="settlement-event"/);
++ assert.equal(writes,0);
++});
++const consistency=require('../src/services/settlementConsistency.ts');
++const {withCompanionSettlements}=require('../src/services/companionSettlements.ts');
++test('支払者変更時は逆方向の精算を重複追加せず確認後のみ訂正',()=>{
++ const f=fixture([2275],['pay']);const app=f.tickets[0].receptions[0].applications[0],s=app.fulfillment.payment.settlements[0];
++ assert.equal(withCompanionSettlements(app,()=> 'new').fulfillment.payment.settlements.length,1);
++ assert.equal(consistency.needsDirectionReview(app,s),true);
++ const kept=consistency.reviewSettlementDirection(app,s.id,'keep','now');assert.equal(consistency.needsDirectionReview(kept,kept.fulfillment.payment.settlements[0]),false);
++ const corrected=consistency.reviewSettlementDirection(app,s.id,'correct','now').fulfillment.payment.settlements[0];assert.equal(corrected.direction,'receive');assert.equal(corrected.amount,2275);assert.equal(s.direction,'pay');
++ for(const patch of [{isSettled:true},{offsetAmount:0}]){Object.assign(s,patch);assert.throws(()=>consistency.reviewSettlementDirection(app,s.id,'correct','now'),/変更できません/);}
++});
++const groupsApi=require('../src/services/offsetGroups.ts');
++test('MAPPA 2275受取と文スト4045支払を1グループにし1770支払後双方完了',()=>{
++ const f=fixture([2275,4045]);const r=apply(f);const group=groupsApi.offsetGroups(r.tickets,f.events)[0];
++ assert.equal(group.remaining,1770);assert.equal(group.direction,'pay');assert.equal(group.items.length,2);
++ const done=groupsApi.completeOffsetGroup(r.tickets,f.events,group,'2026-10-09');const final=groupsApi.offsetGroups(done,f.events)[0];
++ assert.equal(final.completed,true);assert.equal(final.completedDate,'2026-10-09');assert.ok(items({...f,tickets:done}).every(i=>i.settlement.isSettled));
++ assert.throws(()=>groupsApi.completeOffsetGroup(done,f.events,group,'2026-10-09'),/変更/);
++ assert.throws(()=>groupsApi.cancelOffsetGroup(done,f.events,final,'now'),/完了/);
++});
++test('相殺取り消しで元の記録を復元し、履歴・IDは削除しない',()=>{
++ const f=fixture([2275,4045]);const r=apply(f);const group=groupsApi.offsetGroups(r.tickets,f.events)[0];
++ const cancelled=groupsApi.cancelOffsetGroup(r.tickets,f.events,group,'2026-10-09T00:00:00Z');
++ assert.deepEqual(cancelled.map(t=>t.receptions),f.tickets.map(t=>t.receptions));assert.equal(cancelled[0].offsetHistory[0].id,'offset-1');assert.equal(cancelled[0].offsetHistory[0].status,'cancelled');
++ assert.throws(()=>groupsApi.cancelOffsetGroup(cancelled,f.events,group,'now'),/変更/);
++ const req={...request(f),source:items({...f,tickets:cancelled})[0],targets:[items({...f,tickets:cancelled})[1]]};
++ const next=api.applyOffset(cancelled,f.events,req,'offset-2','2026-10-10T00:00:00Z');assert.equal(next.tickets[0].offsetHistory[0].status,'cancelled');
++});
++test('複数対象に残る差額を一括精算し、別の精算は巻き込まない',()=>{
++ const f=fixture([2275,3000,2000,999]);const r=apply(f,{targets:items(f).slice(1,3)});const g=groupsApi.offsetGroups(r.tickets,f.events)[0];assert.equal(g.remaining,2725);
++ const next=groupsApi.completeOffsetGroup(r.tickets,f.events,g,'2026-10-09');assert.deepEqual(items({...f,tickets:next}).map(i=>i.remaining),[0,0,0,999]);
++});
++test('一部相殺残高を再相殺した履歴は同じ残高グループとなり取り消せる',()=>{
++ const f=fixture([10000,3000,2000]);const r=apply(f,{targets:[items(f)[1]]});const i=items({...f,tickets:r.tickets});
++ const r2=api.applyOffset(r.tickets,f.events,{source:i[0],targets:[i[2]],offsetDate:'2026-10-09',settleRemainder:false},'second','2026-10-09T00:00:00Z');
++ const g=groupsApi.offsetGroups(r2.tickets,f.events)[0];assert.equal(g.id,'offset-1');assert.equal(g.remaining,5000);assert.equal(g.histories.length,2);
++ const next=groupsApi.cancelOffsetGroup(r2.tickets,f.events,g,'2026-10-10T00:00:00Z');assert.deepEqual(next.map(t=>t.receptions),f.tickets.map(t=>t.receptions));
++});
++const {groupOffsetTasks}=require('../src/services/offsetTaskDisplay.ts');
++const {CompletedTasksPage}=require('../src/pages/Home/TicketTaskPage.tsx');
++const {GroupDetails}=require('../src/pages/Home/OffsetGroupPage.tsx');
++test('ホームは相殺精算だけ1件にまとめ、完了後はグループ単位でアーカイブ',async()=>{
++ const f=fixture([2275,4045,999]);await save(request(f,{targets:[items(f)[1]]}));
++ let tasks=groupOffsetTasks(loadTicketTasks());const g=tasks.find(t=>t.offsetGroupId);assert.equal(g.amount,1770);assert.equal(g.completed,false);assert.match(g.title,/支払う/);assert.equal(tasks.filter(t=>t.settlementId).length,1);assert.equal(tasks.find(t=>t.settlementId==='s2').amount,999);
++ const group=groupsApi.offsetGroups(storage.loadTickets(),f.events)[0];await storage.transactTicketSettlements((tickets,events)=>({tickets:groupsApi.completeOffsetGroup(tickets,events,group,'2026-10-09'),result:null}),true);
++ tasks=groupOffsetTasks(loadTicketTasks());assert.equal(tasks.find(t=>t.offsetGroupId).completed,true);assert.equal(tasks.find(t=>t.settlementId==='s2').completed,false);
++ const html=renderToStaticMarkup(React.createElement(MemoryRouter,null,React.createElement(CompletedTasksPage)));assert.match(html,/相殺済み/);assert.match(html,/1,770円支払済み/);assert.match(html,/offset-1/);
++});
++test('差額受取・ゼロのアーカイブと旧履歴に互換性がある',()=>{
++ for(const amounts of [[4045,2275],[2275,2275]]){
++  const f=fixture(amounts);const r=apply(f);for(const h of r.tickets[0].offsetHistory){delete h.completedDate;for(const a of h.allocations){delete a.beforeSettlement;delete a.afterSettlement;}}
++  records.set('oshi-memo-tickets',JSON.stringify(r.tickets));const group=groupsApi.offsetGroups(storage.loadTickets(),f.events)[0];
++  assert.equal(group.remaining,amounts[0]-amounts[1]);assert.equal(group.completed,amounts[0]===amounts[1]);
++  const html=renderToStaticMarkup(React.createElement(MemoryRouter,null,React.createElement(GroupDetails,{id:group.id})));assert.match(html,/関連する精算/);assert.match(html,/相殺履歴/);
++  if(!group.completed){const undo=groupsApi.cancelOffsetGroup(r.tickets,f.events,group,'now');assert.deepEqual(items({...f,tickets:undo}).map(i=>i.remaining),amounts);}
++ }
++});
++test('クラウド同期と同じsnapshot形式を往復してグループID・残額・履歴が保持される',async()=>{
++ const f=fixture([2275,4045]);await save(request(f));const before=groupsApi.offsetGroups(storage.loadTickets(),f.events)[0];
++ const transferred=JSON.parse(JSON.stringify(captureSnapshot()));records.clear();restoreSnapshot(transferred);
++ const after=groupsApi.offsetGroups(storage.loadTickets(),storage.loadEvents())[0];assert.equal(after.id,before.id);assert.equal(after.fingerprint,before.fingerprint);assert.equal(groupOffsetTasks(loadTicketTasks()).find(t=>t.offsetGroupId).amount,1770);
++});
++test('グループ完了・取消の保存失敗は両側と履歴を変更しない',async()=>{
++ const f=fixture([2275,4045]);await save(request(f));const before=records.get('oshi-memo-tickets');const group=groupsApi.offsetGroups(storage.loadTickets(),f.events)[0];failWrite=true;
++ for(const operation of [groupsApi.completeOffsetGroup,groupsApi.cancelOffsetGroup])await assert.rejects(()=>storage.transactTicketSettlements((tickets,events)=>({tickets:operation(tickets,events,group,'2026-10-09'),result:null}),true),/quota/);
++ assert.equal(records.get('oshi-memo-tickets'),before);
++});
++test('金銭授受後のグループ取消と他タブの古い内容での操作を拒否',()=>{
++ const f=fixture([2275,4045,2000]);const r=apply(f);let next=api.applySettlementCash(r.tickets,f.events,items({...f,tickets:r.tickets})[1],'2026-10-09');
++ const group=groupsApi.offsetGroups(next,f.events)[0];assert.throws(()=>groupsApi.cancelOffsetGroup(next,f.events,group,'now'),/変更|金銭/);
++ const old=groupsApi.offsetGroups(r.tickets,f.events)[0];assert.throws(()=>groupsApi.completeOffsetGroup(next,f.events,old,'2026-10-09'),/変更/);
++});
++test('グループ完了と取り消しの同時確定は一方だけ成功する',async()=>{
++ const f=fixture([2275,4045]);await save(request(f));const group=groupsApi.offsetGroups(storage.loadTickets(),f.events)[0];
++ const results=await Promise.allSettled([groupsApi.completeOffsetGroup,groupsApi.cancelOffsetGroup].map(operation=>storage.transactTicketSettlements((tickets,events)=>({tickets:operation(tickets,events,group,'2026-10-09'),result:null}),true)));
++ assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
++ const g=groupsApi.offsetGroups(storage.loadTickets(),f.events)[0];assert.equal(g.completed,true);assert.ok(items({...f,tickets:storage.loadTickets()}).every(i=>i.remaining===0));
++});
++test('相殺後の料金変更がある場合、自動金額の復元による残高変更を拒否',()=>{
++ const f=fixture([2275,4045]);f.tickets[0].receptions[0].applications[0].fulfillment.payment.settlements[0].amountMode='auto';const r=apply(f);
++ r.tickets[0].receptions[0].seatTypes[0].price=3000;
++ const g=groupsApi.offsetGroups(r.tickets,f.events)[0];assert.throws(()=>groupsApi.cancelOffsetGroup(r.tickets,f.events,g,'now'),/料金が変更/);
++});
++test('支払者不明や同行者から外れた精算は推測訂正せず維持の確認ができる',()=>{
++ const f=fixture();const app=f.tickets[0].receptions[0].applications[0];app.companionIds=[];const s=app.fulfillment.payment.settlements[0];
++ assert.equal(consistency.needsDirectionReview(app,s),true);assert.throws(()=>consistency.reviewSettlementDirection(app,s.id,'correct','now'),/判断できません/);
++ const next=consistency.reviewSettlementDirection(app,s.id,'keep','now');assert.equal(next.fulfillment.payment.settlements[0].direction,s.direction);
++});
+--- a/tests/ticket-reception.test.cjs
++++ b/tests/ticket-reception.test.cjs
+@@ -7,7 +7,7 @@
+ const helpers=load('src/services/ticketReception.ts');
+ function tasks(type,status,fulfillment) {
+  const reception={id:'r',name:'受付',receptionType:type,resultDate:'2000-01-01',applicationDeadlineDate:'2099-01-01',seatTypes:[{id:'s',price:2000}],fees:[],applications:[{id:'a',status,quantity:1,seatTypeId:'s',companionIds:[],fulfillment}]};
+- return load('src/services/ticketTasks.ts',{'./settlementOffsets':load('src/services/settlementOffsets.ts',{'./ticketAmounts':load('src/services/ticketAmounts.ts')}),'./ticketIssuance':load('src/services/ticketIssuance.ts'),'./ticketReception':helpers,'./taskTags':{selectedTags:()=>[]},'./ticketAmounts':{settlementAmount:()=>1000},'./storage':{loadEvents:()=>[{id:'e',title:'展示'}],loadCompanions:()=>[],loadTickets:()=>[{id:'t',eventId:'e',receptions:[reception]}]}}).loadTicketTasks();
++ return load('src/services/ticketTasks.ts',{'./settlementOffsets':load('src/services/settlementOffsets.ts',{'./ticketAmounts':load('src/services/ticketAmounts.ts'),'./settlementConsistency':load('src/services/settlementConsistency.ts')}),'./ticketIssuance':load('src/services/ticketIssuance.ts'),'./ticketReception':helpers,'./taskTags':{selectedTags:()=>[]},'./ticketAmounts':{settlementAmount:()=>1000},'./storage':{loadEvents:()=>[{id:'e',title:'展示'}],loadCompanions:()=>[],loadTickets:()=>[{id:'t',eventId:'e',receptions:[reception]}]}}).loadTicketTasks();
+ }
+ test('legacy receptions remain lottery; general dates never include result',()=>{
+  assert.equal(helpers.isLottery({}),true);
+--- /dev/null
++++ b/tests/offset-groups.html
+@@ -0,0 +1 @@
++<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>pre{white-space:pre-wrap;overflow-wrap:anywhere}#fixture{min-width:0}</style><title>相殺グループ ローカル受入テスト</title><h1>相殺グループ 受入テスト</h1><p>検証専用データ・既存の登録内容やクラウドには保存しません。</p><button id="run">検証を実行</button><button id="pending">相殺中の画面を表示</button><button id="reload">保存した検証状態を再表示</button><pre id="results"></pre><div id="fixture"></div><script type="module" src="/tests/offset-groups.browser.tsx"></script></html>
+--- /dev/null
++++ b/tests/offset-groups.browser.tsx
+@@ -0,0 +1,62 @@
++import React,{act} from 'react';
++import {createRoot} from 'react-dom/client';
++import {MemoryRouter} from 'react-router';
++import '../src/index.css';
++import SettlementTaskForm from '../src/pages/Home/SettlementTaskForm';
++import {GroupDetails} from '../src/pages/Home/OffsetGroupPage';
++import {CompletedTasksPage} from '../src/pages/Home/TicketTaskPage';
++import TicketTodos from '../src/pages/Home/TicketTodos';
++import {loadTicketTasks} from '../src/services/ticketTasks';
++import {loadTickets,loadEvents} from '../src/services/storage';
++import {offsetGroups} from '../src/services/offsetGroups';
++import {captureSnapshot,restoreSnapshot} from '../src/services/personalSnapshot';
++// Dedicated in-memory Storage. Only this harness's sessionStorage key persists
++// test records across reload; the app's real localStorage is never read or written.
++const key='oshi-offset-acceptance-fixture-v1';
++const records=new Map<string,string>(JSON.parse(sessionStorage.getItem(key)??'[]'));
++const persist=()=>sessionStorage.setItem(key,JSON.stringify([...records]));
++Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:(k:string)=>records.get(k)??null,setItem:(k:string,v:string)=>{records.set(k,v);persist();},removeItem:(k:string)=>{records.delete(k);persist();},get length(){return records.size},key:(i:number)=>[...records.keys()][i]??null}});
++(globalThis as any).IS_REACT_ACT_ENVIRONMENT=true;
++const root=createRoot(document.querySelector('#fixture')!);const output=document.querySelector('#results')!;
++const assertion=(value:unknown,text:string)=>{if(!value)throw new Error(text)};
++const mount=async(node:React.ReactNode)=>{await act(async()=>root.render(<MemoryRouter><React.Fragment key={crypto.randomUUID()}>{node}</React.Fragment></MemoryRouter>));};
++const button=(text:string)=>[...document.querySelectorAll<HTMLButtonElement>('#fixture button')].find(b=>b.textContent===text)!;
++const click=async(element:HTMLElement)=>{assertion(element,'操作対象がありません');await act(async()=>element.click());};
++const input=async(el:HTMLInputElement,value:string)=>{await act(async()=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(el,value);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));});};
++function fixture(){
++ records.clear();persist();
++ localStorage.setItem('oshi-memo-events',JSON.stringify([{id:'mappa',title:'MAPPA EXPO'},{id:'bungo',title:'文スト'}]));
++ localStorage.setItem('oshi-memo-companions',JSON.stringify([{id:'toko',name:'とこ'}]));
++ localStorage.setItem('oshi-memo-tickets',JSON.stringify([2275,4045].map((amount,i)=>({id:`t${i}`,eventId:i?'bungo':'mappa',receptions:[{id:`r${i}`,name:'入場券',seatTypes:[{id:'seat',name:'一般',price:amount}],fees:[],applications:[{id:`a${i}`,seatTypeId:'seat',quantity:2,companionIds:['toko'],status:'won',fulfillment:{payment:{payerId:i?'toko':'self',isPaid:true,deadlineDate:'2026-10-18',settlements:[{id:`s${i}`,companionId:'toko',direction:i?'pay':'receive',amount,amountMode:'manual',isSettled:false}]},issuance:{isIssued:false},distributions:[],seatAssignments:[]}}]}]}))));
++}
++async function until(check:()=>boolean){for(let i=0;i<100;i++){if(check())return;await act(async()=>{await new Promise(resolve=>setTimeout(resolve,10));});}throw new Error('保存完了待ちがタイムアウトしました');}
++async function setupOffset(){
++ const before=JSON.stringify(loadTickets());
++ await mount(<SettlementTaskForm task={loadTicketTasks().find(t=>t.settlementId==='s0')!} initialMode="offset" onSaved={()=>{}}/>);
++ assertion(document.querySelector('#fixture')!.textContent!.includes('文スト'),'相手イベントが表示されない');
++ await click(document.querySelector<HTMLInputElement>('#fixture .settlement-event input[type=checkbox]')!);
++ assertion(document.querySelector('#fixture')!.textContent!.includes('相殺予定'),'予定タグ');
++ await input(document.querySelector<HTMLInputElement>('#fixture input[type=date]')!,'2026-10-08');
++ await click(button('内容を確認する'));assertion(JSON.stringify(loadTickets())===before,'確認前に保存');
++ await click(button('この内容で確定'));await until(()=>offsetGroups(loadTickets(),loadEvents()).some(g=>!g.cancelled&&g.remaining===1770));
++}
++async function run(){
++ const lines:string[]=[];output.textContent='検証中';
++ try{
++ fixture();await setupOffset();lines.push('PASS 候補選択・確認・1770円支払の相殺保存');
++ await mount(<TicketTodos all/>);assertion(document.querySelector('#fixture')!.textContent!.includes('未完了 1件'),'ホーム集約');lines.push('PASS ホームは相殺中タスク1件');
++ let group=offsetGroups(loadTickets(),loadEvents())[0];await mount(<GroupDetails id={group.id}/>);
++ await click(button('相殺を取り消す'));await click(button('この内容で確定'));await until(()=>offsetGroups(loadTickets(),loadEvents()).every(g=>g.cancelled));assertion(loadTickets().every(t=>!t.receptions[0].applications[0].fulfillment!.payment.settlements[0].isSettled),'取消残高');lines.push('PASS 確認つき取消・元の未精算復元');
++ await setupOffset();group=offsetGroups(loadTickets(),loadEvents()).find(g=>!g.cancelled)!;await mount(<GroupDetails id={group.id}/>);
++ await input(document.querySelector<HTMLInputElement>('#fixture input[type=date]')!,'2026-10-09');await click(button('支払いを記録'));await click(button('この内容で確定'));await until(()=>!!offsetGroups(loadTickets(),loadEvents()).find(g=>g.id===group.id)?.completed);
++ assertion(offsetGroups(loadTickets(),loadEvents()).find(g=>g.id===group.id)!.completed,'完了しない');lines.push('PASS 差額支払い・関連精算の一括完了');
++ const snapshot=JSON.parse(JSON.stringify(captureSnapshot()));records.clear();restoreSnapshot(snapshot);await mount(<CompletedTasksPage/>);
++ assertion(document.querySelector('#fixture')!.textContent!.includes('1,770円支払済み'),'アーカイブ');lines.push('PASS 同期形式の往復後も履歴とアーカイブ保持');
++ await mount(<TicketTodos all/>);assertion(document.querySelector('#fixture')!.textContent!.includes('未完了 0件'),'未完了残存');lines.push('PASS ホームの未完了から消える');
++ await mount(<GroupDetails id={group.id}/>);assertion(!button('相殺を取り消す'),'完了後の取消禁止');lines.push('PASS 完了後は取消不可');
++ output.textContent=lines.join('\n')+'\n完了：7/7成功';
++ }catch(e){output.textContent=lines.join('\n')+`\nFAIL ${e}`;}
++}
++document.querySelector('#run')!.addEventListener('click',()=>void run());
++document.querySelector('#pending')!.addEventListener('click',()=>void(async()=>{fixture();await setupOffset();await mount(<GroupDetails id={offsetGroups(loadTickets(),loadEvents())[0].id}/>);output.textContent='検証用：相殺中・1770円支払';})());
++document.querySelector('#reload')!.addEventListener('click',()=>void(async()=>{const group=offsetGroups(loadTickets(),loadEvents()).find(g=>!g.cancelled);if(group){await mount(<GroupDetails id={group.id}/>);output.textContent=`再表示：${group.id} ／ ${group.completed?'相殺済み':'相殺中'} ／ 残額${group.remaining}円`;}else output.textContent='検証データなし';})());

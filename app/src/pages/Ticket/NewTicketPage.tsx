@@ -14,7 +14,7 @@ export default function NewTicketPage() {
   const [title, setTitle] = useState("");
   const [error, setError] = useState("");
   const selected = events.find(event => event.id === eventId);
-  function save(reception: TicketReception, companions: Companion[]) {
+  async function save(reception: TicketReception, companions: Companion[]) {
     setError("");
     const currentEvents = loadEvents();
     const existing = eventId ? currentEvents.find(event => event.id === eventId) : undefined;
@@ -23,10 +23,10 @@ export default function NewTicketPage() {
     const id = existing?.id ?? generateId();
     if (existing) {
       const ticket = loadTicketByEventId(id);
-      saveTicketWithCompanions({ id: ticket?.id ?? generateId(), eventId: id, receptions: [...(ticket?.receptions ?? []), reception] }, companions);
+      await saveTicketWithCompanions({ id: ticket?.id ?? generateId(), eventId: id, receptions: [...(ticket?.receptions ?? []), reception] }, companions);
     } else {
       // Save the minimal event, ticket and companions together, with storage rollback on failure.
-      saveEvents([...currentEvents, { id, title: title.trim(), startDate: "", endDate: "", venue: "" }], { eventId: id, receptions: [reception], companions });
+      await saveEvents([...currentEvents, { id, title: title.trim(), startDate: "", endDate: "", venue: "" }], { eventId: id, receptions: [reception], companions });
     }
     navigate(`/events/${id}/tickets`, { replace: true });
   }

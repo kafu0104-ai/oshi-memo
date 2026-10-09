@@ -1,0 +1,43 @@
+{
+  "checked_at": "2026-10-08",
+  "status": "deployed_acceptance_completed_with_display_issue",
+  "baseline_version": 108,
+  "baseline_source": "005e8bda406e620f13b56f99b403cd696e6cab55",
+  "version": 109,
+  "source": "8fc94046bdbb9ed616516ed96e4d66eb3c2ad331",
+  "version_id": "appgprj_6ab9eb5e23e481919ff36104c0eaff91~appgver_de159ce2aaa48191a30c40e015b7bbfe",
+  "deployment_id": "appgdep_6ac76c0510d8819188de187d5c6a1cf3",
+  "url": "https://oshi-memo-test.yuu0629.chatgpt.site",
+  "env_set_revision": 0,
+  "published_files_verified": 22,
+  "checks": {
+    "build": "passed",
+    "scope_and_hashes": "passed",
+    "staging_display": "passed",
+    "new_payment_options": "passed",
+    "synthetic_staging_write_tests": "completed_with_cancel_warning_issue",
+    "candidate_selection": "passed",
+    "difference_1770_pay": "passed",
+    "offset_confirmation": "passed",
+    "home_settlement_grouping": "passed",
+    "cash_completion": "passed",
+    "completed_archive": "passed",
+    "history": "passed",
+    "cancellation_balance_restore": "passed",
+    "reload_persistence": "passed",
+    "cancelled_group_warning": "failed_false_positive"
+  },
+  "data_changes": "No existing user records or cloud records modified",
+  "limitations": [
+    "Fixtures could not be imported without app cloud login. Equivalent synthetic 2275 receive / 4045 pay settlements were entered through UI in empty Chrome Guest; no cloud login used.",
+    "Ticket prices, fees and purchase completion were not populated; settlement amounts were entered manually. Separate ordinary purchase tasks correctly remain.",
+    "Cancelled group falsely displays inconsistency because offsetGroups.ts:32 applies directions.size > 1 to restored opposite-direction balances.",
+    "Real-device cloud sync and mobile viewport not tested in this run."
+  ],
+  "test_event_ids": [
+    "bdd06679-3913-4e4c-bfa6-61877391e352",
+    "d5906de7-4cad-4df5-97cb-cb6da4de8970"
+  ],
+  "cancelled_group_id": "b43f87ac-69e8-4121-be95-ec44725842e4",
+  "completed_group_id": "addf2b44-398e-45ce-a163-8bf36f2e576d"
+}

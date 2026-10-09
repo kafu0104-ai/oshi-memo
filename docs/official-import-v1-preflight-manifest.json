@@ -1,0 +1,63 @@
+{
+  "baseline": "b081a0ecf2402e3898e2c732569c4cd06559fe4e",
+  "status": "LOCAL_ONLY_NOT_DEPLOYED",
+  "changes": [
+    {
+      "file": "src/components/event/EventForm.tsx",
+      "sha256": "57d5b4c32d92f13c347f0e91e7f4f37cf50645106db817c803320aa577b0baa8"
+    },
+    {
+      "file": "src/components/event/OfficialImport.tsx",
+      "sha256": "ab38f6a2bb9b4ae43b1f268100f84fa8473f03719715a02360c801233a8354f3"
+    },
+    {
+      "file": "src/components/event/OfficialSourceSummary.tsx",
+      "sha256": "e487bff2a00ea8879e2070875c11fc5f7847f9458bbc92b1373ee95a0dfe4911"
+    },
+    {
+      "file": "src/components/event/QuickEventForm.tsx",
+      "sha256": "f4ce8325a53e7f9ced18850c5b39ac406ccad24d9d6e747ac3e962b991b243c2"
+    },
+    {
+      "file": "src/index.css",
+      "sha256": "86eda72d13fefe59b505caa0a10083d5bd0c8d5ac7d53f6e0a311fa436e2ce31"
+    },
+    {
+      "file": "src/pages/Event/EventDetailPage.tsx",
+      "sha256": "2d01a153c6ec92a6157d931d88b0c825cee792fbde2669821994a8745f1f0dc2"
+    },
+    {
+      "file": "src/services/officialCandidates.ts",
+      "sha256": "193ef2242d746a1d71cbc2ca4e9c127265fec01e2351613c1dac32bfc0da6425"
+    },
+    {
+      "file": "src/services/officialDiscovery.ts",
+      "sha256": "319e93f5762fc00ab128d4216e915cabcde201bde88f1037ea680ea1e97d8fb1"
+    },
+    {
+      "file": "src/services/officialImport.ts",
+      "sha256": "7058234326bb098bd473b85124b1ced2dd06de43f6784a55a26f2b934e80094f"
+    },
+    {
+      "file": "src/services/officialSelection.ts",
+      "sha256": "755cfd3f27b094afb116d006652572374214465a54de26750f317a7fe2f6814d"
+    },
+    {
+      "file": "src/services/ticketImport.ts",
+      "sha256": "edca72a8f71b7efbec8a1a8d01eeb3bcb7dba248df0e1e1757564a9498936903"
+    },
+    {
+      "file": "src/types/Event.ts",
+      "sha256": "0aad2203ca4b49b65f1add7f5c90aab6c8fcd19a38965102d3afca997bcc7bde"
+    },
+    {
+      "file": "server/officialPage.ts",
+      "sha256": "24507df9347f2f4689443accc1fe28188c03d61098347002e7adb41bb77b0cf0"
+    },
+    {
+      "file": "server/sites-worker.mjs",
+      "sha256": "7dabc15383a290016765f0a24cb1ea53eccd2a3ed5c5e13df9f84c1285706d53"
+    }
+  ],
+  "assetArchiveSha256": "e475e2178d45ec71754de8a13eb4caa93e4ad74af0736523963ea80293d048bc"
+}

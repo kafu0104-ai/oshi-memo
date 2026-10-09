@@ -1,3 +1,5 @@
+import { withPersonalDataLock } from "./personalDataLock";
+import { assertOffsetPreserved } from "./settlementOffsets";
 import type { EventTicketChanges } from "./eventTicketDraft";
 import { mergeEventTickets } from "./eventTickets";
 import { generateId } from "./id";
@@ -67,7 +69,7 @@ export function loadEvents(): Event[] {
 /**
  * イベント一覧を保存する
  */
-export function saveEvents(
+function writeEvents(
   events: Event[],
   changes?: EventTicketChanges & { eventId: string },
 ): void {
@@ -85,13 +87,15 @@ export function saveEvents(
       ticket.receptions=existing?ticket.receptions.map(r=>r.id===existing.id?updated:r):[...ticket.receptions,updated];
     }
   }
+  assertOffsetPreserved(tickets,nextTickets);
+  if (tickets.some(t=>t.receptions.some(r=>r.applications.some(a=>a.fulfillment?.payment.settlements.some(s=>s.offsetAmount!==undefined))) && !events.some(e=>e.id===t.eventId))) throw new Error("相殺履歴のあるイベントは削除できません。履歴を残すため、過去のイベントとして保管してください。");
   try {
     if(changes?.companions.length){
       const companions=loadCompanions();
       saveCompanions([...companions.map(c=>changes.companions.find(item=>item.id===c.id)??c),...changes.companions.filter(c=>!companions.some(existing=>existing.id===c.id))]);
     }
     saveArray(EVENTS_KEY, events);
-    if(JSON.stringify(nextTickets)!==JSON.stringify(tickets))saveTickets(nextTickets);
+    if(JSON.stringify(nextTickets)!==JSON.stringify(tickets))writeTickets(nextTickets);
   } catch(error) {
     for(const [key,value] of [[EVENTS_KEY,previous],[TICKETS_KEY,previousTickets],[COMPANIONS_KEY,previousCompanions]] as const){
       if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);
@@ -115,9 +119,10 @@ export function loadTickets(): Ticket[] {
 /**
  * チケット管理データをすべて保存する
  */
-export function saveTickets(
+function writeTickets(
   tickets: Ticket[],
 ): void {
+  assertOffsetPreserved(loadTickets(), tickets);
   saveArray(TICKETS_KEY, tickets);
 }
 
@@ -140,7 +145,7 @@ export function loadTicketByEventId(
  * 同じ id のTicketが存在する場合は更新、
  * 存在しない場合は追加する。
  */
-export function saveTicket(
+function writeTicket(
   ticket: Ticket,
 ): void {
   const tickets = loadTickets();
@@ -155,7 +160,7 @@ export function saveTicket(
     tickets.push(ticket);
   }
 
-  saveTickets(tickets);
+  writeTickets(tickets);
 }
 
 
@@ -208,15 +213,36 @@ export function saveCompanion(
   saveCompanions(companions);
 }
 /** Save a ticket and newly added companions together; restore companions if ticket storage fails. */
-export function saveTicketWithCompanions(ticket: Ticket, additions: Companion[]): void {
-  if (additions.length === 0) { saveTicket(ticket); return; }
+function writeTicketWithCompanions(ticket: Ticket, additions: Companion[]): void {
+  if (additions.length === 0) { writeTicket(ticket); return; }
   const previous = localStorage.getItem(COMPANIONS_KEY);
   const companions = loadCompanions();
   saveCompanions([...companions.map(c=>additions.find(item=>item.id===c.id)??c), ...additions.filter(c => !companions.some(existing => existing.id === c.id))]);
-  try { saveTicket(ticket); }
+  try { writeTicket(ticket); }
   catch (error) {
     if (previous === null) localStorage.removeItem(COMPANIONS_KEY);
     else localStorage.setItem(COMPANIONS_KEY, previous);
     throw error;
   }
+}
+
+export function saveEvents(events: Event[], changes?: EventTicketChanges & { eventId: string }): Promise<void> {
+  return withPersonalDataLock(() => writeEvents(events, changes));
+}
+export function saveTickets(tickets: Ticket[]): Promise<void> {
+  return withPersonalDataLock(() => writeTickets(tickets));
+}
+export function saveTicket(ticket: Ticket): Promise<void> {
+  return withPersonalDataLock(() => writeTicket(ticket));
+}
+export function saveTicketWithCompanions(ticket: Ticket, additions: Companion[]): Promise<void> {
+  return withPersonalDataLock(() => writeTicketWithCompanions(ticket, additions));
+}
+/** Balances and histories share the existing tickets key: one atomic setItem, no partial commit. */
+export function transactTicketSettlements<T>(operation: (tickets: Ticket[], events: Event[]) => { tickets: Ticket[]; result: T }, requireLock = false): Promise<T> {
+  return withPersonalDataLock(() => {
+    const { tickets, result } = operation(loadTickets(), loadEvents());
+    saveArray(TICKETS_KEY, tickets);
+    return result;
+  }, requireLock);
 }

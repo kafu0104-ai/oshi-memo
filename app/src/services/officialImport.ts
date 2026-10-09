@@ -1,4 +1,4 @@
-export type OfficialFields = Partial<Record<'performers'|'title'|'startDate'|'endDate'|'venue'|'openingTime'|'closingTime'|'lastAdmission'|'doorsOpen'|'startTime',string>>;
+export type OfficialFields = Partial<Record<'performers'|'title'|'startDate'|'endDate'|'venue'|'openingTime'|'closingTime'|'lastAdmission'|'doorsOpen'|'startTime'|'endTime',string>>;
 export function extractOfficialFields(html:string):OfficialFields {
   const doc=new DOMParser().parseFromString(html,'text/html');
   const fields:OfficialFields={};
@@ -35,7 +35,9 @@ export function extractOfficialFields(html:string):OfficialFields {
   const text=lines.replace(/[〖〗【】]/g,' ').replace(/\s+/g,' ');
   // Only labeled event dates; omitted end year/month inherit from the explicit start date.
   if(events.length<=1){
-    const periods=[...text.matchAll(/(?:開催期間|開催日程|開催日時|開催日|公演日程|公演日|日程|会期)\s*[:：]?\s*([^※]{1,120})/g)].map(m=>eventPeriod(m[1])).filter((value):value is {startDate:string;endDate:string}=>!!value);
+    const labeledPeriods=[...doc.querySelectorAll('dt,th,p,div,span')].filter(node=>/^(開催期間|開催日程|開催日時|開催日|公演日程|公演日|日程|会期)$/.test(clean(node.textContent))).map(node=>eventPeriod(node.nextElementSibling?.textContent ?? '')).filter((value):value is {startDate:string;endDate:string}=>!!value);
+    const fallbackPeriods=[...text.matchAll(/(?:開催期間|開催日程|開催日時|開催日|公演日程|公演日|日程|会期)\s*[:：]?\s*([^※]{1,120})/g)].map(m=>eventPeriod(m[1])).filter((value):value is {startDate:string;endDate:string}=>!!value);
+    const periods=labeledPeriods.length?labeledPeriods:fallbackPeriods;
     const unique=[...new Map(periods.map(p=>[JSON.stringify(p),p])).values()];
     if(unique.length===1){fields.startDate ||= unique[0].startDate;fields.endDate ||= unique[0].endDate;}
     // Sites use both definition tables and ordinary sibling spans for access details.
@@ -80,7 +82,7 @@ export function extractOfficialFields(html:string):OfficialFields {
 
 export interface ImportedLottery {
   name:string; startDate:string; endDate:string;
-  applicationStart:string; applicationEnd:string; resultDate:string;
+  applicationStart:string; applicationEnd:string; resultDate:string; resultTime?:string;
 }
 export function lotteryRoundsFromText(text:string):ImportedLottery[] {
   const normalized=text.replace(/\s+/g,' ');
@@ -89,13 +91,13 @@ export function lotteryRoundsFromText(text:string):ImportedLottery[] {
   return sections.flatMap((heading,index)=>{
     const block=normalized.slice(heading.index!,sections[index+1]?.index ?? normalized.length);
     const target=block.match(/抽選対象期間(.*?)応募期間/);
-    const application=block.match(/応募期間(.*?)当選のご連絡/);
-    const result=block.match(/当選のご連絡\s*[:：]?\s*(\d{4}年\s*\d{1,2}月\s*\d{1,2}日)/);
+    const application=block.match(/応募期間(.*?)(?:当選のご連絡|当落発表|抽選結果発表|当選発表)/);
+    const result=block.match(/(?:当選のご連絡|当落発表|抽選結果発表|当選発表)\s*[:：]?\s*(\d{4}年\s*\d{1,2}月\s*\d{1,2}日)/);
     if(!target||!application||!result)return [];
     const targetDates=dates(target[1]), applicationDates=dates(application[1]);
     if(targetDates.length!==2||applicationDates.length!==2)return [];
     const name=block.slice(0,block.indexOf('抽選対象期間')).trim().slice(0,150);
-    return [{name,startDate:targetDates[0],endDate:targetDates[1],applicationStart:applicationDates[0],applicationEnd:applicationDates[1],resultDate:dates(result[1])[0]}];
+    return [{name,startDate:targetDates[0],endDate:targetDates[1],applicationStart:applicationDates[0],applicationEnd:applicationDates[1],resultDate:dates(result[1])[0],resultTime:(()=>{const tail=block.slice(block.indexOf(result[0])+result[0].length);const time=tail.match(/^\s*(?:[（(][^）)]*[）)])?\s*([0-2]?\d)(?::([0-5]\d)|時(?:([0-5]?\d)分)?)/);return time&&Number(time[1])<24?time[1].padStart(2,"0")+":"+(time[2]||time[3]||"0").padStart(2,"0"):undefined;})()}];
   });
 }
 export function extractOfficialLotteries(html:string):ImportedLottery[] {
@@ -124,6 +126,8 @@ export interface ImportedPerformance {
   venue: string;
   doorsOpen?: string;
   startTime?: string;
+  endTime?: string;
+  genre?: "live" | "stage" | "movie";
 }
 
 /** A performance needs its own dated opening/start times, never a ticket deadline. */
@@ -158,7 +162,7 @@ export function fieldsForPerformances(items: ImportedPerformance[]): OfficialFie
   const dates = items.map(p => p.date).sort();
   const venues = [...new Set(items.map(p => p.venue))];
   return { startDate: dates[0], endDate: dates.at(-1), ...(venues.length === 1 ? {venue: venues[0]} : {}),
-    ...(items.length === 1 ? {doorsOpen:items[0].doorsOpen,startTime:items[0].startTime} : {}) };
+    ...(items.length === 1 ? {doorsOpen:items[0].doorsOpen,startTime:items[0].startTime,endTime:items[0].endTime} : {}) };
 }
 
 /** Read only an explicitly labelled cast block; stop before notices or another section. */

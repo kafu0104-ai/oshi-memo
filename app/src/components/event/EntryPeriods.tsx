@@ -76,6 +76,6 @@ export default function EntryPeriods({performances=[],value,onChange,ticketMode=
         </section>}
       </section>;
     })}
-    {(value.length === 0 || value.some(period=>period.method)) && <button type="button" className="secondary-button" onClick={()=>onChange([...value,{id:generateId(),startDate:"",endDate:"",method:"",resultDate:"",resultTime:"",entries:[]}])}>{ticketMode ? "＋ チケット購入方法を追加" : "＋ 入場方法・抽選回を追加"}</button>}
+    {(value.length === 0 || value.some(period=>period.method)) && <button type="button" className="secondary-button" onClick={()=>onChange([...value,{id:generateId(),startDate:"",endDate:"",method:"",resultDate:"",resultTime:"",entries:[]}])}>{ticketMode ? "＋ チケット購入方法を追加" : "＋ 入場方法を追加"}</button>}
   </section>;
 }

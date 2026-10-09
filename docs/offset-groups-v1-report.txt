@@ -1,0 +1,78 @@
+OshiMemo 相殺機能・関連タスク管理 改善 v1.0 ローカル実装報告
+
+公開状況
+ローカル実装のみ。ステージング・本番・実ユーザーのイベントや精算記録は未変更。
+LINE、Supabase、クラウド同期処理・設定は今回変更していない。
+
+実装内容
+・精算方向と支払者・同行者の関係を確認し、不一致の可能性を表示。
+・個別負担の場合は現状維持を明示確認。未精算・未相殺の記録のみ、確認後に方向を訂正可能。
+・方向訂正で金額や精算IDを変えず、確認前後の方向・日時を保存。
+・支払者変更時に既存の逆方向精算へ受取精算を重複追加しない。既存記録を自動削除しない。
+・既存の相殺計算・履歴・精算ID・一括保存を再利用。
+・相殺履歴IDをグループIDとして利用し、対象の精算IDから関連タスクを導出。
+・同じ精算の残高を再度相殺した場合、つながる履歴を1つの残高グループとして表示。古い履歴IDのURLも維持。
+・ホームの元の精算タスクを差額タスク1件に集約。同じイベントの無関係な精算は集約しない。
+・グループ内の残額を一括精算し、完了済みアーカイブへグループ単位で表示。
+・イベント、チケット精算、元のタスクから関連グループと履歴へ移動可能。
+・相殺予定は選択画面内のみ。相殺中・相殺済み・相殺取消の状態を表示。
+・未完了グループは確認後に取り消し可能。履歴は残し、充当分を戻す。
+・新しい履歴には相殺前後の精算記録を保持。旧履歴は記録済み充当額を元に復元。
+・金銭授受・他の変更がある場合は取消を拒否。完了後の単純取消も拒否。
+・完了・取消は既存の同一ロック内で再検証し、既存ticketsキーへ1回で保存。
+・支払期限と購入自体の支払済み状態は相殺で変更しない。
+
+Phaseごとの確認
+Phase 1: 型チェック、相殺関連テスト34件成功。
+Phase 2: 型チェック、相殺関連テスト38件成功。
+Phase 3: 型チェック、相殺関連テスト38件成功。
+Phase 4: 型チェック、相殺関連テスト43件成功。
+Phase 5: 全自動テスト205件成功（相殺関連46件を含む）、型チェック、アプリビルド成功。
+ブラウザ受入テスト7/7成功。再読み込みで同じグループIDと完了状態を確認。
+スマートフォン相当320/390/430px、768pxで横はみ出しなし。
+
+受入例（検証データのみ）
+MAPPA 2,275円受取、文スト4,045円支払 → 自分からとこさんへ1,770円。
+候補選択 → 確認 → 相殺 → ホーム1件 → 差額精算 → アーカイブを確認。
+別シナリオで確認つき取消 → 元の未精算復元 → 再相殺を確認。
+同一相手、別相手拒否、反対方向、複数イベント、差額ゼロ、受取超過・支払超過、部分残高、
+二重確定、別精算保護、取消、履歴保持、旧履歴、保存失敗、同時完了と取消、料金変更後の取消拒否を検証。
+クラウドで使用するPersonalSnapshot形式をJSON転送して復元し、ID・残額・履歴が変わらないことを検証。
+全体テストで一時的に4件失敗した原因は、既存テストの手動読み込み設定に新しい確認モジュールが未登録だったため。
+実モジュールを読み込む設定へ更新後、全件成功。
+ブラウザ検証では非同期保存の完了待ちと、取消履歴を残す仕様に合わせた検証判定を修正した。
+
+今回変更・追加したファイル（以前からの未公開変更は保持）
+app/src/App.tsx
+app/src/types/Ticket.ts
+app/src/types/SettlementOffset.ts
+app/src/services/companionSettlements.ts
+app/src/services/settlementConsistency.ts
+app/src/services/settlementOffsets.ts
+app/src/services/offsetGroups.ts
+app/src/services/offsetTaskDisplay.ts
+app/src/services/paymentSettlementEntry.ts
+app/src/services/ticketTasks.ts
+app/src/components/common/OffsetLinks.tsx
+app/src/pages/Ticket/TicketPayments.tsx
+app/src/pages/Home/SettlementTaskForm.tsx
+app/src/pages/Home/PaymentOffsetEntry.tsx
+app/src/pages/Home/TicketTodos.tsx
+app/src/pages/Home/TicketTaskPage.tsx
+app/src/pages/Home/OffsetGroupPage.tsx
+app/src/pages/Event/EventDetailPage.tsx
+app/tests/settlement-offsets.test.cjs
+app/tests/ticket-reception.test.cjs
+app/tests/offset-groups.html
+app/tests/offset-groups.browser.tsx
+
+残るリスク・制限
+・実際のクラウドへの送受信、異なる端末間の同期、旧バージョンのアプリとの混在利用は未検証。
+・同期は従来どおりスナップショット方式。クラウドの方式・認証・設定は変更していない。
+・金額の自動計算は従来どおり1人1枚分。複数枚の個別負担などは既存の手入力で確認する。
+・支払者が異なることだけで既存の精算方向を誤りと決めつけず、ユーザー確認が必要。
+・同じ相手の同じ方向に訂正すると未精算が重複する場合は、訂正を拒否して記録の確認を促す。
+・相殺後に金銭授受、料金変更、精算内容変更があった場合、安全な復元を保証できなければ取消を拒否。
+・精算完了後の返金等を伴う専用の訂正フローは今回追加していない。履歴は保持し単純取消を禁止する。
+・ビルドには既存の大きなバンドル警告が残る。ビルドは成功。
+・ユーザーのスマートフォン上のMAPPA実データは未修正。今回の受入例は専用の検証用データ。
